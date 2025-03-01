@@ -5,16 +5,23 @@
 
 #include "lq/crypto.h"
 
+#ifndef LQ_MSG_DOMAIN_LEN
+#define LQ_MSG_DOMAIN_LEN 8
+#endif
+
 struct lq_msg_t {
-	const char *msg_data;
-	size_t msg_len;
-	const char *msg_domain;
-	size_t *msg_domain_len;
-	int msg_timestamp;
-	struct LQPubKey *msg_pubkey;
-	struct LQSig *msg_signature;
+	const char *data;
+	size_t len;
+	char domain[LQ_MSG_DOMAIN_LEN];
+	int timestamp;
+	LQPubKey *pubkey;
+	LQSig *signature;
 };
 typedef struct lq_msg_t LQMsg;
 
+LQMsg* lq_msg_new(const char *msg_data, size_t msg_len);
+void lq_msg_set_domain(LQMsg *msg, const char *domain);
+int lq_msg_sign(LQMsg *msg, LQPrivKey *pk);
+int lq_msg_sign_salted(LQMsg *msg, LQPrivKey *pk, const char *salt, size_t salt_len);
+void lq_msg_free(LQMsg *msg);
 #endif // LIBQAEDA_MSG_H_
-

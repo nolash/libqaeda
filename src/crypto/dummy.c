@@ -64,9 +64,9 @@ LQPubKey* lq_publickey_from_privatekey(LQPrivKey *pk) {
 	return pubk;
 }
 
-LQSig* lq_privatekey_sign(LQPrivKey *pk, char *msg, size_t msg_len, const char *salt, size_t salt_len) {
+LQSig* lq_privatekey_sign(LQPrivKey *pk, const char *msg, size_t msg_len, const char *salt, size_t salt_len) {
 	int i;
-	char *src;
+	const char *src;
 	char *dst;
 	LQSig *sig;
 
