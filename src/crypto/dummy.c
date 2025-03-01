@@ -31,11 +31,6 @@ LQPrivKey* lq_privatekey_new(char *seed, size_t seed_len) {
 	return pk;
 }
 
-void lq_privatekey_free(LQPrivKey *pk) {
-	lq_free(pk->lokey);
-	lq_free(pk);
-}
-
 LQPubKey* lq_publickey_new(char *full, size_t full_len) {
 	LQPubKey *pubk;
 
@@ -103,7 +98,17 @@ LQSig* lq_privatekey_sign(LQPrivKey *pk, char *msg, size_t msg_len, const char *
 	return sig;
 }
 
+void lq_privatekey_free(LQPrivKey *pk) {
+	lq_free(pk->lokey);
+	lq_free(pk);
+}
+
 void lq_publickey_free(LQPubKey *pubk) {
 	lq_free(pubk->lokey);
 	lq_free(pubk);
+}
+
+void lq_signature_free(LQSig *sig) {
+	lq_free(sig->losig);		
+	lq_free(sig);
 }
