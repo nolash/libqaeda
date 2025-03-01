@@ -1,5 +1,3 @@
-#include <stdlib.h>
-
 #include "lq/ctx.h"
 #include "lq/mem.h"
 
