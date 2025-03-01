@@ -21,6 +21,14 @@ static const char sig_dummy_transform[64] = {
 	0x5b, 0xe3, 0xaa, 0x2f, 0xc1, 0xe6, 0xc1, 0x81,
 };
 
+// sha256sum "baz" baa5a0964d3320fbc0c6a922140453c8513ea24ab8fd0577034804a967248096
+static const char digest_dummy_transform[32] = {
+	0xba, 0xa5, 0xa0, 0x96, 0x4d, 0x33, 0x20, 0xfb,
+	0xc0, 0xc6, 0xa9, 0x22, 0x14, 0x04, 0x53, 0xc8,
+	0x51, 0x3e, 0xa2, 0x4a, 0xb8, 0xfd, 0x05, 0x77, 
+	0x03, 0x48, 0x04, 0xa9, 0x67, 0x24, 0x80, 0x96
+};
+
 LQPrivKey* lq_privatekey_new(char *seed, size_t seed_len) {
 	LQPrivKey *pk;
 
@@ -111,4 +119,17 @@ void lq_publickey_free(LQPubKey *pubk) {
 void lq_signature_free(LQSig *sig) {
 	lq_free(sig->losig);		
 	lq_free(sig);
+}
+
+int lq_digest(const char *in, size_t in_len, char *out) {
+	int i;
+	int ii;
+	lq_set(out, 0, LQ_DIGEST_LEN);
+
+	for (i = 0; i < in_len; i++) {
+		ii = i % LQ_DIGEST_LEN;
+		*(out + ii) = *(in + i) ^ digest_dummy_transform[ii];
+	}
+
+	return 0;
 }

@@ -3,6 +3,10 @@
 
 #include <stddef.h>
 
+#ifndef LQ_DIGEST_LEN
+#define LQ_DIGEST_LEN 32
+#endif
+
 struct lq_privatekey_t {
 	int key_typ;
 	void *lokey;
@@ -31,5 +35,6 @@ LQSig* lq_privatekey_sign(LQPrivKey *pk, const char *msg, size_t msg_len, const 
 void lq_publickey_free(LQPubKey *pubk);
 void lq_privatekey_free(LQPrivKey *pk);
 void lq_signature_free(LQSig *sig);
+int lq_digest(const char *in, size_t in_len, char *out);
 
 #endif // LIBQAEDA_CRYPTO_H_

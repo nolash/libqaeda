@@ -24,16 +24,21 @@ int lq_msg_sign(LQMsg *msg, LQPrivKey *pk) {
 }
 
 int lq_msg_sign_salted(LQMsg *msg, LQPrivKey *pk, const char *salt, size_t salt_len) {
+	size_t l;
+	int r;
 	char *data;
+	char digest[LQ_DIGEST_LEN];
 
-	data = lq_alloc(LQ_MSG_DOMAIN_LEN + msg->len);
+	l = LQ_MSG_DOMAIN_LEN + msg->len;
+	data = lq_alloc(l);
 	lq_cpy(data, msg->domain, LQ_MSG_DOMAIN_LEN);
 	lq_cpy(data + LQ_MSG_DOMAIN_LEN, msg->data, msg->len);
 	msg->pubkey = lq_publickey_from_privatekey(pk);
 
-	// TODO: digest msg
+	r = lq_digest(data, l, (char*)digest);
 	msg->signature = lq_privatekey_sign(pk, msg->data, msg->len, salt, salt_len);
-	return 0;
+
+	return r;
 }
 
 void lq_msg_free(LQMsg *msg) {
