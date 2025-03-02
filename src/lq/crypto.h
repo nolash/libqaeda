@@ -109,12 +109,11 @@ LQPubKey* lq_publickey_from_privatekey(LQPrivKey *pk);
  * @param[in] Unencrypted private key to use for the signature.
  * @param[in] Message digest to sign.
  * @param[in] Length of message to sign.
- * @param[in] Salt data to use for the signature.
- * @param[in] Length of salt data.
+ * @param[in] Salt data to use for the signature. Set to NULL if salt is not to be used. If not null, must be LQ_SALT_LEN long.
  * @return Signature object if signing was successful. Returns NULL if signature failed.
  * @see lq_signature_free
  */
-LQSig* lq_privatekey_sign(LQPrivKey *pk, const char *msg, size_t msg_len, const char *salt, size_t salt_len);
+LQSig* lq_privatekey_sign(LQPrivKey *pk, const char *msg, size_t msg_len, const char *salt);
 
 
 /***

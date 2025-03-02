@@ -77,16 +77,13 @@ LQPubKey* lq_publickey_from_privatekey(LQPrivKey *pk) {
 	return pubk;
 }
 
-LQSig* lq_privatekey_sign(LQPrivKey *pk, const char *msg, size_t msg_len, const char *salt, size_t salt_len) {
+LQSig* lq_privatekey_sign(LQPrivKey *pk, const char *msg, size_t msg_len, const char *salt) {
 	int i;
 	const char *src;
 	char *dst;
 	LQSig *sig;
 
 	if (msg_len != LQ_DIGEST_LEN) {
-		return NULL;
-	}
-	if (salt_len != LQ_SALT_LEN) {
 		return NULL;
 	}
 
@@ -99,13 +96,18 @@ LQSig* lq_privatekey_sign(LQPrivKey *pk, const char *msg, size_t msg_len, const 
 		src = msg + i;
 		dst = sig->losig + i;
 		*dst = *src ^ sig_dummy_transform[i];
-		*dst ^= *(salt + i);
+		if (salt != NULL) {
+			*dst ^= *(salt + (i % LQ_SALT_LEN));
+		}
 
 		src += msg_len;
 		dst += msg_len;
 		*dst = *src ^ sig_dummy_transform[i + msg_len];
-		*dst ^= *(salt + i);
+		if (salt != NULL) {
+			*dst ^= *(salt + (i % LQ_SALT_LEN));
+		}
 	}
+
 	*(((char*)sig->losig) + sig->lolen) = 0x2a;
 
 	return sig;

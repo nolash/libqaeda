@@ -54,7 +54,29 @@ void lq_certificate_set_domain(LQCert *cert, const char *domain) {
 	lq_cpy(cert->domain, domain, LQ_CERT_DOMAIN_LEN);
 }
 
+static int state_digest(LQCert *cert, char *out) {
+	int c;
+	char data[1024];
+	char *p;
+
+	c = LQ_CERT_DOMAIN_LEN;
+	p = data;
+	lq_cpy(p, cert->domain, c);
+	p += c;
+
+	if (cert->request_sig != NULL) {
+		lq_cpy(p, cert->request_sig->losig, cert->request_sig->lolen);
+		c += cert->request_sig->lolen;
+		p += cert->request_sig->lolen;
+	}
+
+	return lq_digest(data, c, out);
+}
+
 int lq_certificate_sign(LQCert *cert, LQPrivKey *pk) {
+	char out[LQ_DIGEST_LEN];
+
+	state_digest(cert, out);
 	if (cert->response != NULL) {
 		if (cert->response_sig != NULL) {
 			return ERR_RESPONSE;
@@ -62,7 +84,7 @@ int lq_certificate_sign(LQCert *cert, LQPrivKey *pk) {
 		if (cert->request == NULL) {
 			return ERR_INIT;	
 		}
-		cert->response_sig = lq_msg_sign(cert->response, pk);
+		cert->response_sig = lq_msg_sign_extra(cert->response, pk, NULL, out, LQ_DIGEST_LEN);
 		if (cert->response_sig == NULL) {
 			return ERR_ENCODING;
 		}
@@ -74,7 +96,7 @@ int lq_certificate_sign(LQCert *cert, LQPrivKey *pk) {
 	if (cert->request_sig != NULL) {
 		return ERR_REQUEST;
 	}
-	cert->request_sig = lq_msg_sign(cert->request, pk);
+	cert->request_sig = lq_msg_sign_extra(cert->request, pk, NULL, out, LQ_DIGEST_LEN);
 	if (cert->request_sig == NULL) {
 		return ERR_ENCODING;
 	}

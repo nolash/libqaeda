@@ -39,19 +39,23 @@ LQMsg* lq_msg_new(const char *msg_data, size_t msg_len);
  * @brief Calculate a signature over the message. Uses default salt value.
  * @param[in] Message to sign.
  * @param[in] Private key to sign with.
+ * @param[in] Salt data to secure signature with. Set to NULL if salt is not to be used.
  * @return Signature object. Object will be NULL if signature calculation failed. It is the caller's responsibility to free the signature object.
  * @see lq_signature_free
  */
-LQSig* lq_msg_sign(LQMsg *msg, LQPrivKey *pk);
+LQSig* lq_msg_sign(LQMsg *msg, LQPrivKey *pk, const char *salt);
 
 /***
  * @brief Calculate a signature over the message with a specified salt value. The salt value length must be LQ_SALT_LEN.
  * @param[in] Message to sign.
  * @param[in] Private key to sign with.
+ * @param[in] Salt data to secure signature with. Set to NULL if salt is not to be used.
+ * @param[in] Extra data to prefix message data with when calculating digest. If set to NULL, only message data will be used in digest.
+ * @param[in] Length of extra data. Ignored if extra data is NULL.
  * @return Signature object. Object will be NULL if signature calculation failed. It is the caller's responsibility to free the signature object.
  * @see lq_signature_free
  */
-LQSig* lq_msg_sign_salted(LQMsg *msg, LQPrivKey *pk, const char *salt);
+LQSig* lq_msg_sign_extra(LQMsg *msg, LQPrivKey *pk, const char *salt, const char *extra, size_t extra_len);
 
 /***
  * @brief Serialize message data payload for inclusion in certificate.

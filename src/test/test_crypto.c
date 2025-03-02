@@ -40,7 +40,7 @@ START_TEST(check_signature) {
 
 	pk = lq_privatekey_new(data, 32);
 	lq_digest(data, strlen(data), (char*)digest);
-	sig = lq_privatekey_sign(pk, digest, 32, salt, 32);
+	sig = lq_privatekey_sign(pk, digest, 32, salt);
 
 	r = 42;
 	ck_assert_mem_eq((sig->losig)+65, &r, 1);
