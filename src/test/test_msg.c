@@ -4,8 +4,11 @@
 
 #include "lq/msg.h"
 #include "lq/crypto.h"
+#include "lq/io.h"
+#include "lq/mem.h"
 
-extern struct lq_store_t LQDummyContent;
+extern LQStore LQDummyContent;
+extern LQStore LQFileContent;
 
 const char *data = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
 
@@ -13,11 +16,21 @@ START_TEST(check_msg_symmetric) {
 	int r;
 	size_t c;
 	char buf[4096];
+	char path[1024];
 	LQMsg *msg;
 	LQResolve resolve;
+	LQResolve resolve_dummy;
+	LQStore store;
 
-	resolve.store = &LQDummyContent;
-	resolve.next = NULL;
+	lq_cpy(&store, &LQFileContent, sizeof(LQStore));
+	lq_cpy(path, "/tmp/lqstore_file_XXXXXX", 25);
+	store.userdata = (void*)mktempdir(path);
+	ck_assert_ptr_nonnull(store.userdata);
+
+	resolve_dummy.store = &LQDummyContent;
+	resolve_dummy.next = NULL;
+	resolve.store = &store;
+	resolve.next = &resolve_dummy;
 	msg = lq_msg_new(data, strlen(data) + 1);
 	msg->pubkey = lq_publickey_new(data);
 

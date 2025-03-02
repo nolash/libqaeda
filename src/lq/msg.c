@@ -100,7 +100,7 @@ int lq_msg_serialize(LQMsg *msg, char *out, size_t *out_len, LQResolve *resolve)
 
 	resolve_active = resolve;
 	while (resolve_active != NULL) {
-		r = resolve->store->put(LQ_CONTENT_MSG, tmp, &c, msg->data, msg->len);
+		r = resolve_active->store->put(LQ_CONTENT_MSG, resolve_active->store, tmp, &c, msg->data, msg->len);
 		if (r != ERR_OK) {
 			return r;
 		}
@@ -191,7 +191,7 @@ int lq_msg_deserialize(LQMsg **msg, const char *in, size_t in_len, LQResolve *re
 	c = 1024;
 	resolve_active = resolve;
 	while (resolve_active != NULL) {
-		r = resolve->store->get(LQ_CONTENT_MSG, z, LQ_DIGEST_LEN, tmp, &c);
+		r = resolve_active->store->get(LQ_CONTENT_MSG, resolve_active->store, z, LQ_DIGEST_LEN, tmp, &c);
 		if (r != ERR_OK) {
 			return r;
 		}

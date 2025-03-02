@@ -1,8 +1,11 @@
 INCLUDES := -I.. -I../aux/include
 CFLAGS +=  $(INCLUDES) -Wall
 
-dummy:
-	$(CC) $(CFLAGS) -g3 -c dummy.c 
+all:
+	$(CC) $(CFLAGS) -c file.c 
+
+dummy: all
+	$(CC) $(CFLAGS) -c dummy.c 
 
 clean:
 	rm -vf *.o

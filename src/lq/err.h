@@ -12,6 +12,8 @@ enum err_e {
 	ERR_ENCODING, ///< Failure in serialization and data transformation
 	ERR_REQUEST, ///< Error related to certificate request messages
 	ERR_RESPONSE, ///< Error related to certificate response messages
+	ERR_NOENT, ///< Not found
+	ERR_COMPAT, ///< Incompatible data or format
 };
 
 typedef enum err_e LQErr;

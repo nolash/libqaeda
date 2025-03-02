@@ -10,15 +10,18 @@ enum payload_e {
 	LQ_CONTENT_KEY,
 };
 
+typedef struct lq_store_t LQStore;
 struct lq_store_t {
-	int (*get)(enum payload_e typ, const char *key, size_t key_len, char *value, size_t *value_len);
-	int (*put)(enum payload_e typ, const char *key, size_t *key_len, char *value, size_t value_len);
+	int store_typ;
+	void *userdata;
+	int (*get)(enum payload_e typ, LQStore *store, const char *key, size_t key_len, char *value, size_t *value_len);
+	int (*put)(enum payload_e typ, LQStore *store, const char *key, size_t *key_len, char *value, size_t value_len);
 };
 
 
 typedef struct lq_resolve_t LQResolve;
 struct lq_resolve_t {
-	struct lq_store_t *store;
+	LQStore *store;
 	LQResolve *next;	
 };
 

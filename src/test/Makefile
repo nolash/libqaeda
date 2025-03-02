@@ -13,8 +13,8 @@ test: all
 
 build:
 	$(CC) $(CFLAGS) $(LDFLAGS) test_crypto.c -o test_crypto_bin ../crypto/dummy.o ../mem/std.o -lcheck
-	$(CC) $(CFLAGS) $(LDFLAGS) test_msg.c -o test_msg_bin ../crypto/dummy.o ../mem/std.o ../store/dummy.o ../lq/msg.o -lcheck
-	$(CC) $(CFLAGS) $(LDFLAGS) test_cert.c -o test_cert_bin ../crypto/dummy.o ../mem/std.o ../store/dummy.o ../lq/msg.o ../lq/cert.o -lcheck
+	$(CC) $(CFLAGS) $(LDFLAGS) test_msg.c -o test_msg_bin ../crypto/dummy.o ../mem/std.o ../store/dummy.o ../store/file.o ../io/std.o ../lq/msg.o -lcheck
+	$(CC) $(CFLAGS) $(LDFLAGS) test_cert.c -o test_cert_bin ../crypto/dummy.o ../mem/std.o ../store/dummy.o ../store/file.o ../io/std.o ../lq/msg.o ../lq/cert.o -lcheck
 
 clean:
 	rm -vf test_*_bin
