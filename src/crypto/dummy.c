@@ -47,7 +47,7 @@ LQPubKey* lq_publickey_new(const char *full) {
 	LQPubKey *pubk;
 
 	pubk = lq_alloc(sizeof(LQPubKey));
-	lq_set(pubk->pk, 0, sizeof(LQPrivKey*));
+	pubk->pk = 0;
 	pubk->lokey = lq_alloc(65);
 	lq_cpy(pubk->lokey, full, 65);
 	pubk->lolen = 65;

@@ -1,4 +1,6 @@
-all: asn1 dummy
+all: asn1 core dummy
+
+core:
 	make -C lq
 
 asn1:
@@ -7,5 +9,5 @@ dummy:
 	make -C crypto dummy
 	make -C mem std
 
-test: dummy
+test: core dummy
 	make -C test
