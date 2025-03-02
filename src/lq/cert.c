@@ -54,7 +54,10 @@ void lq_certificate_set_domain(LQCert *cert, const char *domain) {
 	lq_cpy(cert->domain, domain, LQ_CERT_DOMAIN_LEN);
 }
 
-static int state_digest(LQCert *cert, char *out) {
+// prefix with domain
+// also, IF request signature exists, append signature to domain
+static int state_digest(LQCert *cert, char *out, int resolve_parent) {
+	int r;
 	int c;
 	char data[1024];
 	char *p;
@@ -63,6 +66,15 @@ static int state_digest(LQCert *cert, char *out) {
 	p = data;
 	lq_cpy(p, cert->domain, c);
 	p += c;
+
+	if (cert->parent != NULL && resolve_parent) {
+		r = state_digest(cert->parent, p, 0);
+		if (r != ERR_OK) {
+			return r;
+		}
+		c += LQ_DIGEST_LEN;
+		p += LQ_DIGEST_LEN;
+	}
 
 	if (cert->request_sig != NULL) {
 		lq_cpy(p, cert->request_sig->losig, cert->request_sig->lolen);
