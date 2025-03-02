@@ -16,3 +16,8 @@ build:
 	$(CC) $(CFLAGS) $(LDFLAGS) test_msg.c -o test_msg_bin ../crypto/dummy.o ../mem/std.o ../lq/msg.o -lcheck
 	$(CC) $(CFLAGS) $(LDFLAGS) test_cert.c -o test_cert_bin ../crypto/dummy.o ../mem/std.o ../lq/msg.o ../lq/cert.o -lcheck
 
+clean:
+	rm -vf test_*_bin
+	rm -vf *.o
+
+.PHONY: clean

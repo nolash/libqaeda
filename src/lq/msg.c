@@ -29,11 +29,11 @@ LQMsg* lq_msg_new(const char *msg_data, size_t msg_len) {
 	return msg;
 }
 
-int lq_msg_sign(LQMsg *msg, LQPrivKey *pk) {
+LQSig* lq_msg_sign(LQMsg *msg, LQPrivKey *pk) {
 	return lq_msg_sign_salted(msg, pk, 0, 0);
 }
 
-int lq_msg_sign_salted(LQMsg *msg, LQPrivKey *pk, const char *salt, size_t salt_len) {
+LQSig* lq_msg_sign_salted(LQMsg *msg, LQPrivKey *pk, const char *salt, size_t salt_len) {
 	int r;
 	char *data;
 	char digest[LQ_DIGEST_LEN];
@@ -43,8 +43,7 @@ int lq_msg_sign_salted(LQMsg *msg, LQPrivKey *pk, const char *salt, size_t salt_
 	msg->pubkey = lq_publickey_from_privatekey(pk);
 
 	r = lq_digest(data, msg->len, (char*)digest);
-
-	return r;
+	return lq_privatekey_sign(pk, msg->data, msg->len, salt, salt_len);
 }
 
 void lq_msg_free(LQMsg *msg) {
@@ -61,6 +60,7 @@ int lq_msg_serialize(LQMsg *msg, char *out, size_t *out_len) {
 	size_t mx;
 	char timedata[8];
 	char err[1024];
+	LQPubKey *pubkey;
 	asn1_node node;
 
 	mx = *out_len;
@@ -102,16 +102,16 @@ int lq_msg_serialize(LQMsg *msg, char *out, size_t *out_len) {
 		return ERR_WRITE;
 	}
 
-	if (msg->pubkey == NULL) {
-		msg->pubkey = &nokey;
-	} else {
-		c = msg->pubkey->lolen;
-		*out_len += c;
-		if (*out_len > mx) {
-			return ERR_OVERFLOW;
-		}
+	pubkey = msg->pubkey;
+	if (pubkey == NULL) {
+		pubkey = &nokey;
 	}
-	r = asn1_write_value(node, "Qaeda.Msg.pubkey", &msg->pubkey->lokey, c);
+	c = pubkey->lolen;
+	*out_len += c;
+	if (*out_len > mx) {
+		return ERR_OVERFLOW;
+	}
+	r = asn1_write_value(node, "Qaeda.Msg.pubkey", pubkey->lokey, c);
 	if (r != ASN1_SUCCESS) {
 		return ERR_WRITE;
 	}

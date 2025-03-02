@@ -23,8 +23,9 @@ struct lq_certificate_t {
 };
 
 LQCert* lq_certificate_new(LQCert *parent, LQCtx *ctx, LQMsg *req, LQMsg *rsp);
+void lq_certificate_set_domain(LQCert *cert, const char *domain);
 int lq_certificate_serialize(LQCert *cert, char *out, size_t *out_len);
-int lq_certificate_deserialize(LQCert *cert, char *in, size_t in_len);
+int lq_certificate_deserialize(LQCert **cert, char *in, size_t in_len);
 int lq_certificate_verify(LQCert *cert);
 void lq_certificate_free(LQCert *cert);
 

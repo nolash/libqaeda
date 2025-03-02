@@ -9,3 +9,8 @@ LDFLAGS += $(LIBS)
 	$(CC) $(CFLAGS) -c $< -o $@ $(LDFLAGS)
 
 all: $(OBJS)
+
+clean:
+	rm -vf *.o
+
+.PHONY: clean

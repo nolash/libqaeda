@@ -1,6 +1,6 @@
-all: asn1 core dummy
+all: core dummy
 
-core:
+core: asn1
 	make -C lq
 
 asn1:
@@ -11,3 +11,10 @@ dummy:
 
 test: core dummy
 	make -C test
+
+clean:
+	make -C asn1 clean
+	make -C lq clean
+	make -C test clean
+	make -C mem clean
+	make -C crypto clean

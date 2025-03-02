@@ -6,16 +6,18 @@ Qaeda DEFINITIONS EXPLICIT TAGS ::= BEGIN
 		pubkey OCTET STRING
 	}
 
+	NoParent ::= OCTET STRING
+
 	Cert ::= SEQUENCE {
 		domain OCTET STRING,
-		request Msg,
+--- TODO: why cant request be Msg type, fails write
+		request ANY,
 		request_sig OCTET STRING,
-		response Msg,
-		response_sig OCTET STRING
+		response ANY,
+		response_sig OCTET STRING,
+--- TODO: replace parent with no parent obj adn set type ANY
+---		parent ANY OPTIONAL
+		parent OCTET STRING OPTIONAL
 	}
 
-	CertEntry ::= SEQUENCE {
-		parent Cert,
-		this Cert,
-	}
 END
