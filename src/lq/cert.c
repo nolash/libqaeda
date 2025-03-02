@@ -65,10 +65,11 @@ static int state_digest(LQCert *cert, char *out, int final) {
 	p += c;
 
 	if (cert->parent != NULL && !final) {
-		r = state_digest(cert->parent, p, 1);
+		r = state_digest(cert->parent, cert->parent_hash, 1);
 		if (r != ERR_OK) {
 			return r;
 		}
+		lq_cpy(p, cert->parent_hash, LQ_DIGEST_LEN);
 		c += LQ_DIGEST_LEN;
 		p += LQ_DIGEST_LEN;
 	}
@@ -228,12 +229,12 @@ int lq_certificate_serialize(LQCert *cert, char *out, size_t *out_len) {
 			return ERR_WRITE;
 		}
 	} else {
-		r = state_digest(cert, buf, 1);
+		r = state_digest(cert, cert->parent_hash, 1);
 		if (r != ERR_OK) {
 			return r;
 		}
 		c = LQ_DIGEST_LEN;
-		r = asn1_write_value(node, "Qaeda.Cert.parent", buf, c);
+		r = asn1_write_value(node, "Qaeda.Cert.parent", cert->parent_hash, c);
 		if (r != ASN1_SUCCESS) {
 			return ERR_WRITE;
 		}
@@ -337,8 +338,11 @@ int lq_certificate_deserialize(LQCert **cert, char *in, size_t in_len) {
 	if (r != ASN1_SUCCESS) {
 		return ERR_READ;
 	}
+	p->parent = NULL;
 	if (c == 1) {
-		p->parent = NULL;
+		lq_set(p->parent_hash, 0, LQ_DIGEST_LEN);
+	} else {
+		lq_cpy(p->parent_hash, tmp, LQ_DIGEST_LEN);
 	}
 	// \todo render parent if set
 

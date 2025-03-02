@@ -31,13 +31,14 @@
  */
 typedef struct lq_certificate_t LQCert;
 struct lq_certificate_t {
-	LQCert *parent;
 	char domain[LQ_CERT_DOMAIN_LEN];
 	LQMsg *request;
 	LQSig *request_sig;
 	LQMsg *response;
 	LQSig *response_sig;
 	LQCtx ctx;
+	LQCert *parent;
+	char parent_hash[LQ_DIGEST_LEN];
 };
 
 /***
