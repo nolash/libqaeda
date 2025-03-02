@@ -11,13 +11,6 @@ static LQPubKey nokey = {
 	.lokey = "",
 	.lolen = 0,
 };
-static LQCert noparent = {
-	.parent = 0,
-	.request = 0,
-	.request_sig = 0,
-	.response = 0,
-	.response_sig = 0,
-};
 static LQMsg nomsg = {
 	.data = "",
 	.len = 0,
