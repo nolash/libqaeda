@@ -7,11 +7,15 @@ Qaeda DEFINITIONS EXPLICIT TAGS ::= BEGIN
 	}
 
 	Cert ::= SEQUENCE {
-		parent Cert,
 		domain OCTET STRING,
 		request Msg,
 		request_sig OCTET STRING,
 		response Msg,
 		response_sig OCTET STRING
+	}
+
+	CertEntry ::= SEQUENCE {
+		parent Cert,
+		this Cert,
 	}
 END

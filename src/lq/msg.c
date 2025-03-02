@@ -4,11 +4,16 @@
 
 #include "lq/msg.h"
 #include "lq/mem.h"
+#include "lq/err.h"
 #include "lq/crypto.h"
 #include "lq/wire.h"
-#include "lq/err.h"
 #include "endian.h"
 
+static LQPubKey nokey = {
+	.pk = 0,
+	.lokey = "",
+	.lolen = 0,
+};
 
 LQMsg* lq_msg_new(const char *msg_data, size_t msg_len) {
 	LQMsg *msg;
@@ -97,10 +102,14 @@ int lq_msg_serialize(LQMsg *msg, char *out, size_t *out_len) {
 		return ERR_WRITE;
 	}
 
-	c = msg->pubkey->lolen;
-	*out_len += c;
-	if (*out_len > mx) {
-		return ERR_OVERFLOW;
+	if (msg->pubkey == NULL) {
+		msg->pubkey = &nokey;
+	} else {
+		c = msg->pubkey->lolen;
+		*out_len += c;
+		if (*out_len > mx) {
+			return ERR_OVERFLOW;
+		}
 	}
 	r = asn1_write_value(node, "Qaeda.Msg.pubkey", &msg->pubkey->lokey, c);
 	if (r != ASN1_SUCCESS) {
@@ -113,7 +122,7 @@ int lq_msg_serialize(LQMsg *msg, char *out, size_t *out_len) {
 		return ERR_ENCODING;
 	}
 
-	return 0;
+	return ERR_OK;
 }
 
 int lq_msg_deserialize(LQMsg **msg, const char *in, size_t in_len) {
@@ -125,20 +134,20 @@ int lq_msg_deserialize(LQMsg **msg, const char *in, size_t in_len) {
 	asn1_node item;
 
 	lq_set(&node, 0, sizeof(node));
-	lq_set(&item, 0, sizeof(node));
+	lq_set(&item, 0, sizeof(item));
 	r = asn1_array2tree(defs_asn1_tab, &node, err);
 	if (r != ASN1_SUCCESS) {
-		return 3;
+		return ERR_INIT;
 	}
 
 	r = asn1_create_element(node, "Qaeda.Msg", &item);
 	if (r != ASN1_SUCCESS) {
-		return 1;
+		return ERR_READ;
 	}
 
 	r = asn1_der_decoding(&item, in, in_len, err);
 	if (r != ASN1_SUCCESS) {
-		return 1;
+		return ERR_ENCODING;
 	}
 
 	// \todo buffered read
@@ -146,7 +155,7 @@ int lq_msg_deserialize(LQMsg **msg, const char *in, size_t in_len) {
 	c = 1024;
 	r = asn1_read_value(item, "data", tmp, &c);
 	if (r != ASN1_SUCCESS) {
-		return 1;
+		return ERR_READ;
 	}
 	*msg = lq_msg_new((const char*)tmp, (size_t)c);
 
@@ -154,7 +163,7 @@ int lq_msg_deserialize(LQMsg **msg, const char *in, size_t in_len) {
 	c = 8;
 	r = asn1_read_value(item, "timestamp", tmp, &c);
 	if (r != ASN1_SUCCESS) {
-		return 1;
+		return ERR_READ;
 	}
 	if (is_le()) {
 		flip_endian(4, (char*)tmp);
@@ -166,8 +175,8 @@ int lq_msg_deserialize(LQMsg **msg, const char *in, size_t in_len) {
 	c = 65;
 	r = asn1_read_value(item, "pubkey", tmp, &c);
 	if (r != ASN1_SUCCESS) {
-		return 1;
+		return ERR_READ;
 	}
 
-	return 0;
+	return ERR_OK;
 }

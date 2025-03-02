@@ -6,10 +6,6 @@
 
 #include "lq/crypto.h"
 
-#ifndef LQ_MSG_DOMAIN_LEN
-#define LQ_MSG_DOMAIN_LEN 8
-#endif
-
 struct lq_msg_t {
 	char *data;
 	size_t len;
