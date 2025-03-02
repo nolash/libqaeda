@@ -89,6 +89,7 @@ int lq_certificate_sign(LQCert *cert, LQPrivKey *pk);
  * @param[in] Certificate to serialize
  * @param[out] Buffer to write data to.
  * @param[out] Value behind pointer must contain the capacity of the output buffer. Will be overwritten with the actual number of bytes written.
+ * @param[in] Store implementations to use for storing serialized certificate and message data.
  * @return ERR_OK if serialization is successful, or:
  * 	* ERR_INIT if the serialization object couldn't be instantiated.
  * 	* ERR_OVERFLOW if output exceeded the available space in output buffer.
@@ -102,6 +103,7 @@ int lq_certificate_serialize(LQCert *cert, char *out, size_t *out_len, LQResolve
  * @param[out] Pointer to instantiated certificate. It is the caller's responsibility to free the certificate object.
  * @param[in] Serialized data.
  * @param[in] Length of serialized data.
+ * @param[in] Store implementations to use for resolving content key from deserialized message and certificate data.
  * @return ERR_OK if deserialization is successful, or:
  * 	* ERR_INIT if the serialization object couldn't be instantiated.
  * 	* ERR_READ if deserialization of an element failed.
