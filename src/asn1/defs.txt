@@ -1,0 +1,17 @@
+Qaeda DEFINITIONS EXPLICIT TAGS ::= BEGIN 
+	Msg ::= SEQUENCE {
+		domain OCTET STRING,
+		data OCTET STRING,
+---		timestamp GeneralizedTime,
+		timestamp OCTET STRING,
+		pubkey OCTET STRING
+	}
+
+	Cert ::= SEQUENCE {
+		parent Cert,
+		request Msg,
+		request_sig OCTET STRING,
+		response Msg,
+		response_sig OCTET STRING
+	}
+END

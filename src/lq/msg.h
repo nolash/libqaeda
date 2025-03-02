@@ -15,7 +15,6 @@ struct lq_msg_t {
 	char domain[LQ_MSG_DOMAIN_LEN];
 	int timestamp;
 	LQPubKey *pubkey;
-	LQSig *signature;
 };
 typedef struct lq_msg_t LQMsg;
 
@@ -23,5 +22,7 @@ LQMsg* lq_msg_new(const char *msg_data, size_t msg_len);
 void lq_msg_set_domain(LQMsg *msg, const char *domain);
 int lq_msg_sign(LQMsg *msg, LQPrivKey *pk);
 int lq_msg_sign_salted(LQMsg *msg, LQPrivKey *pk, const char *salt, size_t salt_len);
+char *lq_msg_serialize(LQMsg *msg, char *out, size_t *out_len);
+int lq_msg_deserialize(LQMsg *msg, const char *in, size_t in_len);
 void lq_msg_free(LQMsg *msg);
 #endif // LIBQAEDA_MSG_H_
