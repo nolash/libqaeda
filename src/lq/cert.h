@@ -37,7 +37,7 @@ struct lq_certificate_t {
 	LQSig *request_sig;
 	LQMsg *response;
 	LQSig *response_sig;
-	LQCtx *ctx;
+	LQCtx ctx;
 };
 
 /***
@@ -61,6 +61,17 @@ void lq_certificate_set_domain(LQCert *cert, const char *domain);
 
 /***
  * @brief Sign the next pending message in the certificate. If the request message is set but not signed, the request message will be signed. If the response message is set but not signed, the response message will be signed. The limitations described in the struct declaration apply.
+ *
+ * Depending on the state of the certificate, additional data will be prepended to the message before calculating the digest, where <value> means a required value, [value] means and optional value, and "|" means concatenate.
+ *
+ * <domain> | [ parent | ] [ request_signature | ] [ response_signature | ]
+ *
+ * If the certificate is linked to another certificate, then the digest of that certificate will be calculated and used as the "parent" value. Note that a linked certificate must be finalized, meaning it must have a valid response signature.
+ *
+ * If the certificate has the request_signature it will be used as the request_signature value.
+ *
+ * If the certificate has the response_signature it will be used as the response_signature value. The response_signature may not exist without the request_signature.
+ *
  * @param[in] Instantiated certificate to perform signature on.
  * @param[in] Private key to use for signature.
  * @return ERR_OK on successful signature, or:

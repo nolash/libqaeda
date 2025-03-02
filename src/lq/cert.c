@@ -17,7 +17,6 @@ static LQCert noparent = {
 	.request_sig = 0,
 	.response = 0,
 	.response_sig = 0,
-	.ctx = 0,
 };
 static LQMsg nomsg = {
 	.data = "",
@@ -35,16 +34,11 @@ LQCert* lq_certificate_new(LQCert *parent, LQCtx *ctx, LQMsg *req, LQMsg *rsp) {
 	LQCert *cert;
 
 	cert = lq_alloc(sizeof(LQCert));
-	if (parent != NULL) {
-		cert->parent = parent;
-	} else {
-		cert->parent = &noparent;
-	}
+	cert->parent = parent;
 	cert->request = req;
 	cert->request_sig = NULL;
 	cert->response = rsp;
 	cert->response_sig = NULL;
-	cert->ctx = ctx;
 	lq_set(cert->domain, 0, LQ_CERT_DOMAIN_LEN);
 
 	return cert;
@@ -54,9 +48,12 @@ void lq_certificate_set_domain(LQCert *cert, const char *domain) {
 	lq_cpy(cert->domain, domain, LQ_CERT_DOMAIN_LEN);
 }
 
-// prefix with domain
-// also, IF request signature exists, append signature to domain
-static int state_digest(LQCert *cert, char *out, int resolve_parent) {
+// generates a prefix to include with the message for the signature
+// domain (required)
+// parent (optional)
+// request signature (optional)
+// response signature (optional)
+static int state_digest(LQCert *cert, char *out, int final) {
 	int r;
 	int c;
 	char data[1024];
@@ -67,8 +64,8 @@ static int state_digest(LQCert *cert, char *out, int resolve_parent) {
 	lq_cpy(p, cert->domain, c);
 	p += c;
 
-	if (cert->parent != NULL && resolve_parent) {
-		r = state_digest(cert->parent, p, 0);
+	if (cert->parent != NULL && !final) {
+		r = state_digest(cert->parent, p, 1);
 		if (r != ERR_OK) {
 			return r;
 		}
@@ -86,15 +83,21 @@ static int state_digest(LQCert *cert, char *out, int resolve_parent) {
 		lq_cpy(p, cert->response_sig->losig, cert->response_sig->lolen);
 		c += cert->response_sig->lolen;
 		p += cert->response_sig->lolen;
+	} else if (final) {
+		return ERR_RESPONSE;
 	}
 
 	return lq_digest(data, c, out);
 }
 
 int lq_certificate_sign(LQCert *cert, LQPrivKey *pk) {
+	int r;
 	char out[LQ_DIGEST_LEN];
 
-	state_digest(cert, out);
+	r = state_digest(cert, out, 0);
+	if (r != ERR_OK) {
+		return r;
+	}
 	if (cert->response != NULL) {
 		if (cert->response_sig != NULL) {
 			return ERR_RESPONSE;
@@ -316,6 +319,17 @@ int lq_certificate_deserialize(LQCert **cert, char *in, size_t in_len) {
 		p->response_sig->lolen = c;
 		// \todo deserialize pubkey from msg and insert
 	}
+
+	c = 4096;
+	r = asn1_read_value(item, "parent", tmp, &c);
+	if (r != ASN1_SUCCESS) {
+		return ERR_READ;
+	}
+	if (c == 1) {
+		p->parent = NULL;
+	}
+	// \todo render parent if set
+
 	*cert = p;
 
 	return ERR_OK;
