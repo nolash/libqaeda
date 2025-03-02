@@ -32,10 +32,10 @@ LQMsg* lq_msg_new(const char *msg_data, size_t msg_len) {
 }
 
 LQSig* lq_msg_sign(LQMsg *msg, LQPrivKey *pk) {
-	return lq_msg_sign_salted(msg, pk, nosalt, LQ_SALT_LEN);
+	return lq_msg_sign_salted(msg, pk, nosalt);
 }
 
-LQSig* lq_msg_sign_salted(LQMsg *msg, LQPrivKey *pk, const char *salt, size_t salt_len) {
+LQSig* lq_msg_sign_salted(LQMsg *msg, LQPrivKey *pk, const char *salt) {
 	int r;
 	char *data;
 	char digest[LQ_DIGEST_LEN];
@@ -49,7 +49,7 @@ LQSig* lq_msg_sign_salted(LQMsg *msg, LQPrivKey *pk, const char *salt, size_t sa
 	if (r != ERR_OK) {
 		return NULL;
 	}
-	sig = lq_privatekey_sign(pk, digest, LQ_DIGEST_LEN, salt, salt_len);
+	sig = lq_privatekey_sign(pk, digest, LQ_DIGEST_LEN, salt, LQ_SALT_LEN);
 
 	return sig;
 }
