@@ -6,6 +6,7 @@
 
 
 const char *data = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
+const char salt[4] = {0xde, 0xad, 0xbe, 0xef};
 
 START_TEST(check_digest) {
 	int r;
@@ -29,6 +30,18 @@ START_TEST(check_publickey) {
 	lq_publickey_free(pubk);
 	lq_privatekey_free(pk);
 }
+END_TEST
+
+START_TEST(check_signature) {
+	LQPrivKey *pk;
+	LQSig *sig;
+
+	pk = lq_privatekey_new(data, 32);
+	sig = lq_privatekey_sign(pk, data, strlen(data), salt, 4);
+
+	ck_assert_char_eq(*(sig+64), 0x2a);
+}
+END_TEST
 
 Suite * common_suite(void) {
 	Suite *s;
