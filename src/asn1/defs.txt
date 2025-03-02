@@ -1,6 +1,5 @@
 Qaeda DEFINITIONS EXPLICIT TAGS ::= BEGIN 
 	Msg ::= SEQUENCE {
-		domain OCTET STRING,
 		data OCTET STRING,
 ---		timestamp GeneralizedTime,
 		timestamp OCTET STRING,
@@ -9,6 +8,7 @@ Qaeda DEFINITIONS EXPLICIT TAGS ::= BEGIN
 
 	Cert ::= SEQUENCE {
 		parent Cert,
+		domain OCTET STRING,
 		request Msg,
 		request_sig OCTET STRING,
 		response Msg,

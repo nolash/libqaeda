@@ -7,6 +7,14 @@
 #define LQ_DIGEST_LEN 32
 #endif
 
+#ifndef LQ_PUBKEY_LEN
+#define LQ_PUBKEY_LEN 65
+#endif
+
+#ifndef LQ_PRIVKEY_LEN
+#define LQ_PRIVKEY_LEN 32
+#endif
+
 struct lq_privatekey_t {
 	int key_typ;
 	void *lokey;
