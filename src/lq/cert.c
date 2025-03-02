@@ -221,10 +221,22 @@ int lq_certificate_serialize(LQCert *cert, char *out, size_t *out_len) {
 		return ERR_WRITE;
 	}
 
-	c = 0;
-	r = asn1_write_value(node, "Qaeda.Cert.parent", &c, 1);
-	if (r != ASN1_SUCCESS) {
-		return ERR_WRITE;
+	if (cert->parent == NULL) {
+		c = 0;
+		r = asn1_write_value(node, "Qaeda.Cert.parent", &c, 1);
+		if (r != ASN1_SUCCESS) {
+			return ERR_WRITE;
+		}
+	} else {
+		r = state_digest(cert, buf, 1);
+		if (r != ERR_OK) {
+			return r;
+		}
+		c = LQ_DIGEST_LEN;
+		r = asn1_write_value(node, "Qaeda.Cert.parent", buf, c);
+		if (r != ASN1_SUCCESS) {
+			return ERR_WRITE;
+		}
 	}
 
 	*out_len = mx;
