@@ -2,11 +2,15 @@
 #include "lq/mem.h"
 
 // sha256sum "foo" 2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae
-static const char pubkey_dummy_transform[32] = {
-	0x2c, 0x26, 0xb4, 0x6b, 0x68, 0xff, 0xc6, 0x8f,
-	0xf9, 0x9b, 0x45, 0x3c, 0x1d, 0x30, 0x41, 0x34,
-	0x13, 0x42, 0x2d, 0x70, 0x64, 0x83, 0xbf, 0xa0,
-	0xf9, 0x8a, 0x5e, 0x88, 0x62, 0x66, 0xe7, 0xae
+static const char pubkey_dummy_transform[64] = {
+	0xf7, 0xfb, 0xba, 0x6e, 0x06, 0x36, 0xf8, 0x90,
+	0xe5, 0x6f, 0xbb, 0xf3, 0x28, 0x3e, 0x52, 0x4c,
+	0x6f, 0xa3, 0x20, 0x4a, 0xe2, 0x98, 0x38, 0x2d,
+	0x62, 0x47, 0x41, 0xd0, 0xdc, 0x66, 0x38, 0x32,
+	0x6e, 0x28, 0x2c, 0x41, 0xbe, 0x5e, 0x42, 0x54,
+	0xd8, 0x82, 0x07, 0x72, 0xc5, 0x51, 0x8a, 0x2c,
+	0x5a, 0x8c, 0x0c, 0x7f, 0x7e, 0xda, 0x19, 0x59,
+	0x4a, 0x7e, 0xb5, 0x39, 0x45, 0x3e, 0x1e, 0xd7,
 };
 
 // sha512sum "bar" d82c4eb5261cb9c8aa9855edd67d1bd10482f41529858d925094d173fa662aa91ff39bc5b188615273484021dfb16fd8284cf684ccf0fc795be3aa2fc1e6c181
@@ -29,7 +33,7 @@ static const char digest_dummy_transform[32] = {
 	0x03, 0x48, 0x04, 0xa9, 0x67, 0x24, 0x80, 0x96
 };
 
-LQPrivKey* lq_privatekey_new(char *seed, size_t seed_len) {
+LQPrivKey* lq_privatekey_new(const char *seed, size_t seed_len) {
 	LQPrivKey *pk;
 
 	pk = lq_alloc(sizeof(LQPrivKey));
@@ -39,35 +43,36 @@ LQPrivKey* lq_privatekey_new(char *seed, size_t seed_len) {
 	return pk;
 }
 
-LQPubKey* lq_publickey_new(char *full, size_t full_len) {
+LQPubKey* lq_publickey_new(const char *full) {
 	LQPubKey *pubk;
 
 	pubk = lq_alloc(sizeof(LQPubKey));
-	lq_set(pubk->pk, 0, sizeof(LQPrivKey));
-	pubk->lokey = lq_alloc(full_len);
-	lq_cpy(pubk->lokey, full, full_len);
-	pubk->lolen = full_len;
+	lq_set(pubk->pk, 0, sizeof(LQPrivKey*));
+	pubk->lokey = lq_alloc(65);
+	lq_cpy(pubk->lokey, full, 65);
+	pubk->lolen = 65;
 
 	return pubk;
 }
 
 LQPubKey* lq_publickey_from_privatekey(LQPrivKey *pk) {
 	int i;
+	int ii;
 	char *src;
 	char *dst;
 	LQPubKey *pubk;
 
 	pubk = lq_alloc(sizeof(LQPubKey));
 	pubk->pk = pk;
-	pubk->lokey = lq_alloc(pk->lolen);
-	pubk->lolen = pk->lolen;
-	lq_cpy(pubk->lokey, pk->lokey, pk->lolen);
-	for (i = 0; i < pubk->lolen; i++) {
-		src = pk->lokey + i;
-		*src ^= *(pubkey_dummy_transform + i);
-		dst = pubk->lokey + i;
-		*dst = *src;
+	pubk->lokey = lq_alloc(65);
+	pubk->lolen = 65;
+	for (i = 0; i < 64; i++) {
+		ii = i % 32;
+		src = pk->lokey + ii;
+		dst = pubk->lokey + i + 1;
+		*dst = *src ^ pubkey_dummy_transform[i];
 	}
+	*((char*)pubk->lokey) = 0x04;
 
 	return pubk;
 }

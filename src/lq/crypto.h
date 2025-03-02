@@ -28,8 +28,8 @@ struct lq_signature_t {
 };
 typedef struct lq_signature_t LQSig;
 
-LQPrivKey* lq_privatekey_new(char *seed, size_t seed_len);
-LQPubKey* lq_publickey_new(char *full, size_t full_len);
+LQPrivKey* lq_privatekey_new(const char *seed, size_t seed_len);
+LQPubKey* lq_publickey_new(const char *full);
 LQPubKey* lq_publickey_from_privatekey(LQPrivKey *pk);
 LQSig* lq_privatekey_sign(LQPrivKey *pk, const char *msg, size_t msg_len, const char *salt, size_t salt_len);
 void lq_publickey_free(LQPubKey *pubk);
