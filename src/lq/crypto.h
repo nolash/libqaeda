@@ -15,6 +15,11 @@
 #define LQ_PRIVKEY_LEN 32
 #endif
 
+#ifndef LQ_SALT_LEN
+#define LQ_SALT_LEN 32
+#endif
+
+
 struct lq_privatekey_t {
 	int key_typ;
 	void *lokey;

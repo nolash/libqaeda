@@ -15,6 +15,8 @@ static LQPubKey nokey = {
 	.lolen = 0,
 };
 
+static char nosalt[LQ_SALT_LEN];
+
 LQMsg* lq_msg_new(const char *msg_data, size_t msg_len) {
 	LQMsg *msg;
 
@@ -30,20 +32,26 @@ LQMsg* lq_msg_new(const char *msg_data, size_t msg_len) {
 }
 
 LQSig* lq_msg_sign(LQMsg *msg, LQPrivKey *pk) {
-	return lq_msg_sign_salted(msg, pk, 0, 0);
+	return lq_msg_sign_salted(msg, pk, nosalt, LQ_SALT_LEN);
 }
 
 LQSig* lq_msg_sign_salted(LQMsg *msg, LQPrivKey *pk, const char *salt, size_t salt_len) {
 	int r;
 	char *data;
 	char digest[LQ_DIGEST_LEN];
+	LQSig *sig;
 
 	data = lq_alloc(msg->len);
 	lq_cpy(data, msg->data, msg->len);
 	msg->pubkey = lq_publickey_from_privatekey(pk);
 
 	r = lq_digest(data, msg->len, (char*)digest);
-	return lq_privatekey_sign(pk, msg->data, msg->len, salt, salt_len);
+	if (r != ERR_OK) {
+		return NULL;
+	}
+	sig = lq_privatekey_sign(pk, digest, LQ_DIGEST_LEN, salt, salt_len);
+
+	return sig;
 }
 
 void lq_msg_free(LQMsg *msg) {

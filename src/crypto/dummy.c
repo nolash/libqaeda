@@ -83,10 +83,10 @@ LQSig* lq_privatekey_sign(LQPrivKey *pk, const char *msg, size_t msg_len, const 
 	char *dst;
 	LQSig *sig;
 
-	if (msg_len != 32) {
+	if (msg_len != LQ_DIGEST_LEN) {
 		return NULL;
 	}
-	if (salt_len != 32) {
+	if (salt_len != LQ_SALT_LEN) {
 		return NULL;
 	}
 

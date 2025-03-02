@@ -66,14 +66,15 @@ int lq_certificate_sign(LQCert *cert, LQPrivKey *pk) {
 		if (cert->response_sig == NULL) {
 			return ERR_ENCODING;
 		}
+		return ERR_OK;
 	}
 	if (cert->request == NULL) {
 		return ERR_INIT;
 	}
-	if (cert->request->signature != NULL) {
+	if (cert->request_sig != NULL) {
 		return ERR_REQUEST;
 	}
-	cert->request->sig = lq_msg_sign(cert->request, pk);
+	cert->request_sig = lq_msg_sign(cert->request, pk);
 	if (cert->request_sig == NULL) {
 		return ERR_ENCODING;
 	}
@@ -200,11 +201,11 @@ int lq_certificate_deserialize(LQCert **cert, char *in, size_t in_len) {
 	char tmp[4096];
 	asn1_node node;
 	asn1_node item;
-	LQCtx *ctx;
+	LQCtx ctx;
 	LQCert *p;
 
 	// \todo ctx make it make sense here
-	lq_set(ctx, 0, sizeof(LQCtx));
+	lq_set(&ctx, 0, sizeof(LQCtx));
 	lq_set(&node, 0, sizeof(node));
 	lq_set(&item, 0, sizeof(item));
 	r = asn1_array2tree(defs_asn1_tab, &node, err);
@@ -228,7 +229,7 @@ int lq_certificate_deserialize(LQCert **cert, char *in, size_t in_len) {
 		return ERR_READ;
 	}
 
-	p = lq_certificate_new(NULL, ctx, NULL, NULL);
+	p = lq_certificate_new(NULL, &ctx, NULL, NULL);
 	lq_certificate_set_domain(p, tmp);
 
 	c = 4096;

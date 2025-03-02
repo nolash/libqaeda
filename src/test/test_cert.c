@@ -67,7 +67,9 @@ START_TEST(check_cert_symmetric_req_sig) {
 	req = lq_msg_new(data, strlen(data) + 1);
 	cert = lq_certificate_new(NULL, &ctx, req, NULL);
 	// \todo change interface to certificate sign
-	cert->request_sig = lq_msg_sign(req, pk);
+	r = lq_certificate_sign(cert, pk);
+	ck_assert_int_eq(r, 0);
+
 	c = 4096;
 	r = lq_certificate_serialize(cert, buf, &c);
 	ck_assert_int_eq(r, 0);
@@ -93,9 +95,11 @@ START_TEST(check_cert_symmetric_rsp_onesig) {
 	lq_set(&ctx, 0, sizeof(LQCtx));
 	req = lq_msg_new(data, strlen(data) + 1);
 	rsp = lq_msg_new(data_two, strlen(data_two) + 1);
-	cert = lq_certificate_new(NULL, &ctx, req, rsp);
-	// \todo change interface to certificate sign
-	cert->request_sig = lq_msg_sign(req, pk);
+	cert = lq_certificate_new(NULL, &ctx, req, NULL);
+	r = lq_certificate_sign(cert, pk);
+	ck_assert_int_eq(r, 0);
+	cert->response = rsp;
+
 	c = 4096;
 	r = lq_certificate_serialize(cert, buf, &c);
 	ck_assert_int_eq(r, 0);
@@ -112,7 +116,6 @@ START_TEST(check_cert_symmetric_rsp_bothsig) {
 	size_t c;
 	LQCert *cert;
 	LQMsg *req;
-	LQMsg *rsp;
 	LQPrivKey *pk;
 	LQCtx ctx;
 	char buf[4096];
@@ -120,11 +123,14 @@ START_TEST(check_cert_symmetric_rsp_bothsig) {
 	pk = lq_privatekey_new(data, 32);
 	lq_set(&ctx, 0, sizeof(LQCtx));
 	req = lq_msg_new(data, strlen(data) + 1);
-	rsp = lq_msg_new(data_two, strlen(data_two) + 1);
-	cert = lq_certificate_new(NULL, &ctx, req, rsp);
-	// \todo change interface to certificate sign
-	cert->request_sig = lq_msg_sign(req, pk);
-	cert->response_sig = lq_msg_sign(rsp, pk);
+	cert = lq_certificate_new(NULL, &ctx, req, NULL);
+	r = lq_certificate_sign(cert, pk);
+	ck_assert_int_eq(r, 0);
+
+	cert->response = lq_msg_new(data_two, strlen(data_two) + 1);
+	r = lq_certificate_sign(cert, pk);
+	ck_assert_int_eq(r, 0);
+
 	c = 4096;
 	r = lq_certificate_serialize(cert, buf, &c);
 	ck_assert_int_eq(r, 0);
