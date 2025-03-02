@@ -1,7 +1,10 @@
-all: core dummy
+all: asn1 aux core dummy
 
-core: 
+core:
 	make -C lq
+
+aux:
+	make -C aux
 
 asn1:
 	make -C asn1 all
@@ -10,7 +13,7 @@ dummy:
 	make -C crypto dummy
 	make -C mem std
 
-test: asn1 core dummy
+test: all
 	make -C test
 
 clean:
@@ -20,4 +23,4 @@ clean:
 	make -C mem clean
 	make -C crypto clean
 
-.PHONY: clean asn1
+.PHONY: clean asn1 aux
