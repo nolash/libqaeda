@@ -82,6 +82,12 @@ static int state_digest(LQCert *cert, char *out, int resolve_parent) {
 		p += cert->request_sig->lolen;
 	}
 
+	if (cert->response_sig != NULL) {
+		lq_cpy(p, cert->response_sig->losig, cert->response_sig->lolen);
+		c += cert->response_sig->lolen;
+		p += cert->response_sig->lolen;
+	}
+
 	return lq_digest(data, c, out);
 }
 
