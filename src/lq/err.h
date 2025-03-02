@@ -9,6 +9,8 @@ enum err_e {
 	ERR_READ,
 	ERR_WRITE,
 	ERR_ENCODING,
+	ERR_REQUEST,
+	ERR_RESPONSE,
 };
 
 typedef enum err_e LQErr;

@@ -54,6 +54,32 @@ void lq_certificate_set_domain(LQCert *cert, const char *domain) {
 	lq_cpy(cert->domain, domain, LQ_CERT_DOMAIN_LEN);
 }
 
+int lq_certificate_sign(LQCert *cert, LQPrivKey *pk) {
+	if (cert->response != NULL) {
+		if (cert->response_sig != NULL) {
+			return ERR_RESPONSE;
+		}
+		if (cert->request == NULL) {
+			return ERR_INIT;	
+		}
+		cert->response_sig = lq_msg_sign(cert->response, pk);
+		if (cert->response_sig == NULL) {
+			return ERR_ENCODING;
+		}
+	}
+	if (cert->request == NULL) {
+		return ERR_INIT;
+	}
+	if (cert->request->signature != NULL) {
+		return ERR_REQUEST;
+	}
+	cert->request->sig = lq_msg_sign(cert->request, pk);
+	if (cert->request_sig == NULL) {
+		return ERR_ENCODING;
+	}
+	return ERR_OK;
+}
+
 int lq_certificate_serialize(LQCert *cert, char *out, size_t *out_len) {
 	size_t c;
 	int r;
