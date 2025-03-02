@@ -5,6 +5,7 @@
 #include <time.h>
 
 #include "lq/crypto.h"
+#include "lq/store.h"
 
 /***
  * @struct LQMsg
@@ -68,7 +69,7 @@ LQSig* lq_msg_sign_extra(LQMsg *msg, LQPrivKey *pk, const char *salt, const char
  * 	* ERR_WRITE if serialization of an element failed.
  * 	* ERR_ENCODING if generating the final serialization string failed.
  */
-int lq_msg_serialize(LQMsg *msg, char *out, size_t *out_len);
+int lq_msg_serialize(LQMsg *msg, char *out, size_t *out_len, LQResolve *resolve);
 
 /***
  * @brief Deserialize message data payload from certificate.
@@ -81,7 +82,7 @@ int lq_msg_serialize(LQMsg *msg, char *out, size_t *out_len);
  * 	* ERR_ENCODING if interpretation of the serialized data failed.
  * @see lq_msg_free
  */
-int lq_msg_deserialize(LQMsg **msg, const char *in, size_t in_len);
+int lq_msg_deserialize(LQMsg **msg, const char *in, size_t in_len, LQResolve *resolve);
 
 /***
  * @brief Free an instantiated message.

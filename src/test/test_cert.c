@@ -21,11 +21,11 @@ START_TEST(check_cert_symmetric_nomsg) {
 	lq_set(&ctx, 0, sizeof(LQCtx));
 	cert = lq_certificate_new(NULL, &ctx, NULL, NULL);
 	c = 4096;
-	r = lq_certificate_serialize(cert, buf, &c);
+	r = lq_certificate_serialize(cert, buf, &c, NULL);
 	ck_assert_int_eq(r, 0);
 	lq_certificate_free(cert);
 
-	r = lq_certificate_deserialize(&cert, buf, c);
+	r = lq_certificate_deserialize(&cert, buf, c, NULL);
 	ck_assert_int_eq(r, 0);
 	lq_certificate_free(cert);
 }
@@ -43,11 +43,11 @@ START_TEST(check_cert_symmetric_req_nosig) {
 	req = lq_msg_new(data, strlen(data) + 1);
 	cert = lq_certificate_new(NULL, &ctx, req, NULL);
 	c = 4096;
-	r = lq_certificate_serialize(cert, buf, &c);
+	r = lq_certificate_serialize(cert, buf, &c, NULL);
 	ck_assert_int_eq(r, 0);
 	lq_certificate_free(cert);
 
-	r = lq_certificate_deserialize(&cert, buf, c);
+	r = lq_certificate_deserialize(&cert, buf, c, NULL);
 	ck_assert_int_eq(r, 0);
 	lq_certificate_free(cert);
 }
@@ -71,11 +71,11 @@ START_TEST(check_cert_symmetric_req_sig) {
 	ck_assert_int_eq(r, 0);
 
 	c = 4096;
-	r = lq_certificate_serialize(cert, buf, &c);
+	r = lq_certificate_serialize(cert, buf, &c, NULL);
 	ck_assert_int_eq(r, 0);
 	lq_certificate_free(cert);
 
-	r = lq_certificate_deserialize(&cert, buf, c);
+	r = lq_certificate_deserialize(&cert, buf, c, NULL);
 	ck_assert_int_eq(r, 0);
 	lq_certificate_free(cert);
 }
@@ -101,11 +101,11 @@ START_TEST(check_cert_symmetric_rsp_onesig) {
 	cert->response = rsp;
 
 	c = 4096;
-	r = lq_certificate_serialize(cert, buf, &c);
+	r = lq_certificate_serialize(cert, buf, &c, NULL);
 	ck_assert_int_eq(r, 0);
 	lq_certificate_free(cert);
 
-	r = lq_certificate_deserialize(&cert, buf, c);
+	r = lq_certificate_deserialize(&cert, buf, c, NULL);
 	ck_assert_int_eq(r, 0);
 	lq_certificate_free(cert);
 }
@@ -132,11 +132,11 @@ START_TEST(check_cert_symmetric_rsp_bothsig) {
 	ck_assert_int_eq(r, 0);
 
 	c = 4096;
-	r = lq_certificate_serialize(cert, buf, &c);
+	r = lq_certificate_serialize(cert, buf, &c, NULL);
 	ck_assert_int_eq(r, 0);
 	lq_certificate_free(cert);
 
-	r = lq_certificate_deserialize(&cert, buf, c);
+	r = lq_certificate_deserialize(&cert, buf, c, NULL);
 	ck_assert_int_eq(r, 0);
 	lq_certificate_free(cert);
 }

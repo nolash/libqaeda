@@ -7,6 +7,7 @@
 #include "lq/err.h"
 #include "lq/crypto.h"
 #include "lq/wire.h"
+#include "lq/store.h"
 #include "endian.h"
 
 static LQPubKey nokey = {
@@ -68,13 +69,15 @@ void lq_msg_free(LQMsg *msg) {
 	lq_free(msg);
 }
 
-int lq_msg_serialize(LQMsg *msg, char *out, size_t *out_len) {
-	int c;
+int lq_msg_serialize(LQMsg *msg, char *out, size_t *out_len, LQResolve *resolve) {
+	size_t c;
 	int r;
 	size_t mx;
+	char tmp[LQ_DIGEST_LEN];
 	char timedata[8];
 	char err[1024];
 	LQPubKey *pubkey;
+	LQResolve *resolve_active;
 	asn1_node node;
 
 	mx = *out_len;
@@ -85,12 +88,26 @@ int lq_msg_serialize(LQMsg *msg, char *out, size_t *out_len) {
 		return ERR_INIT;
 	}
 
-	c = (int)msg->len;
+	c = LQ_DIGEST_LEN;
 	*out_len += c;
 	if (*out_len > mx) {
 		return ERR_OVERFLOW;
 	}
-	r = asn1_write_value(node, "Qaeda.Msg.data", msg->data, c);
+	r = lq_digest(msg->data, msg->len, tmp);
+	if (r != ERR_OK) {
+		return r;
+	}
+
+	resolve_active = resolve;
+	while (resolve_active != NULL) {
+		r = resolve->store->put(LQ_CONTENT_MSG, tmp, &c, msg->data, msg->len);
+		if (r != ERR_OK) {
+			return r;
+		}
+		resolve_active = resolve_active->next;
+	}
+
+	r = asn1_write_value(node, "Qaeda.Msg.data", tmp, c);
 	if (r != ASN1_SUCCESS) {
 		return ERR_WRITE;
 	}
@@ -139,13 +156,15 @@ int lq_msg_serialize(LQMsg *msg, char *out, size_t *out_len) {
 	return ERR_OK;
 }
 
-int lq_msg_deserialize(LQMsg **msg, const char *in, size_t in_len) {
+int lq_msg_deserialize(LQMsg **msg, const char *in, size_t in_len, LQResolve *resolve) {
 	int r;
-	int c;
+	size_t c;
 	char err[1024];
+	char z[LQ_DIGEST_LEN];
 	char tmp[1024];
 	asn1_node node;
 	asn1_node item;
+	LQResolve *resolve_active;
 
 	lq_set(&node, 0, sizeof(node));
 	lq_set(&item, 0, sizeof(item));
@@ -164,18 +183,26 @@ int lq_msg_deserialize(LQMsg **msg, const char *in, size_t in_len) {
 		return ERR_ENCODING;
 	}
 
-	// \todo buffered read
-	// \todo avoid double alloc for msg data
-	c = 1024;
-	r = asn1_read_value(item, "data", tmp, &c);
+	c = LQ_DIGEST_LEN;
+	r = asn1_read_value(item, "data", z, (int*)&c);
 	if (r != ASN1_SUCCESS) {
 		return ERR_READ;
 	}
-	*msg = lq_msg_new((const char*)tmp, (size_t)c);
+	c = 1024;
+	resolve_active = resolve;
+	while (resolve_active != NULL) {
+		r = resolve->store->get(LQ_CONTENT_MSG, z, LQ_DIGEST_LEN, tmp, &c);
+		if (r != ERR_OK) {
+			return r;
+		}
+		resolve_active = resolve_active->next;
+	}
+
+	*msg = lq_msg_new((const char*)tmp, c);
 
 	/// \todo document timestamp size
 	c = 8;
-	r = asn1_read_value(item, "timestamp", tmp, &c);
+	r = asn1_read_value(item, "timestamp", tmp, (int*)&c);
 	if (r != ASN1_SUCCESS) {
 		return ERR_READ;
 	}
@@ -187,7 +214,7 @@ int lq_msg_deserialize(LQMsg **msg, const char *in, size_t in_len) {
 	lq_cpy(&((*msg)->time.tv_nsec), ((char*)tmp)+4, 4);
 
 	c = 65;
-	r = asn1_read_value(item, "pubkey", tmp, &c);
+	r = asn1_read_value(item, "pubkey", tmp, (int*)&c);
 	if (r != ASN1_SUCCESS) {
 		return ERR_READ;
 	}

@@ -12,6 +12,7 @@ asn1:
 dummy:
 	make -C crypto dummy
 	make -C mem std
+	make -C store dummy
 
 test: all
 	make -C test

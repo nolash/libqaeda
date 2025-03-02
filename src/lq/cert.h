@@ -6,6 +6,7 @@
 #include "lq/crypto.h"
 #include "lq/msg.h"
 #include "lq/ctx.h"
+#include "lq/store.h"
 
 #ifndef LQ_CERT_DOMAIN_LEN
 #define LQ_CERT_DOMAIN_LEN 8
@@ -94,7 +95,7 @@ int lq_certificate_sign(LQCert *cert, LQPrivKey *pk);
  * 	* ERR_WRITE if serialization of an element failed.
  * 	* ERR_ENCODING if generating the final serialization string failed.
  */
-int lq_certificate_serialize(LQCert *cert, char *out, size_t *out_len);
+int lq_certificate_serialize(LQCert *cert, char *out, size_t *out_len, LQResolve *resolve);
 
 /***
  * @brief Deserialize certificate data payload from storage or transport.
@@ -107,7 +108,7 @@ int lq_certificate_serialize(LQCert *cert, char *out, size_t *out_len);
  * 	* ERR_ENCODING if interpretation of the serialized data failed.
  * @see lq_certificate_free
  */
-int lq_certificate_deserialize(LQCert **cert, char *in, size_t in_len);
+int lq_certificate_deserialize(LQCert **cert, char *in, size_t in_len, LQResolve *resolve);
 
 
 /***

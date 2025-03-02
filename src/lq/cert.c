@@ -5,6 +5,7 @@
 #include "lq/mem.h"
 #include "lq/wire.h"
 #include "lq/err.h"
+#include "lq/store.h"
 
 static LQPubKey nokey = {
 	.pk = 0,
@@ -118,7 +119,7 @@ int lq_certificate_sign(LQCert *cert, LQPrivKey *pk) {
 	return ERR_OK;
 }
 
-int lq_certificate_serialize(LQCert *cert, char *out, size_t *out_len) {
+int lq_certificate_serialize(LQCert *cert, char *out, size_t *out_len, LQResolve *resolve) {
 	size_t c;
 	int r;
 	size_t mx;
@@ -152,7 +153,7 @@ int lq_certificate_serialize(LQCert *cert, char *out, size_t *out_len) {
 		msg = &nomsg;
 	}
 	c = mx - LQ_CERT_DOMAIN_LEN; 
-	r = lq_msg_serialize(msg, buf, &c);
+	r = lq_msg_serialize(msg, buf, &c, resolve);
 	if (r != ERR_OK) {
 		return r;
 	}
@@ -186,7 +187,7 @@ int lq_certificate_serialize(LQCert *cert, char *out, size_t *out_len) {
 		msg = &nomsg;
 	}
 	c = mx - LQ_CERT_DOMAIN_LEN; 
-	r = lq_msg_serialize(msg, buf, &c);
+	r = lq_msg_serialize(msg, buf, &c, resolve);
 	if (r != ERR_OK) {
 		return r;
 	}
@@ -243,7 +244,7 @@ int lq_certificate_serialize(LQCert *cert, char *out, size_t *out_len) {
 	return ERR_OK;
 }
 
-int lq_certificate_deserialize(LQCert **cert, char *in, size_t in_len) {
+int lq_certificate_deserialize(LQCert **cert, char *in, size_t in_len, LQResolve *resolve) {
 	int r;
 	int c;
 	char err[1024];
@@ -286,7 +287,7 @@ int lq_certificate_deserialize(LQCert **cert, char *in, size_t in_len) {
 	if (r != ASN1_SUCCESS) {
 		return ERR_READ;
 	}
-	r = lq_msg_deserialize(&p->request, tmp, c);
+	r = lq_msg_deserialize(&p->request, tmp, c, resolve);
 	if (r != ERR_OK) {
 		return r;
 	}
@@ -308,7 +309,7 @@ int lq_certificate_deserialize(LQCert **cert, char *in, size_t in_len) {
 	if (r != ASN1_SUCCESS) {
 		return ERR_READ;
 	}
-	r = lq_msg_deserialize(&p->response, tmp, c);
+	r = lq_msg_deserialize(&p->response, tmp, c, resolve);
 	if (r != ERR_OK) {
 		return r;
 	}
