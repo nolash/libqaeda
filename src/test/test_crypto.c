@@ -6,7 +6,7 @@
 
 
 const char *data = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
-const char salt[4] = {0xde, 0xad, 0xbe, 0xef};
+const char *salt = "spamspamspamspamspamspamspamspam";
 
 START_TEST(check_digest) {
 	int r;
@@ -33,13 +33,20 @@ START_TEST(check_publickey) {
 END_TEST
 
 START_TEST(check_signature) {
+	char r;
+	char digest[32];
 	LQPrivKey *pk;
 	LQSig *sig;
 
 	pk = lq_privatekey_new(data, 32);
-	sig = lq_privatekey_sign(pk, data, strlen(data), salt, 4);
+	lq_digest(data, strlen(data), (char*)digest);
+	sig = lq_privatekey_sign(pk, digest, 32, salt, 32);
 
-	ck_assert_char_eq(*(sig+64), 0x2a);
+	r = 42;
+	ck_assert_mem_eq((sig->losig)+65, &r, 1);
+
+	lq_signature_free(sig);
+	lq_privatekey_free(pk);
 }
 END_TEST
 
@@ -51,6 +58,7 @@ Suite * common_suite(void) {
 	tc = tcase_create("dummy");
 	tcase_add_test(tc, check_digest);
 	tcase_add_test(tc, check_publickey);
+	tcase_add_test(tc, check_signature);
 	suite_add_tcase(s, tc);
 
 	return s;

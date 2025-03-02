@@ -106,7 +106,7 @@ LQSig* lq_privatekey_sign(LQPrivKey *pk, const char *msg, size_t msg_len, const 
 		*dst = *src ^ sig_dummy_transform[i + msg_len];
 		*dst ^= *(salt + i);
 	}
-	*((char*)sig->losig + sig->lolen) = 0x2a;
+	*(((char*)sig->losig) + sig->lolen) = 0x2a;
 
 	return sig;
 }
@@ -122,6 +122,7 @@ void lq_publickey_free(LQPubKey *pubk) {
 }
 
 void lq_signature_free(LQSig *sig) {
+	lq_publickey_free(sig->pubkey);
 	lq_free(sig->losig);		
 	lq_free(sig);
 }
