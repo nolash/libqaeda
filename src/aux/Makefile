@@ -1,4 +1,4 @@
-DESTDIR := /usr/local
+DESTDIR := `realpath .`
 export DESTDIR
 
 install: hashmap
