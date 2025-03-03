@@ -43,7 +43,8 @@ START_TEST(check_msg_symmetric) {
 	ck_assert_ptr_nonnull(msg);
 	ck_assert_int_eq(r, 0);
 	lq_msg_free(msg);
-	store.free(&store);
+	resolve.store->free(resolve.store);
+	resolve_dummy.store->free(resolve_dummy.store);
 }
 END_TEST
 
