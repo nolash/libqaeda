@@ -48,19 +48,25 @@ static long unsigned int pair_hash(const void *item, long unsigned int s0, long 
 	return (unsigned int)hashmap_sip(o->key, o->key_len, s0, s1);
 }
 
-void lq_mem_init(LQStore *store) {
+struct hashmap* lq_mem_init(LQStore *store) {
 	if (store->userdata == NULL) {
 		store->userdata = (void*)hashmap_new(sizeof(struct pair_t) , 0, 0, 0, pair_hash, pair_cmp, NULL, NULL);
 	}
+	return (struct hashmap *)store->userdata;
 }
 
 int lq_mem_content_get(enum payload_e typ, LQStore *store, const char *key, size_t key_len, char *value, size_t *value_len) {
-	lq_mem_init(store);
+	struct hashmap *o;
+	
+	o = lq_mem_init(store);
 	return ERR_OK;
 }
 
 int lq_mem_content_put(enum payload_e typ, LQStore *store, const char *key, size_t *key_len, char *value, size_t value_len) {
-	lq_mem_init(store);
+	struct hashmap *o;
+
+	o = lq_mem_init(store);
+	hashmap_set(store.userdata);
 	return ERR_OK;
 }
 
