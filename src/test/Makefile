@@ -5,9 +5,9 @@ LIBS := `pkg-config --libs libtasn1` -L../aux/lib -llash ../asn1/defs_asn1_tab.o
 LDFLAGS += $(LIBS)
 
 all: build
-	#CK_FORK=no LD_LIBRARY_PATH=`realpath ../aux/lib` ./test_crypto_bin
-	#CK_FORK=no LD_LIBRARY_PATH=`realpath ../aux/lib` ./test_msg_bin
-	#CK_FORK=no LD_LIBRARY_PATH=`realpath ../aux/lib` ./test_cert_bin
+	CK_FORK=no LD_LIBRARY_PATH=`realpath ../aux/lib` ./test_crypto_bin
+	CK_FORK=no LD_LIBRARY_PATH=`realpath ../aux/lib` ./test_msg_bin
+	CK_FORK=no LD_LIBRARY_PATH=`realpath ../aux/lib` ./test_cert_bin
 	CK_FORK=no LD_LIBRARY_PATH=`realpath ../aux/lib` ./test_trust_bin
 	
 test: all

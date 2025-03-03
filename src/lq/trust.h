@@ -2,7 +2,7 @@
 #define LIBQAEDA_TRUST_H_
 
 #ifndef LQ_TRUST_FLAG_BITS
-#define LQ_TRUST_FLAG_BITS 8
+#define LQ_TRUST_FLAG_BITS 13
 #endif
 
 #include "lq/crypto.h"
@@ -15,7 +15,7 @@ enum trust_mode_e {
 	TRUST_MATCH_ALL,
 };
 
-int lq_trust_check(LQPubKey *pubkey, LQStore *store, enum trust_mode_e mode, const char *flags);
+int lq_trust_check(LQPubKey *pubkey, LQStore *store, enum trust_mode_e mode, const unsigned char *flags);
 
 #endif // LIBQAEDA_TRUST_H_
 
