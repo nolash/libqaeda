@@ -7,27 +7,22 @@
 #include "lq/crypto.h"
 #include "lq/store.h"
 
-/***
- * @struct LQMsg
- * @brief Represents a message that is used as part of certificate as request or response.
- * @var LQMsg::data
- * Arbitrary data constituting the message.
- * @var LQMsg::len
- * Length of arbitrary data.
- * @var LQMsg::time
- * Nanosecond timestamp of when the message was created.
- * @var LQMsg::pubkey
- * Public key authoring the message. Must be checked against any private key calculating a signature over it.
+/**
+ * \struct LQMsg
+ *
+ * \brief Represents a message that is used as part of certificate as request or response.
+ *
+ * \see lq_msg_t 
  */
 struct lq_msg_t {
-	char *data;
-	size_t len;
-	struct timespec time;
-	LQPubKey *pubkey;
+	char *data; ///< Arbitrary data constituting the message.
+	size_t len; ///< Length of arbitrary data.
+	struct timespec time; ///< Nanosecond timestamp of when the message was created.
+	LQPubKey *pubkey; ///< Public key authoring the message. Must be checked against any private key calculating a signature over it.
 };
 typedef struct lq_msg_t LQMsg;
 
-/***
+/**
  * @brief Instantiate a new message object.
  * @param[in] Message data. Data will be copied.
  * @param[in] Length of message data.
@@ -36,7 +31,7 @@ typedef struct lq_msg_t LQMsg;
  */
 LQMsg* lq_msg_new(const char *msg_data, size_t msg_len);
 
-/***
+/**
  * @brief Calculate a signature over the message. Uses default salt value.
  * @param[in] Message to sign.
  * @param[in] Private key to sign with.
@@ -46,7 +41,7 @@ LQMsg* lq_msg_new(const char *msg_data, size_t msg_len);
  */
 LQSig* lq_msg_sign(LQMsg *msg, LQPrivKey *pk, const char *salt);
 
-/***
+/**
  * @brief Calculate a signature over the message with a specified salt value. The salt value length must be LQ_SALT_LEN.
  * @param[in] Message to sign.
  * @param[in] Private key to sign with.
@@ -58,7 +53,7 @@ LQSig* lq_msg_sign(LQMsg *msg, LQPrivKey *pk, const char *salt);
  */
 LQSig* lq_msg_sign_extra(LQMsg *msg, LQPrivKey *pk, const char *salt, const char *extra, size_t extra_len);
 
-/***
+/**
  * @brief Serialize message data payload for inclusion in certificate.
  * @param[in] Message to serialize.
  * @param[out] Output buffer.
@@ -72,7 +67,7 @@ LQSig* lq_msg_sign_extra(LQMsg *msg, LQPrivKey *pk, const char *salt, const char
  */
 int lq_msg_serialize(LQMsg *msg, char *out, size_t *out_len, LQResolve *resolve);
 
-/***
+/**
  * @brief Deserialize message data payload from certificate.
  * @param[out] Pointer to instantiated message. It is the caller's responsibility to free the message object.
  * @param[in] Serialized data.
@@ -86,7 +81,7 @@ int lq_msg_serialize(LQMsg *msg, char *out, size_t *out_len, LQResolve *resolve)
  */
 int lq_msg_deserialize(LQMsg **msg, const char *in, size_t in_len, LQResolve *resolve);
 
-/***
+/**
  * @brief Free an instantiated message.
  * @param[in] Message to free.
  */

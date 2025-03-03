@@ -3,7 +3,7 @@
 
 #include <stddef.h>
 
-/***
+/**
  * @brief Allocate heap memory.
  *
  * @param[in] Number of memory bytes to allocate.
@@ -11,14 +11,14 @@
  */
 void* lq_alloc(size_t bytes);
 
-/***
+/**
  * @brief Free a memory pointer.
  *
  * @param[in] Pointer to free.
  */
 void lq_free(void *o);
 
-/***
+/**
  * @brief Copy memory region.
  *
  * @param[out] Destination memory.
@@ -28,7 +28,7 @@ void lq_free(void *o);
  */
 void* lq_cpy(void *dst, const void *src, size_t len);
 
-/***
+/**
  *
  * @brief Fill memory region with value.
  *

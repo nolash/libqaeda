@@ -1,7 +1,7 @@
 #ifndef LIBQAEDA_IO_H_
 #define LIBQAEDA_IO_H_
 
-/***
+/**
  * @brief Create temporary directory using template.
  *
  * @param[in] Directory path template

@@ -5,3 +5,4 @@ src/asn1/*_tab.o
 src/asn1/generate_*
 src/aux/lib
 src/aux/include
+build/

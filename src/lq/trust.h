@@ -16,7 +16,7 @@ enum trust_mode_e {
 	TRUST_MATCH_ALL, ///< Strictly match all flags.
 };
 
-/***
+/**
  * @brief Check whether a public key is known (exists in public key store) and optionally perform match its trust flags.
  *
  * The value of the "mode" parameter controls the behavior of this routine, as well as which return value to expect. In 

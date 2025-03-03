@@ -1,3 +1,4 @@
+///file @cert.h
 #ifndef LIBQAEDA_CERT_H_
 #define LIBQAEDA_CERT_H_
 
@@ -12,56 +13,46 @@
 #define LQ_CERT_DOMAIN_LEN 8
 #endif
 
-/***
- * @struct LQCert
- * @brief A certificate is a counter-signed piece of arbitrary data within a designated domain. It may or may not be linked to a previous certificate.
- * @var LQCert::parent
- * Link to previous certificate. Optional. Set to NULL if no link exists.
- * @var LQCert::domain
- * Domain data is used by application data to evaluate whether a record is relevant for it or not.
- * @var LQCert::request
- * A request message encapsulates an arbitrary string of data that should be confirmed by a responder.
- * @var LQCert::request_sig
- * Signature over a request message and the linked certificate. If the linked certificate is NULL, the certificate data used in the signature with be a LQ_DIGEST_LEN string with all bytes set to 0.
- * @var LQCert::response
- * A response message encapsulates an arbitrary string of data that confirms a request. This field must be NULL unless a signed requests exists.
- * @var LQCert::response_sig
- * Signature over a response message. This field must be NULL unless a response message is set. The signature is calculated over both the response and the signed request.
- * @var LQCert::ctx
- * Context reflecting the behavior of state, validation and serialization of the certificate.
+/**
+ * \struct LQCert
+ *
+ * \brief A certificate is a counter-signed piece of arbitrary data within a designated domain. It may or may not be linked to a previous certificate.
+ *
+ * \see lq_certificate_t
  */
 typedef struct lq_certificate_t LQCert;
 struct lq_certificate_t {
-	char domain[LQ_CERT_DOMAIN_LEN];
-	LQMsg *request;
-	LQSig *request_sig;
-	LQMsg *response;
-	LQSig *response_sig;
-	LQCtx ctx;
-	LQCert *parent;
+	char domain[LQ_CERT_DOMAIN_LEN]; ///< Domain data is used by application data to evaluate whether a record is relevant for it or not.
+	LQMsg *request; ///< A request message encapsulates an arbitrary string of data that should be confirmed by a responder.
+	LQSig *request_sig; ///< Signature over a request message and the linked certificate. If the linked certificate is NULL, the certificate data used in the signature with be a LQ_DIGEST_LEN string with all bytes set to 0.
+	LQMsg *response; ///< A response message encapsulates an arbitrary string of data that confirms a request. This field must be NULL unless a signed requests exists.
+	LQSig *response_sig; ///< Signature over a response message. This field must be NULL unless a response message is set. The signature is calculated over both the response and the signed request.
+	LQCtx ctx; ///< Context reflecting the behavior of state, validation and serialization of the certificate. (unused)
+	LQCert *parent; ///< Link to previous certificate. Optional. Set to NULL if no link exists.
 	char parent_hash[LQ_DIGEST_LEN];
 };
 
-/***
- * @brief Create a new certificate.
- * @param[in] Previous certificate to link to.
- * @param[in] Context to control behavior of certificate processing. If NULL, default behavior will be used.
- * @param[in] Request message.
- * @param[in] Response message.
- * @return The allocated certificate object. It is the caller's responsibility to free the object.
- * @todo request and response message does not make sense to set without option to set signature, factor out to separate functions.
- * @see lq_certificate_free
+/**
+ * \brief Create a new certificate.
+ *
+ * \param[in] Previous certificate to link to.
+ * \param[in] Context to control behavior of certificate processing. If NULL, default behavior will be used.
+ * \param[in] Request message.
+ * \param[in] Response message.
+ * \return The allocated certificate object. It is the caller's responsibility to free the object.
+ * \todo request and response message does not make sense to set without option to set signature, factor out to separate functions.
+ * \see lq_certificate_free
  */
 LQCert* lq_certificate_new(LQCert *parent, LQCtx *ctx, LQMsg *req, LQMsg *rsp);
 
-/***
+/**
  * @brief Set the domain of the certificate. If not set, the default domain value will be used, which is LQ_DOMAIN_LEN bytes set to 0.
  * @param[in] Instantiated certificate to set domain on.
  * @param[in] Domain data. Must be LQ_DOMAIN_LEN bytes long.
  */
 void lq_certificate_set_domain(LQCert *cert, const char *domain);
 
-/***
+/**
  * @brief Sign the next pending message in the certificate. If the request message is set but not signed, the request message will be signed. If the response message is set but not signed, the response message will be signed. The limitations described in the struct declaration apply.
  *
  * Depending on the state of the certificate, additional data will be prepended to the message before calculating the digest, where <value> means a required value, [value] means and optional value, and "|" means concatenate.
@@ -84,7 +75,7 @@ void lq_certificate_set_domain(LQCert *cert, const char *domain);
  */
 int lq_certificate_sign(LQCert *cert, LQPrivKey *pk);
 
-/***
+/**
  * @brief Serialize certificate data payload for storage and transport.
  * @param[in] Certificate to serialize
  * @param[out] Buffer to write data to.
@@ -98,7 +89,7 @@ int lq_certificate_sign(LQCert *cert, LQPrivKey *pk);
  */
 int lq_certificate_serialize(LQCert *cert, char *out, size_t *out_len, LQResolve *resolve);
 
-/***
+/**
  * @brief Deserialize certificate data payload from storage or transport.
  * @param[out] Pointer to instantiated certificate. It is the caller's responsibility to free the certificate object.
  * @param[in] Serialized data.
@@ -113,7 +104,7 @@ int lq_certificate_serialize(LQCert *cert, char *out, size_t *out_len, LQResolve
 int lq_certificate_deserialize(LQCert **cert, char *in, size_t in_len, LQResolve *resolve);
 
 
-/***
+/**
  * @brief UNIMPLEMENTED verify the integrity of a certificate. Specifically that signatures in the certificate match given keys and data.
  * @param[in] Certificate to verify
  * @return ERR_OK if verified, or:
@@ -122,7 +113,7 @@ int lq_certificate_deserialize(LQCert **cert, char *in, size_t in_len, LQResolve
 int lq_certificate_verify(LQCert *cert);
 
 
-/***
+/**
  * @brief Free an instantiated certificate.
  * @param[in] Certificate to free.
  */
