@@ -17,22 +17,22 @@ struct pair_t {
 static int pair_cmp(const void *a, const void *b, void *userdata) {
 	int i;
 	int c;
-	const char *pa;
-	const char *pb;
-	size_t l;
+	struct pair_t *pa;
+	struct pair_t *pb;
+	char *ka;
+	char *kb;
 
-	lq_cpy(&l, userdata, sizeof(size_t));
-	c = 0;
-	for (i = 0; i < l; i++) {
-		if (i % 8 == 0) {
-			pa = a + c;
-			pb = b + c;
-			c++;
-		}
-		if (*pa == *pb) {
+	pa = (struct pair_t*)a;
+	pb = (struct pair_t*)b;
+	ka = pa->key;
+	kb = pb->key;
+	for (i = 0; i < pa->key_len; i++) {
+		if (*ka == *kb) {
+			ka++;
+			kb++;
 			continue;
 		}
-		if (*pa < *pb) {
+		if (*ka < *kb) {
 			return -1;
 		}
 		return 1;
@@ -42,31 +42,53 @@ static int pair_cmp(const void *a, const void *b, void *userdata) {
 }
 
 static long unsigned int pair_hash(const void *item, long unsigned int s0, long unsigned int s1) {
+	unsigned int r;
 	struct pair_t *o;
 
 	o = (struct pair_t*)item;
-	return (unsigned int)hashmap_sip(o->key, o->key_len, s0, s1);
+	r = (unsigned int)hashmap_sip(o->key, o->key_len, s0, s1);
+	return r;
 }
 
 struct hashmap* lq_mem_init(LQStore *store) {
+	size_t l;
+
+	l = 65;
 	if (store->userdata == NULL) {
-		store->userdata = (void*)hashmap_new(sizeof(struct pair_t) , 0, 0, 0, pair_hash, pair_cmp, NULL, NULL);
+		store->userdata = (void*)hashmap_new(sizeof(struct pair_t) , 0, 0, 0, pair_hash, pair_cmp, NULL, &l);
 	}
 	return (struct hashmap *)store->userdata;
 }
 
 int lq_mem_content_get(enum payload_e typ, LQStore *store, const char *key, size_t key_len, char *value, size_t *value_len) {
 	struct hashmap *o;
+	struct pair_t v;
+	struct pair_t *p;
 	
 	o = lq_mem_init(store);
+
+	v.key = key;
+	v.key_len = key_len;
+
+	p = hashmap_get(o, &v);
+	if (p == NULL) {
+		return ERR_NOENT;
+	}
+	
 	return ERR_OK;
 }
 
 int lq_mem_content_put(enum payload_e typ, LQStore *store, const char *key, size_t *key_len, char *value, size_t value_len) {
 	struct hashmap *o;
+	struct pair_t v;
+
+	v.key = key;
+	v.key_len = *key_len;
+	v.val = value;
+	v.val_len = value_len;
 
 	o = lq_mem_init(store);
-	hashmap_set(store.userdata);
+	hashmap_set(o, &v);
 	return ERR_OK;
 }
 
