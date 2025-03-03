@@ -4,11 +4,12 @@
 #include <stddef.h>
 
 /// Payload type hint to control how and what a store implementation executes persistence.
+/// Not currently in active use.
 enum payload_e {
-	LQ_CONTENT_RAW,
-	LQ_CONTENT_MSG,
-	LQ_CONTENT_CERT,	
-	LQ_CONTENT_KEY,
+	LQ_CONTENT_RAW, ///< Arbitrary data.
+	LQ_CONTENT_MSG, ///< Data is a message type.
+	LQ_CONTENT_CERT, ///< Data is a cert type.
+	LQ_CONTENT_KEY, ///< Data is a public key type.
 };
 
 /***
@@ -22,6 +23,8 @@ enum payload_e {
  * Interface for retrieving data corresponding to a key.
  * @var LQStore::put
  * Interface for storing data corresponding to a key.
+ * @var LQStore::free
+ * Interface for cleaning up implementation specific resources in use by the store.
  */
 typedef struct lq_store_t LQStore;
 struct lq_store_t {
