@@ -16,11 +16,10 @@ struct pair_t {
 
 static int pair_cmp(const void *a, const void *b, void *userdata) {
 	int i;
-	int c;
 	struct pair_t *pa;
 	struct pair_t *pb;
-	char *ka;
-	char *kb;
+	const char *ka;
+	const char *kb;
 
 	pa = (struct pair_t*)a;
 	pb = (struct pair_t*)b;
@@ -60,7 +59,7 @@ struct hashmap* lq_mem_init(LQStore *store) {
 int lq_mem_content_get(enum payload_e typ, LQStore *store, const char *key, size_t key_len, char *value, size_t *value_len) {
 	struct hashmap *o;
 	struct pair_t v;
-	struct pair_t *p;
+	const struct pair_t *p;
 	
 	o = lq_mem_init(store);
 
