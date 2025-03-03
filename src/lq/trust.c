@@ -1,6 +1,9 @@
+#include <stdio.h>
+
 #include "lq/trust.h"
 #include "lq/store.h"
 #include "lq/err.h"
+#include "lq/mem.h"
 
 
 int lq_trust_check(LQPubKey *pubkey, LQStore *store, enum trust_mode_e mode, const unsigned char *flags) {
@@ -15,6 +18,7 @@ int lq_trust_check(LQPubKey *pubkey, LQStore *store, enum trust_mode_e mode, con
 	double z;
 	unsigned char key_flags[(int)((LQ_TRUST_FLAG_BITS - 1)/8+1)];
 
+	lq_set(v, 0, 3);
 	l = (int)((LQ_TRUST_FLAG_BITS - 1)/8+1);
 	r = store->get(LQ_CONTENT_KEY, store, pubkey->lokey, pubkey->lolen, key_flags, &l);
 	if (r != ERR_OK) {
@@ -27,7 +31,7 @@ int lq_trust_check(LQPubKey *pubkey, LQStore *store, enum trust_mode_e mode, con
 
 	match = 0;
 	match_req = 0;
-	z = 0.f;
+	z = 0;
 	m = 0;
 	ii = 0;
 

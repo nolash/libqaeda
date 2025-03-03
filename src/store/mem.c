@@ -51,11 +51,8 @@ static long unsigned int pair_hash(const void *item, long unsigned int s0, long 
 }
 
 struct hashmap* lq_mem_init(LQStore *store) {
-	size_t l;
-
-	l = 65;
 	if (store->userdata == NULL) {
-		store->userdata = (void*)hashmap_new(sizeof(struct pair_t) , 0, 0, 0, pair_hash, pair_cmp, NULL, &l);
+		store->userdata = (void*)hashmap_new(sizeof(struct pair_t) , 0, 0, 0, pair_hash, pair_cmp, NULL, NULL);
 	}
 	return (struct hashmap *)store->userdata;
 }
@@ -74,6 +71,8 @@ int lq_mem_content_get(enum payload_e typ, LQStore *store, const char *key, size
 	if (p == NULL) {
 		return ERR_NOENT;
 	}
+	*value_len = p->val_len;
+	lq_cpy(value, p->val, *value_len);
 	
 	return ERR_OK;
 }
