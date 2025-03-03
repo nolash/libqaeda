@@ -65,6 +65,8 @@ START_TEST(check_trust_none) {
 	store->put(LQ_CONTENT_KEY, store, pubkey_bob->lokey, &pubkey_bob->lolen, (unsigned char*)trust_bob, 2);
 	r = lq_trust_check(pubkey_bob, store, TRUST_MATCH_NONE, flag_test);
 	ck_assert_int_eq(r, 1000000);
+
+	store->free(store);
 }
 END_TEST
 
@@ -85,6 +87,8 @@ START_TEST(check_trust_one) {
 	flag_test[1] = 0x40;
 	r = lq_trust_check(pubkey_alice, store, TRUST_MATCH_ONE, (const unsigned char*)flag_test);
 	ck_assert_int_eq(r, 1000000);
+
+	store->free(store);
 }
 END_TEST
 
@@ -106,6 +110,7 @@ START_TEST(check_trust_best) {
 	r = lq_trust_check(pubkey_alice, store, TRUST_MATCH_BEST, (const unsigned char*)flag_test);
 	ck_assert_int_eq(r, 600000);
 
+	store->free(store);
 }
 END_TEST
 
@@ -136,6 +141,8 @@ START_TEST(check_trust_all) {
 	flag_test[1] = 0x78;
 	r = lq_trust_check(pubkey_alice, store, TRUST_MATCH_ALL, (const unsigned char*)flag_test);
 	ck_assert_int_eq(r, 1000000);
+
+	store->free(store);
 }
 END_TEST
 
@@ -145,10 +152,10 @@ Suite * common_suite(void) {
 
 	s = suite_create("trust");
 	tc = tcase_create("check");
-	//tcase_add_test(tc, check_trust_none);
-	//tcase_add_test(tc, check_trust_one);
+	tcase_add_test(tc, check_trust_none);
+	tcase_add_test(tc, check_trust_one);
 	tcase_add_test(tc, check_trust_best);
-	//tcase_add_test(tc, check_trust_all);
+	tcase_add_test(tc, check_trust_all);
 	suite_add_tcase(s, tc);
 
 	return s;

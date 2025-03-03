@@ -104,11 +104,15 @@ int lq_file_content_put(enum payload_e typ, LQStore *store, const char *key, siz
 	return ERR_OK;
 }
 
+void lq_file_content_free(LQStore *store) {
+}
+
 struct lq_store_t LQFileContent = {
 	.store_typ = store_typ_file,
 	.userdata = "",
 	.get = lq_file_content_get,	
 	.put = lq_file_content_put,
+	.free = lq_file_content_free,
 };
 
 //LQStore* lq_file_content_new(const char *dir) {

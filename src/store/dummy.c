@@ -28,9 +28,13 @@ int lq_dummy_content_put(enum payload_e typ, LQStore *store, const char *key, si
 	return 0;
 }
 
+void lq_dummy_content_free(LQStore *store) {
+}
+
 struct lq_store_t LQDummyContent = {
 	.store_typ = store_typ_dummy,
 	.userdata = NULL,
 	.get = lq_dummy_content_get,	
 	.put = lq_dummy_content_put,
+	.free = lq_dummy_content_free,
 };

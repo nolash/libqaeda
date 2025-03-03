@@ -29,6 +29,7 @@ struct lq_store_t {
 	void *userdata;
 	int (*get)(enum payload_e typ, LQStore *store, const char *key, size_t key_len, char *value, size_t *value_len);
 	int (*put)(enum payload_e typ, LQStore *store, const char *key, size_t *key_len, char *value, size_t value_len);
+	void (*free)(LQStore *store);
 };
 
 

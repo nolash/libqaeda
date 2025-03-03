@@ -91,9 +91,17 @@ int lq_mem_content_put(enum payload_e typ, LQStore *store, const char *key, size
 	return ERR_OK;
 }
 
+void lq_mem_content_free(LQStore *store) {
+	if (store->userdata != NULL) {
+		hashmap_free((struct hashmap*)store->userdata);
+		store->userdata = NULL;
+	}
+}
+
 struct lq_store_t LQMemContent = {
 	.store_typ = store_typ_mem,
 	.userdata = NULL,
 	.get = lq_mem_content_get,	
 	.put = lq_mem_content_put,
+	.free = lq_mem_content_free,
 };
