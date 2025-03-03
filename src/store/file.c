@@ -10,7 +10,7 @@
 #include "lq/mem.h"
 #include "hex.h"
 
-static const int store_typ_file = 2;
+static const int store_typ_file = 3;
 
 int lq_file_content_get(enum payload_e typ, LQStore *store, const char *key, size_t key_len, char *value, size_t *value_len) {
 	int f;

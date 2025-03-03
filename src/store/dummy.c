@@ -1,9 +1,10 @@
 #include <stddef.h>
 #include <stdio.h>
 
+#include <hex.h>
+
 #include "lq/store.h"
 #include "lq/err.h"
-#include "hex.h"
 
 static const int store_typ_dummy = 1;
 
