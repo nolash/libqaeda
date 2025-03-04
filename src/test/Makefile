@@ -1,7 +1,7 @@
 OBJS := $(patsubst %.c,%.o,$(wildcard *.c))
 INCLUDES := -I.. -I../aux/include
 CFLAGS +=  $(INCLUDES) -Wall -g3
-LIBS := `pkg-config --libs libtasn1` -L../aux/lib -llash ../asn1/defs_asn1_tab.o
+LIBS := `pkg-config --libs libtasn1` -L../aux/lib -llash -lm ../asn1/defs_asn1_tab.o
 LDFLAGS += $(LIBS)
 
 all: build
