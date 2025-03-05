@@ -46,13 +46,16 @@ START_TEST(check_trust_none) {
 	LQPubKey *pubkey_alice;
 	LQPubKey *pubkey_bob;
 	LQStore *store;
+	char *lodata;
+	size_t lolen;
 
 	store = &LQMemContent;
 
 	pubkey_alice = lq_publickey_new(pubkey_data_alice);
 	pubkey_bob = lq_publickey_new(pubkey_data_bob);
 
-	store->put(LQ_CONTENT_KEY, store, pubkey_alice->lokey, &pubkey_alice->lolen, (char*)trust_alice, 2);
+	lolen = lq_publickey_bytes(pubkey_alice, &lodata);
+	store->put(LQ_CONTENT_KEY, store, lodata, &lolen, (char*)trust_alice, 2);
 
 	lq_set(flag_test, 0, 2); 
 	r = lq_trust_check(pubkey_alice, store, TRUST_MATCH_NONE, flag_test);
@@ -61,7 +64,8 @@ START_TEST(check_trust_none) {
 	r = lq_trust_check(pubkey_bob, store, TRUST_MATCH_NONE, flag_test);
 	ck_assert_int_eq(r, -1);
 
-	store->put(LQ_CONTENT_KEY, store, pubkey_bob->lokey, &pubkey_bob->lolen, (char*)trust_bob, 2);
+	lolen = lq_publickey_bytes(pubkey_bob, &lodata);
+	store->put(LQ_CONTENT_KEY, store, lodata, &lolen, (char*)trust_bob, 2);
 	r = lq_trust_check(pubkey_bob, store, TRUST_MATCH_NONE, flag_test);
 	ck_assert_int_eq(r, 1000000);
 
@@ -74,12 +78,15 @@ START_TEST(check_trust_one) {
 	unsigned char flag_test[2];
 	LQPubKey *pubkey_alice;
 	LQStore *store;
+	char *lodata;
+	size_t lolen;
 
 	store = &LQMemContent;
 
 	pubkey_alice = lq_publickey_new(pubkey_data_alice);
 
-	store->put(LQ_CONTENT_KEY, store, pubkey_alice->lokey, &pubkey_alice->lolen, (char*)trust_alice, 2);
+	lolen = lq_publickey_bytes(pubkey_alice, &lodata);
+	store->put(LQ_CONTENT_KEY, store, lodata, &lolen, (char*)trust_alice, 2);
 
 	flag_test[0] = 0;
 	flag_test[1] = 0x40;
@@ -95,12 +102,15 @@ START_TEST(check_trust_best) {
 	unsigned char flag_test[2];
 	LQPubKey *pubkey_alice;
 	LQStore *store;
+	char *lodata;
+	size_t lolen;
 
 	store = &LQMemContent;
 
 	pubkey_alice = lq_publickey_new(pubkey_data_alice);
 
-	store->put(LQ_CONTENT_KEY, store, pubkey_alice->lokey, &pubkey_alice->lolen, (char*)trust_alice, 2);
+	lolen = lq_publickey_bytes(pubkey_alice, &lodata);
+	store->put(LQ_CONTENT_KEY, store, lodata, &lolen, (char*)trust_alice, 2);
 
 	flag_test[0] = 0x13;
 	flag_test[1] = 0x60;
@@ -116,12 +126,15 @@ START_TEST(check_trust_all) {
 	unsigned char flag_test[2];
 	LQPubKey *pubkey_alice;
 	LQStore *store;
+	char *lodata;
+	size_t lolen;
 
 	store = &LQMemContent;
 
 	pubkey_alice = lq_publickey_new(pubkey_data_alice);
 
-	store->put(LQ_CONTENT_KEY, store, pubkey_alice->lokey, &pubkey_alice->lolen, (char*)trust_alice, 2);
+	lolen = lq_publickey_bytes(pubkey_alice, &lodata);
+	store->put(LQ_CONTENT_KEY, store, lodata, &lolen, (char*)trust_alice, 2);
 
 	flag_test[0] = 0x13;
 	flag_test[1] = 0x60;

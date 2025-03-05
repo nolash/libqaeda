@@ -12,8 +12,7 @@
 
 static LQPubKey nokey = {
 	.pk = 0,
-	.lokey = "",
-	.lolen = 0,
+	.impl = 0,
 };
 
 LQMsg* lq_msg_new(const char *msg_data, size_t msg_len) {
@@ -79,6 +78,7 @@ int lq_msg_serialize(LQMsg *msg, char *out, size_t *out_len, LQResolve *resolve)
 	LQPubKey *pubkey;
 	LQResolve *resolve_active;
 	asn1_node node;
+	char *keydata;
 
 	mx = *out_len;
 	*out_len = 0;
@@ -137,12 +137,12 @@ int lq_msg_serialize(LQMsg *msg, char *out, size_t *out_len, LQResolve *resolve)
 	if (pubkey == NULL) {
 		pubkey = &nokey;
 	}
-	c = pubkey->lolen;
+	c = lq_publickey_bytes(pubkey, &keydata);
 	*out_len += c;
 	if (*out_len > mx) {
 		return ERR_OVERFLOW;
 	}
-	r = asn1_write_value(node, "Qaeda.Msg.pubkey", pubkey->lokey, c);
+	r = asn1_write_value(node, "Qaeda.Msg.pubkey", keydata, c);
 	if (r != ASN1_SUCCESS) {
 		return ERR_WRITE;
 	}
