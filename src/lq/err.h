@@ -4,6 +4,7 @@
 /// Error values used across all error contexts.
 enum err_e {
 	ERR_OK, ///< No error
+	ERR_NOOP, ///< No action taken.
 	ERR_BYTEORDER, ///< Errors related to endianness
 	ERR_OVERFLOW, ///< Not enough space to write
 	ERR_INIT, ///< Failure instantiating object or data
@@ -12,7 +13,7 @@ enum err_e {
 	ERR_ENCODING, ///< Failure in serialization and data transformation
 	ERR_REQUEST, ///< Error related to certificate request messages
 	ERR_RESPONSE, ///< Error related to certificate response messages
-	ERR_NOENT, ///< Not found
+	ERR_NOENT, ///< Object not found
 	ERR_COMPAT, ///< Incompatible data or format
 };
 

@@ -1,5 +1,7 @@
 #include "lq/crypto.h"
 #include "lq/mem.h"
+#include "lq/err.h"
+
 
 // sha512sum "foo" 2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae
 static const char pubkey_dummy_transform[64] = {
@@ -59,8 +61,11 @@ void keylock_xor(LQPrivKey *pk) {
 int lq_privatekey_unlock(LQPrivKey *pk, const char *passphrase) {
 	char b;
 
+	if (pk == NULL) {
+		return ERR_INIT;
+	}
 	if ((pk->key_state & LQ_KEY_LOCK) == 0) {
-		return 1;
+		return ERR_NOOP;
 	}
 	keylock_xor(pk);
 	b = LQ_KEY_LOCK;
@@ -68,11 +73,14 @@ int lq_privatekey_unlock(LQPrivKey *pk, const char *passphrase) {
 	return 0;
 }
 
-int lq_privatekey_lock(LQPrivKey *pk) {
+int lq_privatekey_lock(LQPrivKey *pk, const char *passphrase) {
 	char b;
 
+	if (pk == NULL) {
+		return ERR_INIT;
+	}
 	if ((pk->key_state & LQ_KEY_LOCK) == 0) {
-		return 1;
+		return ERR_NOOP;
 	}
 	keylock_xor(pk);
 	pk->key_state |= LQ_KEY_LOCK;
@@ -89,7 +97,8 @@ LQPrivKey* lq_privatekey_new(const char *seed, size_t seed_len) {
 	lq_cpy(o->data, seed, seed_len);
 	o->len = seed_len;
 	pk->impl = o;
-	pk->key_state = LQ_KEY_LOCK;
+	pk->key_state = 0;
+      	pk->key_state |= LQ_KEY_LOCK;
 	pk->key_typ = 0;
 	return pk;
 }

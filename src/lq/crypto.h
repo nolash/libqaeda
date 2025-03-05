@@ -20,7 +20,7 @@
 #endif
 
 enum lq_keystate_e {
-	LQ_KEY_LOCK,
+	LQ_KEY_LOCK = 1,
 };
 
 
@@ -112,6 +112,24 @@ LQPubKey* lq_publickey_from_privatekey(LQPrivKey *pk);
  * @return Length of key. If 0, no key could be found.
  */
 size_t lq_publickey_bytes(LQPubKey *pubk, char **out);
+
+/**
+ * @brief Encrypt private key in place.
+ * 
+ * Must clear sensistive memory.
+ *
+ * @param[in] Private Key object
+ * @return ERR_OK if encrypted, ERR_NOOP if already encrypted, or ERR_INIT if encryption fails.
+ */
+int lq_privatekey_lock(LQPrivKey *pk, const char *passphrase);
+
+/**
+ * @brief Decrypt private key in place.
+ * 
+ * @param[in] Private Key object
+ * @return ERR_OK if decrypted, ERR_NOOP if not encrypted, or ERR_INIT if decryption fails.
+ */
+int lq_privatekey_unlock(LQPrivKey *pk, const char *passphrase);
 
 /**
  * @brief Sign digest data using a private key.
