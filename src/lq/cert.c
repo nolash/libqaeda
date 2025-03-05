@@ -9,8 +9,9 @@
 
 static LQPubKey nokey = {
 	.pk = 0,
-	.impl = 0;
+	.impl = 0,
 };
+
 static LQMsg nomsg = {
 	.data = "",
 	.len = 0,
@@ -19,7 +20,7 @@ static LQMsg nomsg = {
 };
 static LQSig nosig = {
 	.pubkey = &nokey,
-	.impl = 0;
+	.impl = 0,
 };
 
 LQCert* lq_certificate_new(LQCert *parent, LQCtx *ctx, LQMsg *req, LQMsg *rsp) {
