@@ -48,18 +48,19 @@ struct dummycrypto {
 	size_t len; ///< Length of private key data.
 };
 
-void keylock_xor(LQPrivKey *pk) {
+void keylock_xor(LQPrivKey *pk, const char *passphrase_digest) {
 	int i;
 	struct dummycrypto *o;
 
 	o = (struct dummycrypto*)pk->impl;
-	for (i = 0; i < 32; i++) {
+	for (i = 0; i < LQ_PRIVKEY_LEN; i++) {
 		*((char*)o->data+i) ^= encrypt_dummy_transport[i];
 	}
 }
 
-int lq_privatekey_unlock(LQPrivKey *pk, const char *passphrase) {
+int lq_privatekey_unlock(LQPrivKey *pk, const char *passphrase, size_t passphrase_len) {
 	char b;
+	char digest[LQ_DIGEST_LEN];
 
 	if (pk == NULL) {
 		return ERR_INIT;
@@ -67,27 +68,29 @@ int lq_privatekey_unlock(LQPrivKey *pk, const char *passphrase) {
 	if ((pk->key_state & LQ_KEY_LOCK) == 0) {
 		return ERR_NOOP;
 	}
-	keylock_xor(pk);
+	lq_digest(passphrase, passphrase_len, digest);
+	keylock_xor(pk, digest);
 	b = LQ_KEY_LOCK;
 	pk->key_state &= ~b;
 	return 0;
 }
 
-int lq_privatekey_lock(LQPrivKey *pk, const char *passphrase) {
-	char b;
+int lq_privatekey_lock(LQPrivKey *pk, const char *passphrase, size_t passphrase_len) {
+	char digest[LQ_DIGEST_LEN];
 
 	if (pk == NULL) {
 		return ERR_INIT;
 	}
-	if ((pk->key_state & LQ_KEY_LOCK) == 0) {
+	if ((pk->key_state & LQ_KEY_LOCK) > 0) {
 		return ERR_NOOP;
 	}
-	keylock_xor(pk);
+	lq_digest(passphrase, passphrase_len, digest);
+	keylock_xor(pk, digest);
 	pk->key_state |= LQ_KEY_LOCK;
 	return 0;
 }
 
-LQPrivKey* lq_privatekey_new(const char *seed, size_t seed_len) {
+LQPrivKey* lq_privatekey_new(const char *seed, size_t seed_len, const char *passphrase, size_t passphrase_len) {
 	LQPrivKey *pk;
 	struct dummycrypto *o;
 
@@ -97,9 +100,11 @@ LQPrivKey* lq_privatekey_new(const char *seed, size_t seed_len) {
 	lq_cpy(o->data, seed, seed_len);
 	o->len = seed_len;
 	pk->impl = o;
-	pk->key_state = 0;
-      	pk->key_state |= LQ_KEY_LOCK;
 	pk->key_typ = 0;
+	pk->key_state = 0;
+	if (passphrase != NULL) {
+		lq_privatekey_lock(pk, passphrase, passphrase_len);
+	}
 	return pk;
 }
 

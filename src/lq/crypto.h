@@ -70,12 +70,15 @@ typedef struct lq_signature_t LQSig;
 /**
  * @brief Create a new private key
  *
+ * If passphrase is not null the passphrase will be encrypted using that passphrase by default.
+ *
  * @param[in] Key material. If NULL, a new random private key will be generated.
  * @param[in] Length of key material. Ignored if seed parameter is NULL.
+ * @param[in] Encryption passphrase for key.
  * @return Pointer to new private key. Freeing the object is the caller's responsibility.
  * @see lq_privatekey_free
  */
-LQPrivKey* lq_privatekey_new(const char *seed, size_t seed_len);
+LQPrivKey* lq_privatekey_new(const char *seed, size_t seed_len, const char *passphrase, size_t passphrase_len);
 
 /**
  * @brief Get raw private key bytes
@@ -121,7 +124,7 @@ size_t lq_publickey_bytes(LQPubKey *pubk, char **out);
  * @param[in] Private Key object
  * @return ERR_OK if encrypted, ERR_NOOP if already encrypted, or ERR_INIT if encryption fails.
  */
-int lq_privatekey_lock(LQPrivKey *pk, const char *passphrase);
+int lq_privatekey_lock(LQPrivKey *pk, const char *passphrase, size_t passphrase_len);
 
 /**
  * @brief Decrypt private key in place.
@@ -129,7 +132,7 @@ int lq_privatekey_lock(LQPrivKey *pk, const char *passphrase);
  * @param[in] Private Key object
  * @return ERR_OK if decrypted, ERR_NOOP if not encrypted, or ERR_INIT if decryption fails.
  */
-int lq_privatekey_unlock(LQPrivKey *pk, const char *passphrase);
+int lq_privatekey_unlock(LQPrivKey *pk, const char *passphrase, size_t passphrase_len);
 
 /**
  * @brief Sign digest data using a private key.

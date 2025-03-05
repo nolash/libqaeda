@@ -39,6 +39,15 @@ START_TEST(check_digest) {
 }
 END_TEST
 
+START_TEST(check_privatekey) {
+	int r;
+	LQPrivKey *pk;
+
+	pk = lq_privatekey_new(privkeydata, 32, NULL, 0);
+	lq_privatekey_free(pk);
+}
+END_TEST
+
 START_TEST(check_publickey) {
 	LQPrivKey *pk;
 	LQPubKey *pubk;
@@ -46,7 +55,7 @@ START_TEST(check_publickey) {
 	char *keydata;
 	char *keydata_manual;
 
-	pk = lq_privatekey_new(privkeydata, 32);
+	pk = lq_privatekey_new(privkeydata, 32, passphrase, 32);
 	pubk = lq_publickey_from_privatekey(pk);
 	lq_publickey_bytes(pubk, &keydata);
 	pubk_manual = lq_publickey_new(keydata);
@@ -65,12 +74,12 @@ START_TEST(check_signature) {
 	LQSig *sig;
 	char *sigdata;
 
-	pk = lq_privatekey_new(privkeydata, 32);
+	pk = lq_privatekey_new(privkeydata, 32, passphrase, 32);
 	lq_digest(data, strlen(data), (char*)digest);
 	sig = lq_privatekey_sign(pk, digest, 32, salt);
 	ck_assert_ptr_null(sig);
 
-	r = lq_privatekey_unlock(pk, passphrase);
+	r = lq_privatekey_unlock(pk, passphrase, 32);
 	ck_assert_int_eq(r, 0);
 
 	sig = lq_privatekey_sign(pk, digest, 32, salt);
@@ -92,6 +101,7 @@ Suite * common_suite(void) {
 	s = suite_create("crypto");
 	tc = tcase_create("dummy");
 	tcase_add_test(tc, check_digest);
+	tcase_add_test(tc, check_privatekey);
 	tcase_add_test(tc, check_publickey);
 	tcase_add_test(tc, check_signature);
 	suite_add_tcase(s, tc);

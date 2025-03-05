@@ -78,11 +78,11 @@ START_TEST(check_cert_symmetric_req_sig) {
 	LQCtx ctx;
 	char buf[4096];
 
-	pk = lq_privatekey_new(privkeydata, 32);
+	pk = lq_privatekey_new(privkeydata, 32, passphrase, 32);
 	lq_set(&ctx, 0, sizeof(LQCtx));
 	req = lq_msg_new(data, strlen(data) + 1);
 	cert = lq_certificate_new(NULL, &ctx, req, NULL);
-	lq_privatekey_unlock(pk, passphrase);
+	lq_privatekey_unlock(pk, passphrase, 32);
 	r = lq_certificate_sign(cert, pk);
 	ck_assert_int_eq(r, 0);
 
@@ -107,12 +107,12 @@ START_TEST(check_cert_symmetric_rsp_onesig) {
 	LQCtx ctx;
 	char buf[4096];
 
-	pk = lq_privatekey_new(data, 32);
+	pk = lq_privatekey_new(privkeydata, 32, passphrase, 32);
 	lq_set(&ctx, 0, sizeof(LQCtx));
 	req = lq_msg_new(data, strlen(data) + 1);
 	rsp = lq_msg_new(data_two, strlen(data_two) + 1);
 	cert = lq_certificate_new(NULL, &ctx, req, NULL);
-	lq_privatekey_unlock(pk, passphrase);
+	lq_privatekey_unlock(pk, passphrase, 32);
 	r = lq_certificate_sign(cert, pk);
 	ck_assert_int_eq(r, 0);
 	cert->response = rsp;
@@ -137,11 +137,11 @@ START_TEST(check_cert_symmetric_rsp_bothsig) {
 	LQCtx ctx;
 	char buf[4096];
 
-	pk = lq_privatekey_new(data, 32);
+	pk = lq_privatekey_new(privkeydata, 32, passphrase, 32);
 	lq_set(&ctx, 0, sizeof(LQCtx));
 	req = lq_msg_new(data, strlen(data) + 1);
 	cert = lq_certificate_new(NULL, &ctx, req, NULL);
-	lq_privatekey_unlock(pk, passphrase);
+	lq_privatekey_unlock(pk, passphrase, 32);
 	r = lq_certificate_sign(cert, pk);
 	ck_assert_int_eq(r, 0);
 
