@@ -9,8 +9,7 @@
 
 static LQPubKey nokey = {
 	.pk = 0,
-	.lokey = "",
-	.lolen = 0,
+	.impl = 0;
 };
 static LQMsg nomsg = {
 	.data = "",
@@ -20,8 +19,7 @@ static LQMsg nomsg = {
 };
 static LQSig nosig = {
 	.pubkey = &nokey,
-	.losig = "",
-	.lolen = 0,
+	.impl = 0;
 };
 
 LQCert* lq_certificate_new(LQCert *parent, LQCtx *ctx, LQMsg *req, LQMsg *rsp) {
@@ -52,6 +50,8 @@ static int state_digest(LQCert *cert, char *out, int final) {
 	int c;
 	char data[1024];
 	char *p;
+	char *sigdata;
+	size_t siglen;
 
 	c = LQ_CERT_DOMAIN_LEN;
 	p = data;
@@ -69,15 +69,17 @@ static int state_digest(LQCert *cert, char *out, int final) {
 	}
 
 	if (cert->request_sig != NULL) {
-		lq_cpy(p, cert->request_sig->losig, cert->request_sig->lolen);
-		c += cert->request_sig->lolen;
-		p += cert->request_sig->lolen;
+		siglen = lq_signature_bytes(cert->request_sig, &sigdata);
+		lq_cpy(p, sigdata, siglen);
+		c += siglen;
+		p += siglen;
 	}
 
 	if (cert->response_sig != NULL) {
-		lq_cpy(p, cert->response_sig->losig, cert->response_sig->lolen);
-		c += cert->response_sig->lolen;
-		p += cert->response_sig->lolen;
+		siglen = lq_signature_bytes(cert->response_sig, &sigdata);
+		lq_cpy(p, sigdata, siglen);
+		c += siglen;
+		p += siglen;
 	} else if (final) {
 		return ERR_RESPONSE;
 	}
@@ -128,6 +130,7 @@ int lq_certificate_serialize(LQCert *cert, char *out, size_t *out_len, LQResolve
 	LQMsg *msg;
 	LQSig *sig;
 	asn1_node node;
+	char *sigdata;
 
 	mx = *out_len;
 	*out_len = 0;
@@ -172,12 +175,12 @@ int lq_certificate_serialize(LQCert *cert, char *out, size_t *out_len, LQResolve
 		sig = &nosig;	
 	}
 	// \todo proper sig serialize
-	c = sig->lolen;
+	c = lq_signature_bytes(sig, &sigdata);
 	*out_len += c;
 	if (*out_len > mx) {
 		return ERR_OVERFLOW;
 	}
-	r = asn1_write_value(node, "Qaeda.Cert.request_sig", sig->losig, c);
+	r = asn1_write_value(node, "Qaeda.Cert.request_sig", sigdata, c);
 	if (r != ASN1_SUCCESS) {
 		return ERR_WRITE;
 	}
@@ -206,12 +209,12 @@ int lq_certificate_serialize(LQCert *cert, char *out, size_t *out_len, LQResolve
 		sig = &nosig;	
 	}
 	// \todo proper sig serialize
-	c = sig->lolen;
+	c = lq_signature_bytes(sig, &sigdata);
 	*out_len += c;
 	if (*out_len > mx) {
 		return ERR_OVERFLOW;
 	}
-	r = asn1_write_value(node, "Qaeda.Cert.response_sig", sig->losig, c);
+	r = asn1_write_value(node, "Qaeda.Cert.response_sig", sigdata, c);
 	if (r != ASN1_SUCCESS) {
 		return ERR_WRITE;
 	}
@@ -298,10 +301,7 @@ int lq_certificate_deserialize(LQCert **cert, char *in, size_t in_len, LQResolve
 		return ERR_READ;
 	}
 	if (c > 0) {
-		p->request_sig = lq_alloc(sizeof(LQSig));
-		p->request_sig->losig = tmp;
-		p->request_sig->lolen = c;
-		// \todo deserialize pubkey from msg and insert
+		p->request_sig = lq_signature_from_bytes(tmp, c, NULL);
 	}
 
 	c = 4096;
@@ -321,10 +321,7 @@ int lq_certificate_deserialize(LQCert **cert, char *in, size_t in_len, LQResolve
 		return ERR_READ;
 	}
 	if (c > 0) {
-		p->response_sig = lq_alloc(sizeof(LQSig));
-		p->response_sig->losig = tmp;
-		p->response_sig->lolen = c;
-		// \todo deserialize pubkey from msg and insert
+		p->response_sig = lq_signature_from_bytes(tmp, c, NULL);
 	}
 
 	c = 4096;

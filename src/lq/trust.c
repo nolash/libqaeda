@@ -17,10 +17,14 @@ int lq_trust_check(LQPubKey *pubkey, LQStore *store, enum trust_mode_e mode, con
 	unsigned char v[3];
 	double z;
 	unsigned char key_flags[(int)((LQ_TRUST_FLAG_BITS - 1)/8+1)];
+	char *keydata;
+	size_t keylen;
 
 	lq_set(v, 0, 3);
 	l = (int)((LQ_TRUST_FLAG_BITS - 1)/8+1);
-	r = store->get(LQ_CONTENT_KEY, store, pubkey->lokey, pubkey->lolen, key_flags, &l);
+	//r = store->get(LQ_CONTENT_KEY, store, pubkey->lokey, pubkey->lolen, key_flags, &l);
+	keylen = lq_publickey_bytes(pubkey, &keydata);
+	r = store->get(LQ_CONTENT_KEY, store, keydata, keylen, (char*)key_flags, &l);
 	if (r != ERR_OK) {
 		return -1;
 	}
