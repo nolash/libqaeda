@@ -17,3 +17,7 @@ void* lq_cpy(void *dst, const void *src, size_t len) {
 void* lq_set(void *dst, const char b, size_t len) {
 	return memset(dst, (int)b, len);
 }
+
+void* lq_zero(void *dst, const char b, size_t len) {
+	return lq_set(dst, 0, len);
+}

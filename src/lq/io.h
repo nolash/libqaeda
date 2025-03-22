@@ -1,6 +1,10 @@
 #ifndef LIBQAEDA_IO_H_
 #define LIBQAEDA_IO_H_
 
+#ifndef LQ_PATH_MAX
+#define LQ_PATH_MAX 1024
+#endif
+
 /**
  * @brief Create temporary directory using template.
  *

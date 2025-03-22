@@ -1,7 +1,14 @@
 #ifndef LIBQAEDA_MEM_H_
 #define LIBQAEDA_MEM_H_
 
+enum lq_typ_e {
+	LQ_TYP_VOID,
+	LQ_TYP_NUM,
+	LQ_TYP_STR,
+};
+
 #include <stddef.h>
+
 
 /**
  * @brief Allocate heap memory.
@@ -38,5 +45,15 @@ void* lq_cpy(void *dst, const void *src, size_t len);
  * @return Pointer to written memory.
  */
 void* lq_set(void *dst, const char b, size_t len);
+
+/**
+ *
+ * @brief Fill memory region zeros.
+ *
+ * @param[out] Destination memory.
+ * @param[in] Number of bytes to write.
+ * @return Pointer to written memory.
+ */
+void* lq_zero(void *dst, size_t len);
 
 #endif // LIBQAEDA_MEM_H_

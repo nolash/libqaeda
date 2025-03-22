@@ -8,6 +8,7 @@ enum err_e {
 	ERR_BYTEORDER, ///< Errors related to endianness
 	ERR_OVERFLOW, ///< Not enough space to write
 	ERR_INIT, ///< Failure instantiating object or data
+	ERR_MEM, ///< Failure allocating memory
 	ERR_READ, ///< General data read failure
 	ERR_WRITE, ///< General data write failure
 	ERR_ENCODING, ///< Failure in serialization and data transformation

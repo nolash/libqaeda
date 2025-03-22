@@ -40,7 +40,6 @@ START_TEST(check_digest) {
 END_TEST
 
 START_TEST(check_privatekey) {
-	int r;
 	LQPrivKey *pk;
 
 	pk = lq_privatekey_new(privkeydata, 32, NULL, 0);
