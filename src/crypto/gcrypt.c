@@ -29,17 +29,19 @@ struct gpg_store {
 	gcry_sexp_t k;
 	char fingerprint[LQ_FP_LEN];
 	char public_key[LQ_PUBKEY_LEN];
-	char path[LQ_PATH_MAX];
 	char last_signature[LQ_SIG_LEN];
 	char last_data[LQ_DIGEST_LEN];
 };
+
+static int gpg_cfg_idx_dir;
 
 int lq_crypto_init() {
 #ifdef RERR
 	rerr_register(RERR_PFX_GPG, "crypto", _rerr);
 #endif
-	char *p;
-	size_t c;
+	//char *p;
+	//size_t c;
+	int r;
 
 	gpg = lq_zero(sizeof(struct gpg_store));
 	if (gpg == NULL) {
@@ -47,13 +49,15 @@ int lq_crypto_init() {
 	}
 	gpg->passphrase_digest_len = gcry_md_get_algo_dlen(GCRY_MD_SHA256);
 
-	strcpy(gpg->path, path);
-	c = strlen(gpg->path);
-	p = gpg->path+c;
-	if (*p != '/') {
-		*p = '/';
-		*(p+1) = 0;
-	}
+	gpg_cfg_idx_dir = lq_config_register(LQ_TYP_STR, "CRYPTODIR");
+
+//	strcpy(gpg->path, path);
+//	c = strlen(gpg->path);
+//	p = gpg->path+c;
+//	if (*p != '/') {
+//		*p = '/';
+//		*(p+1) = 0;
+//	}
 
 	return ERR_OK;
 }

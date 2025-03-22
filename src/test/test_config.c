@@ -18,9 +18,9 @@ START_TEST(check_register) {
 	int r;
 
 	lq_config_init();
-	r = lq_config_register(LQ_TYP_STR);
+	r = lq_config_register(LQ_TYP_STR, NULL);
 	lq_config_free();
-	ck_assert_int_eq(r, ERR_OK);
+	ck_assert_int_ge(r, 0);
 }
 END_TEST
 
@@ -28,33 +28,36 @@ START_TEST(check_set_get) {
 	int r;
 	long v;
 	char *p;
+	int c;
 
+	c = LQ_CFG_LAST;
 	lq_config_init();
-	r = lq_config_register(LQ_TYP_NUM);
-	ck_assert_int_eq(r, ERR_OK);
-	r = lq_config_register(LQ_TYP_STR);
-	ck_assert_int_eq(r, ERR_OK);
+	r = lq_config_register(LQ_TYP_NUM, NULL);
+	ck_assert_int_ge(r, 0);
+	r = lq_config_register(LQ_TYP_STR, NULL);
+	ck_assert_int_ge(r, 0);
 
-	r = lq_config_set(2, "foobarbaz");
+	// set with the index returned from the last register action
+	r = lq_config_set(r, "foobarbaz");
 	ck_assert_int_eq(r, ERR_OK);
 
 	v = 42;
-	r = lq_config_set(1, &v);
+	r = lq_config_set(c, &v);
 	ck_assert_int_eq(r, ERR_OK);
 
-	r = lq_config_get(1, (void**)&p);
+	r = lq_config_get(c, (void**)&p);
 	ck_assert_int_eq(r, ERR_OK);
 	v = *((long*)p);
 	ck_assert_int_eq(v, 42);
 
-	r = lq_config_get(2, (void**)&p);
+	r = lq_config_get(c + 1, (void**)&p);
 	ck_assert_int_eq(r, ERR_OK);
 	ck_assert_str_eq(p, "foobarbaz");
 
-	r = lq_config_set(3, &v);
+	r = lq_config_set(c + 2, &v);
 	ck_assert_int_eq(r, ERR_OVERFLOW);
 
-	r = lq_config_get(3, (void**)&p);
+	r = lq_config_get(c + 2, (void**)&p);
 	ck_assert_int_eq(r, ERR_OVERFLOW);
 
 	lq_config_free();
