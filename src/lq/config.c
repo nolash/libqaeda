@@ -83,7 +83,7 @@ int lq_config_set(int k, void *v) {
 	void *p;
 	size_t l;
 
-	if (k > config.last) {
+	if (k >= config.last) {
 		return ERR_OVERFLOW;
 	}
 
@@ -116,7 +116,7 @@ int lq_config_set(int k, void *v) {
 }
 
 int lq_config_get(int k, void **r) {
-	if (k > config.last) {
+	if (k >= config.last) {
 		return ERR_OVERFLOW;
 	}
 

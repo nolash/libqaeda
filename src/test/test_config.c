@@ -51,6 +51,9 @@ START_TEST(check_set_get) {
 	ck_assert_int_eq(r, ERR_OK);
 	ck_assert_str_eq(p, "foobarbaz");
 
+	r = lq_config_set(3, &v);
+	ck_assert_int_eq(r, ERR_OVERFLOW);
+
 	r = lq_config_get(3, (void**)&p);
 	ck_assert_int_eq(r, ERR_OVERFLOW);
 
