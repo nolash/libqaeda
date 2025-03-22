@@ -24,7 +24,7 @@ START_TEST(check_register) {
 }
 END_TEST
 
-START_TEST(check_set) {
+START_TEST(check_set_get) {
 	int r;
 	long v;
 	char *p;
@@ -47,6 +47,13 @@ START_TEST(check_set) {
 	v = *((long*)p);
 	ck_assert_int_eq(v, 42);
 
+	r = lq_config_get(2, (void**)&p);
+	ck_assert_int_eq(r, ERR_OK);
+	ck_assert_str_eq(p, "foobarbaz");
+
+	r = lq_config_get(3, (void**)&p);
+	ck_assert_int_eq(r, ERR_OVERFLOW);
+
 	lq_config_free();
 }
 END_TEST
@@ -59,7 +66,7 @@ Suite * common_suite(void) {
 	tc = tcase_create("core");
 	tcase_add_test(tc, check_core);
 	tcase_add_test(tc, check_register);
-	tcase_add_test(tc, check_set);
+	tcase_add_test(tc, check_set_get);
 	suite_add_tcase(s, tc);
 
 	return s;

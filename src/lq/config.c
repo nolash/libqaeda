@@ -92,7 +92,7 @@ int lq_config_set(int k, void *v) {
 			l = sizeof(void*);
 			break;
 		case LQ_TYP_STR:
-			l = strlen((char*)v);
+			l = strlen((char*)v) + 1;
 			break;
 		case LQ_TYP_NUM:
 			l = sizeof(long*);
