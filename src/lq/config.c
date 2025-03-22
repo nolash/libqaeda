@@ -1,3 +1,5 @@
+#include <string.h>
+
 #include "lq/err.h"
 #include "lq/mem.h"
 #include "lq/config.h"
@@ -7,12 +9,15 @@ const int lq_config_core_typs[] = {
 };
 
 static struct config_t {
-	void *members;
-	enum  lq_typ_e *typs;
-	size_t last;
+	void *mem; ///< Config data memory.
+	void **members; ///< Member pointer.
+	enum  lq_typ_e *typs; ///< Member type.
+	size_t last; ///< Last registered members index.
+	size_t cap; ///< Bytes allocated for config content.
+	size_t len; ///< Bytes currently used for content.
 } config;
 
-static int core_apply() {
+static int core_register() {
 	int i;
 	int r;
 
@@ -26,17 +31,26 @@ static int core_apply() {
 }
 
 int lq_config_init() {
-	config.members = lq_alloc(LQ_CONFIG_MAX * sizeof(void*));
-	if (config.members == NULL) {
+	config.mem = lq_alloc(LQ_CONFIG_MEMCAP);
+	if (config.mem == NULL) {
 		return ERR_MEM;
 	}
-	config.typs = lq_alloc(LQ_CONFIG_MAX * sizeof(void*));
+	config.members = lq_alloc(LQ_CONFIG_MEMCAP * sizeof(void**));
+	if (config.members == NULL) {
+		lq_free(config.mem);
+		return ERR_MEM;
+	}
+	config.typs = lq_alloc(LQ_CONFIG_MEMCAP * sizeof(void*));
 	if (config.typs == NULL) {
 		lq_free(config.members);
+		lq_free(config.mem);
 		return ERR_MEM;
 	}
 	config.last = 0;
-	return core_apply();
+	config.len = 0;
+	config.cap = LQ_CONFIG_MEMCAP;
+	*config.members = config.mem;
+	return core_register();
 }
 
 int lq_config_register(enum lq_typ_e typ) {
@@ -65,15 +79,54 @@ int lq_config_register(enum lq_typ_e typ) {
 	return ERR_OK;
 }
 
-int lq_config_set(char typ, int k, void *v) {
+int lq_config_set(int k, void *v) {
+	void *p;
+	size_t l;
+
+	if (k > config.last) {
+		return ERR_OVERFLOW;
+	}
+
+	switch (*(config.typs+k)) {
+		case LQ_TYP_VOID:
+			l = sizeof(void*);
+			break;
+		case LQ_TYP_STR:
+			l = strlen((char*)v);
+			break;
+		case LQ_TYP_NUM:
+			l = sizeof(long*);
+			break;
+		default:
+			l = 0;
+	}
+
+	if (config.len + l > config.cap) {
+		return ERR_OVERFLOW;
+	}
+	
+	p = config.mem + config.len;
+	*(config.members + k) = p;
+	p = lq_cpy(p, v, l);
+	if (p == NULL) {
+		return ERR_WRITE;
+	}
+	config.len += l;
 	return ERR_OK;
 }
 
-int lq_config_get(int k, void *r) {
+int lq_config_get(int k, void **r) {
+	if (k > config.last) {
+		return ERR_OVERFLOW;
+	}
+
+	*r = *(config.members + k);
+	
 	return ERR_OK;
 }
 
 void lq_config_free() {
 	lq_free(config.typs);
 	lq_free(config.members);
+	lq_free(config.mem);
 }
