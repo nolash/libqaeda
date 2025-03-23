@@ -55,7 +55,7 @@ int lq_crypto_init() {
 	}
 	gpg_version = v;
 	//sprintf(d, "Using gpg version: %s", gpgVersion);
-	debug_dbg("gpg", "using gpg");
+	debug_dbg_x("gpg", "using gpg", MORGEL_TYP_STR, 0, "version", gpg_version);
 
 //	gpg = lq_zero(sizeof(struct gpg_store));
 //	if (gpg == NULL) {
