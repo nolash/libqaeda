@@ -1,6 +1,12 @@
-all: asn1 aux core dummy
+INCLUDES := -I. -I./aux/include
+CFLAGS +=  $(INCLUDES) -Wall
+
+all: all-gpg
+all-dummy: asn1 aux core dummy
+all-gpg: asn1 aux core gpg
 
 core:
+	$(CC) $(CFLAGS) -c debug.c
 	make -C lq
 
 aux:
@@ -8,6 +14,12 @@ aux:
 
 asn1:
 	make -C asn1 all
+
+gpg:
+	make -C crypto gpg
+	make -C mem std
+	make -C io std
+	make -C store dummy
 
 dummy:
 	make -C crypto dummy

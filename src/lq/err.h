@@ -1,10 +1,12 @@
 #ifndef LIBQAEDA_ERR_H_
 #define LIBQAEDA_ERR_H_
 
+// provides ERR_OK = 0, ERR_FAIL = 1, ERR_UNIMPLEMENTED = 2
+#include <rerr.h> 
+
 /// Error values used across all error contexts.
 enum err_e {
-	ERR_OK, ///< No error
-	ERR_NOOP, ///< No action taken.
+	ERR_NOOP = 3, ///< No action taken.
 	ERR_BYTEORDER, ///< Errors related to endianness
 	ERR_OVERFLOW, ///< Not enough space to write
 	ERR_INIT, ///< Failure instantiating object or data

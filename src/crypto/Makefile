@@ -1,8 +1,11 @@
-INCLUDES := -I..
+INCLUDES := -I.. -I../aux/include
 CFLAGS +=  $(INCLUDES) -Wall
 
 dummy:
-	$(CC) $(CFLAGS) -g3 -c dummy.c 
+	$(CC) $(CFLAGS) -c dummy.c 
+
+gpg:
+	$(CC) $(CFLAGS) -DLQ_GPG -c gcrypt.c
 
 clean:
 	rm -vf *.o

@@ -1,7 +1,9 @@
 #ifndef LLOG_H_
 #define LLOG_H_
 
+#ifndef LLOG_LENGTH
 #define LLOG_LENGTH 1024
+#endif
 
 #ifndef LLOG_DEFAULT_NS
 #define LLOG_DEFAULT_NS "llog"
