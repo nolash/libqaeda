@@ -44,7 +44,6 @@ int lq_crypto_init() {
 #endif
 	//char *p;
 	//size_t c;
-	int r;
 	char *v;
 
 	if (gpg_version == NULL) {
@@ -69,6 +68,40 @@ int lq_crypto_init() {
 
 	return ERR_OK;
 }
+
+// DIGEST SECTION
+
+int calculate_digest_algo(const char *in, size_t in_len, char *out, enum gcry_md_algos algo) {
+	gcry_error_t e;
+	gcry_md_hd_t h;
+	unsigned char *v;
+	static unsigned int digest_len;
+
+	if (algo == GCRY_MD_NONE) {
+		algo = GCRY_MD_SHA256;
+	}
+	digest_len = gcry_md_get_algo_dlen(algo);
+
+	e = gcry_md_open(&h, algo, GCRY_MD_FLAG_SECURE);
+	if (e) {
+		return ERR_ENCODING;
+	}
+
+	gcry_md_write(h, in, in_len);
+	v = gcry_md_read(h, 0);
+	lq_cpy(out, v, digest_len);
+	gcry_md_close(h);
+	return ERR_OK;
+}
+
+//int calculate_digest(const char *in, size_t in_len, char *out) {
+//	return calculate_digest_algo(in, in_len, out, GCRY_MD_NONE);
+//}
+
+int lq_digest(const char *in, size_t in_len, char *out) {
+	return calculate_digest_algo(in, in_len, out, GCRY_MD_NONE);
+}
+
 
 static int key_apply_public(struct gpg_store *gpg, gcry_sexp_t key) {
 	char *p;
@@ -159,10 +192,15 @@ static LQPrivKey* privatekey_alloc(const char *seed, size_t seed_len, const char
 }
 
 LQPrivKey* lq_privatekey_new(const char *seed, size_t seed_len, const char *passphrase, size_t passphrase_len) {
+	int r;
 	LQPrivKey *o;
 
 	o = privatekey_alloc(seed, seed_len, passphrase, passphrase_len);
 	if (o == NULL) {
+		return NULL;
+	}
+	r = lq_privatekey_lock(o, passphrase, passphrase_len);
+	if (r) {
 		return NULL;
 	}
 	return o;	
@@ -181,15 +219,141 @@ size_t lq_publickey_bytes(LQPubKey *pubk, char **out) {
 }
 
 int lq_privatekey_lock(LQPrivKey *pk, const char *passphrase, size_t passphrase_len) {
-
+	if (pk == NULL) {
+		return ERR_INIT;
+	}
+	if ((pk->key_state & LQ_KEY_LOCK) > 0) {
+		return ERR_NOOP;
+	}
+	pk->key_state |= LQ_KEY_LOCK;
+	return ERR_OK;
 }
 
 int lq_privatekey_unlock(LQPrivKey *pk, const char *passphrase, size_t passphrase_len) {
+	char b;
 
+	if (pk == NULL) {
+		return ERR_INIT;
+	}
+	if ((pk->key_state & LQ_KEY_LOCK) == 0) {
+		return ERR_NOOP;
+	}
+	b = LQ_KEY_LOCK;
+	pk->key_state &= ~b;
+	return ERR_OK;
+}
+
+// SIGNATURE SECTION
+//
+//int sign_with(struct gpg_store *gpg, char *data, size_t data_len, const char *passphrase, const char *fingerprint) {
+//	int r;
+//	size_t c;
+//	gcry_sexp_t pnt;
+//	gcry_sexp_t msg;
+//	gcry_sexp_t sig;
+//	gcry_error_t e;
+//	char *p;
+//
+//
+//	if (fingerprint == NULL) {
+//		r = gpg_key_load(gpg, passphrase, KEE_GPG_FIND_MAIN, NULL);
+//	} else {
+//		r = gpg_key_load(gpg, passphrase, KEE_GPG_FIND_FINGERPRINT, fingerprint);
+//	}
+//	if (r) {
+//		return 1;
+//	}
+//		 
+//	c = 0;
+//	e = gcry_sexp_build(&msg, &c, "(data(flags eddsa)(hash-algo sha512)(value %b))", 64, gpg->last_data);
+//	if (e != GPG_ERR_NO_ERROR) {
+//		return 1;
+//	}
+//}
+
+static int sign(struct gpg_store *gpg, char *data, size_t data_len, const char *salt) {
+	int r;
+	size_t c;
+	char *p;
+	gcry_sexp_t pnt;
+	gcry_sexp_t msg;
+	gcry_sexp_t sig;
+	gcry_error_t e;
+
+	r = calculate_digest_algo(data, data_len, gpg->last_data, GCRY_MD_SHA512);
+	if (r) {
+		return 1;
+	}
+
+	c = 0;
+	e = gcry_sexp_build(&msg, &c, "(data(flags eddsa)(hash-algo sha512)(value %b))", 64, gpg->last_data);
+	if (e != GPG_ERR_NO_ERROR) {
+		return 1;
+	}
+
+	e = gcry_pk_sign(&sig, msg, gpg->k);
+	if (e != GPG_ERR_NO_ERROR) {
+		return 1;
+	}
+
+	// retrieve r and write it
+	pnt = NULL;
+	pnt = gcry_sexp_find_token(sig, "r", 1);
+	if (pnt == NULL) {
+		return 1;
+	}
+	c = LQ_POINT_LEN;
+	p = (char*)gcry_sexp_nth_data(pnt, 1, &c);
+	if (p == NULL) {
+		return 1;
+	}
+	lq_cpy(gpg->last_signature, p, c);
+
+	// retrieve s and write it
+	pnt = NULL;
+	pnt = gcry_sexp_find_token(sig, "s", 1);
+	if (pnt == NULL) {
+		return 1;
+	}
+	c = LQ_POINT_LEN;
+	p = (char*)gcry_sexp_nth_data(pnt, 1, &c);
+	if (p == NULL) {
+		return 1;
+	}
+	lq_cpy(gpg->last_signature + LQ_POINT_LEN, p, c);
+
+	//gcry_sexp_release(gpg->k);
+
+	return 0;
 }
 
 LQSig* lq_privatekey_sign(LQPrivKey *pk, const char *msg, size_t msg_len, const char *salt) {
+	int r;
+	struct gpg_store *gpg;
+	LQSig *sig;
 
+	if ((pk->key_state & LQ_KEY_LOCK) > 0) {
+		return NULL;
+	}
+	if (msg_len != LQ_DIGEST_LEN) {
+		return NULL;
+	}
+
+	gpg = (struct gpg_store*)pk->impl;
+
+	r = sign(gpg, msg, msg_len, salt);
+	if (r != ERR_OK) {
+		return NULL;
+	}
+
+	sig = lq_alloc(sizeof(LQSig));
+	sig->pubkey = lq_publickey_from_privatekey(pk);
+	if (sig->pubkey == NULL) {
+		lq_free(sig);
+		return NULL;
+	}
+	sig->impl= gpg->last_signature;
+	return sig;
 }
 
 LQSig* lq_signature_from_bytes(const char *sig_data, size_t sig_len, LQPubKey *pubkey) {
@@ -197,7 +361,8 @@ LQSig* lq_signature_from_bytes(const char *sig_data, size_t sig_len, LQPubKey *p
 }
 
 size_t lq_signature_bytes(LQSig *sig, char **out) {
-
+	*out = sig->impl;
+	return LQ_SIGN_LEN;
 }
 
 void lq_privatekey_free(LQPrivKey *pk) {
@@ -210,12 +375,16 @@ void lq_publickey_free(LQPubKey *pubk) {
 }
 
 void lq_signature_free(LQSig *sig) {
-
+	lq_free(sig->pubkey);
+	lq_free(sig);
 }
 
 char *lq_publickey_fingerprint(LQPubKey *pubk) {
+	struct gpg_store *gpg;
 	char *p;
 
+	gpg = (struct gpg_store*)pubk->impl;
+	return gpg->fingerprint;
 }
 
 LQPubKey* lq_publickey_from_privatekey(LQPrivKey *pk) {
@@ -254,39 +423,6 @@ LQPubKey* lq_publickey_new(const char *full) {
 	pubk->key_typ = GPG_KEY_TYP;
 	pubk->pk = NULL;
 	return pubk;
-}
-
-// DIGEST SECTION
-
-int calculate_digest_algo(const char *in, size_t in_len, char *out, enum gcry_md_algos algo) {
-	gcry_error_t e;
-	gcry_md_hd_t h;
-	unsigned char *v;
-	static unsigned int digest_len;
-
-	if (algo == GCRY_MD_NONE) {
-		algo = GCRY_MD_SHA256;
-	}
-	digest_len = gcry_md_get_algo_dlen(algo);
-
-	e = gcry_md_open(&h, algo, GCRY_MD_FLAG_SECURE);
-	if (e) {
-		return ERR_ENCODING;
-	}
-
-	gcry_md_write(h, in, in_len);
-	v = gcry_md_read(h, 0);
-	lq_cpy(out, v, digest_len);
-	gcry_md_close(h);
-	return ERR_OK;
-}
-
-//int calculate_digest(const char *in, size_t in_len, char *out) {
-//	return calculate_digest_algo(in, in_len, out, GCRY_MD_NONE);
-//}
-
-int lq_digest(const char *in, size_t in_len, char *out) {
-	return calculate_digest_algo(in, in_len, out, GCRY_MD_NONE);
 }
 
 #endif

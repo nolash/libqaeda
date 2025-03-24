@@ -31,6 +31,10 @@
 #define LQ_CRYPTO_BUFLEN 524288
 #endif
 
+#ifndef LQ_POINT_LEN
+#define LQ_POINT_LEN 32
+#endif
+
 #define RERR_PFX_CRYPTO 0x100
 /// Crypto backend unavailable
 #define ERR_NOCRYPTO 0x101

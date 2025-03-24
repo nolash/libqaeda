@@ -87,7 +87,7 @@ int lq_privatekey_lock(LQPrivKey *pk, const char *passphrase, size_t passphrase_
 	lq_digest(passphrase, passphrase_len, digest);
 	keylock_xor(pk, digest);
 	pk->key_state |= LQ_KEY_LOCK;
-	return 0;
+	return ERR_OK;
 }
 
 LQPrivKey* lq_privatekey_new(const char *seed, size_t seed_len, const char *passphrase, size_t passphrase_len) {

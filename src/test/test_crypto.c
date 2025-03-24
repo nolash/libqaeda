@@ -110,7 +110,7 @@ Suite * common_suite(void) {
 	tcase_add_test(tc, check_digest);
 	tcase_add_test(tc, check_privatekey);
 	tcase_add_test(tc, check_publickey);
-//	tcase_add_test(tc, check_signature);
+	tcase_add_test(tc, check_signature);
 	suite_add_tcase(s, tc);
 
 	return s;
