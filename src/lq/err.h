@@ -18,6 +18,7 @@ enum err_e {
 	ERR_RESPONSE, ///< Error related to certificate response messages
 	ERR_NOENT, ///< Object not found
 	ERR_COMPAT, ///< Incompatible data or format
+	ERR_CRYPTO, ///< Crypto related error
 };
 
 typedef enum err_e LQErr;

@@ -4,6 +4,7 @@
 #include <stdarg.h>
 
 #include <llog.h>
+#include <rerr.h>
 
 #include "lq/mem.h"
 #include "debug.h"
@@ -42,11 +43,15 @@ void llog_out(const char *s) {
 	debug_write(default_fd, s);
 }
 
-void debug_dbg(const char *ns, const char *msg) {
+static void debug_out(enum lloglvl_e lvl, const char *ns, const char *msg) {
 	char *p;
-	
+
 	p = llog_new_ns(LLOG_DEBUG, (char*)msg, (char*)ns);
 	llog_out(p);
+}
+
+void debug_dbg(const char *ns, const char *msg) {
+	debug_out(LLOG_DEBUG, (char*)ns, (char*)msg);
 }
 
 void debug_dbg_x(const char *ns, const char *msg, int argc, ...) {
@@ -83,4 +88,20 @@ void debug_dbg_x(const char *ns, const char *msg, int argc, ...) {
 	}
 	llog_out(p);
 	va_end(vv);
+}
+
+int debug_logerr(enum lloglvl_e lvl, int err, char *msg) {
+	char *e;
+	char *s;
+
+	if (msg == 0) {
+		msg = "debug logerr";
+	}
+	s = rerrpfx(err);
+	e = llog_new_ns(lvl, msg, s);
+	e = llog_add_x("errcode", err);
+	s = rerrstrv(err);
+	e = llog_add_s("err", s);
+	llog_out(e);
+	return err;
 }

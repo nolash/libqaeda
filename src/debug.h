@@ -9,5 +9,6 @@ enum debug_typ_e {
 
 void debug_dbg(const char *ns, const char *msg);
 void debug_dbg_x(const char *ns, const char *msg, int argc, ...);
+int debug_logerr(enum lloglvl_e lvl, int err, char *msg);
 
 #endif // MOREGELLONS_H_
