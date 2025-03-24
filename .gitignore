@@ -6,3 +6,6 @@ src/asn1/generate_*
 src/aux/lib
 src/aux/include
 build/
+*.tar.gz
+*.so
+*.a
