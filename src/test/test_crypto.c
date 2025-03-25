@@ -49,7 +49,7 @@ START_TEST(check_privatekey) {
 	r = lq_crypto_init();
 	ck_assert_int_eq(r, 0);
 
-	pk = lq_privatekey_new(privkeydata, 32, NULL, 0);
+	pk = lq_privatekey_new(privkeydata, LQ_PRIVKEY_LEN, NULL, 0);
 	ck_assert_ptr_nonnull(pk);
 	lq_privatekey_free(pk);
 }
@@ -62,7 +62,7 @@ START_TEST(check_publickey) {
 	char *keydata;
 	char *keydata_manual;
 
-	pk = lq_privatekey_new(privkeydata, 32, passphrase, 32);
+	pk = lq_privatekey_new(privkeydata, LQ_PRIVKEY_LEN, passphrase, 32);
 	pubk = lq_publickey_from_privatekey(pk);
 	lq_publickey_bytes(pubk, &keydata);
 	pubk_manual = lq_publickey_new(keydata);
@@ -82,8 +82,7 @@ START_TEST(check_signature) {
 	char *sigdata;
 
 	pk = lq_privatekey_new(privkeydata, 32, passphrase, 32);
-	lq_digest(data, strlen(data), (char*)digest);
-	sig = lq_privatekey_sign(pk, digest, 32, salt);
+	sig = lq_privatekey_sign(pk, data, strlen(data), salt);
 	ck_assert_ptr_null(sig);
 
 	r = lq_privatekey_unlock(pk, passphrase, 32);
@@ -100,6 +99,29 @@ START_TEST(check_signature) {
 }
 END_TEST
 
+START_TEST(check_verify) {
+	char r;
+	LQPrivKey *pk;
+	LQSig *sig;
+	char *sigdata;
+
+	pk = lq_privatekey_new(privkeydata, LQ_PRIVKEY_LEN, passphrase, 32);
+	sig = lq_privatekey_sign(pk, data, strlen(data), salt);
+	ck_assert_ptr_null(sig);
+
+	r = lq_privatekey_unlock(pk, passphrase, 32);
+	ck_assert_int_eq(r, 0);
+
+	sig = lq_privatekey_sign(pk, data, strlen(data), salt);
+	ck_assert_ptr_nonnull(sig);
+
+	r = lq_signature_verify(sig, data, strlen(data));
+
+	lq_signature_free(sig);
+	lq_privatekey_free(pk);
+}
+END_TEST
+
 Suite * common_suite(void) {
 	Suite *s;
 	TCase *tc;
@@ -110,6 +132,7 @@ Suite * common_suite(void) {
 	tcase_add_test(tc, check_privatekey);
 	tcase_add_test(tc, check_publickey);
 	tcase_add_test(tc, check_signature);
+	tcase_add_test(tc, check_verify);
 	suite_add_tcase(s, tc);
 
 	return s;

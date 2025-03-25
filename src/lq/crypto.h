@@ -4,7 +4,7 @@
 #include <stddef.h>
 
 #ifndef LQ_DIGEST_LEN
-#define LQ_DIGEST_LEN 32
+#define LQ_DIGEST_LEN 64
 #endif
 
 #ifndef LQ_PUBKEY_LEN
@@ -207,6 +207,12 @@ LQSig* lq_signature_from_bytes(const char *sig_data, size_t sig_len, LQPubKey *p
  * @return Length of signature. If 0, no signature data could be found.
  */
 size_t lq_signature_bytes(LQSig *sig, char **out);
+
+/**
+ * @brief Verify a signature against a private key and message.
+ *
+ */
+int lq_signature_verify(LQSig *sig, const char *msg, size_t msg_len);
 
 /**
  * @brief Free an allocated public key.

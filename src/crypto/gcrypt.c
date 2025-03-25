@@ -42,9 +42,7 @@ int lq_crypto_init() {
 #ifdef RERR
 	rerr_register(RERR_PFX_GPG, "crypto", _rerr);
 #endif
-	//char *p;
-	//size_t c;
-	char *v;
+	const char *v;
 
 	if (gpg_version == NULL) {
 		v = gcry_check_version(GPG_MIN_VERSION);
@@ -271,7 +269,7 @@ int lq_privatekey_unlock(LQPrivKey *pk, const char *passphrase, size_t passphras
 //	}
 //}
 
-static int sign(struct gpg_store *gpg, char *data, size_t data_len, const char *salt) {
+static int sign(struct gpg_store *gpg, const char *data, size_t data_len, const char *salt) {
 	int r;
 	size_t c;
 	char *p;
@@ -327,21 +325,20 @@ static int sign(struct gpg_store *gpg, char *data, size_t data_len, const char *
 	return 0;
 }
 
-LQSig* lq_privatekey_sign(LQPrivKey *pk, const char *msg, size_t msg_len, const char *salt) {
+LQSig* lq_privatekey_sign(LQPrivKey *pk, const char *data, size_t data_len, const char *salt) {
 	int r;
 	struct gpg_store *gpg;
 	LQSig *sig;
+	char digest[LQ_DIGEST_LEN];
 
 	if ((pk->key_state & LQ_KEY_LOCK) > 0) {
 		return NULL;
 	}
-	if (msg_len != LQ_DIGEST_LEN) {
-		return NULL;
-	}
 
+	lq_digest(data, strlen(data), (char*)digest);
 	gpg = (struct gpg_store*)pk->impl;
 
-	r = sign(gpg, msg, msg_len, salt);
+	r = sign(gpg, digest, LQ_DIGEST_LEN, salt);
 	if (r != ERR_OK) {
 		return NULL;
 	}
@@ -363,6 +360,72 @@ LQSig* lq_signature_from_bytes(const char *sig_data, size_t sig_len, LQPubKey *p
 size_t lq_signature_bytes(LQSig *sig, char **out) {
 	*out = sig->impl;
 	return LQ_SIGN_LEN;
+}
+
+int lq_signature_verify(LQSig *sig, const char *data, size_t data_len) {
+	int r;
+	size_t c;
+	gcry_mpi_t sig_r;
+	gcry_mpi_t sig_s;
+	gcry_error_t err;
+	gcry_sexp_t sigx;
+	gcry_sexp_t msgx;
+	gcry_sexp_t pubkey;
+	struct gpg_store *gpg;
+	char digest[LQ_DIGEST_LEN];
+
+	if (sig->pubkey == NULL) {
+		return ERR_NOENT;
+	}
+
+	gpg = (struct gpg_store*)sig->pubkey->impl;
+	c = 0;
+	err = gcry_sexp_build(&pubkey, &c, "(key-data(public-key(ecc(curve Ed25519)(q %b))))", LQ_PUBKEY_LEN, gpg->public_key);
+	if (err != GPG_ERR_NO_ERROR) {
+		return ERR_CRYPTO;
+	}
+
+	c = 0;
+	err = gcry_mpi_scan(&sig_r, GCRYMPI_FMT_STD, sig->impl, LQ_POINT_LEN, &c);
+	if (err != GPG_ERR_NO_ERROR) {
+		return ERR_CRYPTO;
+	}
+	if (c != 32) {
+		return ERR_CRYPTO;
+	}
+
+	c = 0;
+	err = gcry_mpi_scan(&sig_s, GCRYMPI_FMT_STD, sig->impl + LQ_POINT_LEN, LQ_POINT_LEN, &c);
+	if (err != GPG_ERR_NO_ERROR) {
+		return ERR_CRYPTO;
+	}
+	if (c != 32) {
+		return ERR_CRYPTO;
+	}
+
+	c = 0;
+	err = gcry_sexp_build(&sigx, &c, "(sig-val(eddsa(r %m)(s %m)))", sig_r, sig_s);
+	if (err != GPG_ERR_NO_ERROR) {
+		return ERR_CRYPTO;
+	}
+
+	r = calculate_digest_algo(data, data_len, digest, GCRY_MD_SHA512);
+	if (r) {
+		return ERR_CRYPTO;
+	}
+
+	c = 0;
+	err = gcry_sexp_build(&msgx, &c, "(data(flags eddsa)(hash-algo sha512)(value %b))", LQ_DIGEST_LEN, digest);
+	if (err != GPG_ERR_NO_ERROR) {
+		return ERR_CRYPTO;
+	}
+
+	err = gcry_pk_verify(sigx, msgx, pubkey);
+	if (err != GPG_ERR_NO_ERROR) {
+		return ERR_ENCODING;
+	}
+
+	return ERR_OK;
 }
 
 void lq_privatekey_free(LQPrivKey *pk) {
@@ -413,6 +476,7 @@ LQPubKey* lq_publickey_new(const char *full) {
 	if (e != GPG_ERR_NO_ERROR) {
 		return NULL;
 	}
+	lq_cpy(gpg->public_key, full, LQ_PUBKEY_LEN);
 
 	r = (char*)gcry_pk_get_keygrip(gpg->k, (unsigned char*)gpg->fingerprint);
 	if (r == NULL) {
