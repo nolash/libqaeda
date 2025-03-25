@@ -92,9 +92,8 @@ START_TEST(check_signature) {
 	sig = lq_privatekey_sign(pk, digest, 32, salt);
 	ck_assert_ptr_nonnull(sig);
 
-	r = 42;
-	lq_signature_bytes(sig, &sigdata);
-	ck_assert_mem_eq(sigdata+65, &r, 1);
+	r = lq_signature_bytes(sig, &sigdata);
+	ck_assert_mem_eq(sig->impl, sigdata, r);
 
 	lq_signature_free(sig);
 	lq_privatekey_free(pk);
