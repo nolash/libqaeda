@@ -5,6 +5,7 @@
 #include <fcntl.h>
 
 #include "lq/crypto.h"
+#include "lq/io.h"
 #include "lq/store.h"
 #include "lq/err.h"
 #include "lq/mem.h"
@@ -35,7 +36,7 @@ int lq_file_content_get(enum payload_e typ, LQStore *store, const char *key, siz
 	if (r < 0) {
 		return ERR_READ;
 	}
-	f = open(path, O_RDONLY, S_IRUSR);
+	f = lq_open(path, O_RDONLY, S_IRUSR);
 	if (f < 0) {
 		return ERR_READ;
 	}
@@ -43,18 +44,18 @@ int lq_file_content_get(enum payload_e typ, LQStore *store, const char *key, siz
 	p = value;
 	l = 0;
 	while (1) {
-		c = read(f, p, *value_len - l);
+		c = lq_read(f, p, *value_len - l);
 		if (c == 0) {
 			break;
 		}
 		l += c;
 		if (l > *value_len) {
-			close(f);
+			lq_close(f);
 			return ERR_OVERFLOW;
 		}
 		p += c;	
 	}
-	close(f);
+	lq_close(f);
 
 	*value_len = l;
 
@@ -82,7 +83,7 @@ int lq_file_content_put(enum payload_e typ, LQStore *store, const char *key, siz
 	if (r < 0) {
 		return ERR_WRITE;
 	}
-	f = open(path, O_CREAT | O_TRUNC | O_WRONLY, S_IRUSR | S_IWUSR);
+	f = lq_open(path, O_CREAT | O_TRUNC | O_WRONLY, S_IRUSR | S_IWUSR);
 	if (f < 0) {
 		return ERR_WRITE;
 	}
@@ -91,7 +92,7 @@ int lq_file_content_put(enum payload_e typ, LQStore *store, const char *key, siz
 	while (l > 0) {
 		c = write(f, p, l);
 		if (c < 0) {
-			close(f);
+			lq_close(f);
 			return ERR_WRITE;
 		}
 		if (c == 0) {
@@ -100,7 +101,7 @@ int lq_file_content_put(enum payload_e typ, LQStore *store, const char *key, siz
 		l -= c;
 		p += c;
 	}
-	close(f);
+	lq_close(f);
 	return ERR_OK;
 }
 
