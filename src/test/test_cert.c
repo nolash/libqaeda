@@ -6,6 +6,7 @@
 #include "lq/cert.h"
 #include "lq/mem.h"
 #include "lq/crypto.h"
+#include "lq/config.h"
 
 const char *data = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
 const char *data_two = "Que trata de la condición y ejercicio del famoso hidalgo D. Quijote de la Mancha En un lugar de la Mancha, de cuyo nombre no quiero acordarme, no ha mucho tiempo que vivía un hidalgo de los de lanza en astillero, adarga antigua, rocín flaco y galgo corredor.";
@@ -34,6 +35,7 @@ START_TEST(check_cert_symmetric_nomsg) {
 	LQCtx ctx;
 	char buf[4096];
 
+	lq_config_init();
 	lq_crypto_init();
 	lq_set(&ctx, 0, sizeof(LQCtx));
 	cert = lq_certificate_new(NULL, &ctx, NULL, NULL);
@@ -56,6 +58,8 @@ START_TEST(check_cert_symmetric_req_nosig) {
 	LQCtx ctx;
 	char buf[4096];
 
+	lq_config_init();
+	lq_crypto_init();
 	lq_set(&ctx, 0, sizeof(LQCtx));
 	req = lq_msg_new(data, strlen(data) + 1);
 	cert = lq_certificate_new(NULL, &ctx, req, NULL);
@@ -79,6 +83,7 @@ START_TEST(check_cert_symmetric_req_sig) {
 	LQCtx ctx;
 	char buf[4096];
 
+	lq_config_init();
 	lq_crypto_init();
 	pk = lq_privatekey_new(privkeydata, 32, passphrase, 32);
 	lq_set(&ctx, 0, sizeof(LQCtx));
@@ -109,6 +114,7 @@ START_TEST(check_cert_symmetric_rsp_onesig) {
 	LQCtx ctx;
 	char buf[4096];
 
+	lq_config_init();
 	lq_crypto_init();
 	pk = lq_privatekey_new(privkeydata, 32, passphrase, 32);
 	lq_set(&ctx, 0, sizeof(LQCtx));
@@ -140,6 +146,8 @@ START_TEST(check_cert_symmetric_rsp_bothsig) {
 	LQCtx ctx;
 	char buf[4096];
 
+	lq_config_init();
+	lq_crypto_init();
 	pk = lq_privatekey_new(privkeydata, 32, passphrase, 32);
 	lq_set(&ctx, 0, sizeof(LQCtx));
 	req = lq_msg_new(data, strlen(data) + 1);

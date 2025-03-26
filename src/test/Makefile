@@ -6,12 +6,12 @@ LIBS := ../asn1/defs_asn1_tab.o `pkg-config --libs libtasn1 libgcrypt` -L../aux/
 LDFLAGS := -lcheck $(LIBS)
 
 all: build
-#	CK_FORK=no LD_LIBRARY_PATH=`realpath ../aux/lib` ./test_debug_bin
-#	CK_FORK=no LD_LIBRARY_PATH=`realpath ../aux/lib` ./test_config_bin
-#	CK_FORK=no LD_LIBRARY_PATH=`realpath ../aux/lib` ./test_crypto_bin
-#	CK_FORK=no LD_LIBRARY_PATH=`realpath ../aux/lib` ./test_msg_bin
-#	CK_FORK=no LD_LIBRARY_PATH=`realpath ../aux/lib` ./test_cert_bin
-#	CK_FORK=no LD_LIBRARY_PATH=`realpath ../aux/lib` ./test_trust_bin
+	CK_FORK=no LD_LIBRARY_PATH=`realpath ../aux/lib` ./test_debug_bin
+	CK_FORK=no LD_LIBRARY_PATH=`realpath ../aux/lib` ./test_config_bin
+	CK_FORK=no LD_LIBRARY_PATH=`realpath ../aux/lib` ./test_crypto_bin
+	CK_FORK=no LD_LIBRARY_PATH=`realpath ../aux/lib` ./test_msg_bin
+	CK_FORK=no LD_LIBRARY_PATH=`realpath ../aux/lib` ./test_cert_bin
+	CK_FORK=no LD_LIBRARY_PATH=`realpath ../aux/lib` ./test_trust_bin
 	CK_FORK=no LD_LIBRARY_PATH=`realpath ../aux/lib` ./test_store_bin
 
 test: all
@@ -22,7 +22,7 @@ build:
 #	$(CC) $(CFLAGS) test_crypto.c -o test_crypto_bin ../crypto/dummy.o ../mem/std.o $(LDFLAGS)
 #	$(CC) $(CFLAGS) test_msg.c -o test_msg_bin ../crypto/dummy.o ../mem/std.o ../store/dummy.o ../store/file.o ../io/std.o ../lq/msg.o $(LDFLAGS)
 	#$(CC) $(CFLAGS) test_cert.c -o test_cert_bin ../crypto/dummy.o ../mem/std.o ../store/dummy.o ../store/file.o ../io/std.o ../lq/msg.o ../lq/cert.o $(LDFLAGS)
-	$(CC) $(CFLAGS) test_trust.c -o test_trust_bin ../crypto/dummy.o ../mem/std.o ../store/mem.o ../lq/trust.o -lhashmap $(LDFLAGS)
+	#$(CC) $(CFLAGS) test_trust.c -o test_trust_bin ../crypto/dummy.o ../mem/std.o ../store/mem.o ../lq/trust.o -lhashmap $(LDFLAGS)
 	$(CC) $(CFLAGS) test_crypto.c -o test_crypto_bin ../crypto/gcrypt.o ../debug.o ../mem/std.o ../lq/config.o $(LDFLAGS) -lgcrypt
 	$(CC) $(CFLAGS) test_msg.c -o test_msg_bin ../crypto/gcrypt.o ../debug.o ../mem/std.o  ../lq/config.o ../store/dummy.o ../store/file.o ../io/std.o ../lq/msg.o $(LDFLAGS)
 	$(CC) $(CFLAGS) test_cert.c -o test_cert_bin ../crypto/gcrypt.o ../debug.o  ../lq/config.o ../mem/std.o ../store/dummy.o ../store/file.o ../io/std.o ../lq/msg.o ../lq/cert.o $(LDFLAGS)

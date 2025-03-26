@@ -10,9 +10,10 @@
 #include "lq/store.h"
 #include "endian.h"
 
+static char zeros[LQ_PUBKEY_LEN];
 static LQPubKey nokey = {
 	.pk = 0,
-	.impl = 0,
+	.impl = zeros,
 };
 
 LQMsg* lq_msg_new(const char *msg_data, size_t msg_len) {

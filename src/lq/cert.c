@@ -7,9 +7,10 @@
 #include "lq/err.h"
 #include "lq/store.h"
 
+static char zeros[65];
 static LQPubKey nokey = {
 	.pk = 0,
-	.impl = 0,
+	.impl = zeros,
 };
 
 static LQMsg nomsg = {
@@ -20,7 +21,7 @@ static LQMsg nomsg = {
 };
 static LQSig nosig = {
 	.pubkey = &nokey,
-	.impl = 0,
+	.impl = zeros,
 };
 
 LQCert* lq_certificate_new(LQCert *parent, LQCtx *ctx, LQMsg *req, LQMsg *rsp) {
@@ -173,7 +174,7 @@ int lq_certificate_serialize(LQCert *cert, char *out, size_t *out_len, LQResolve
 	// Set request signature if exists
 	sig = cert->request_sig;
 	if (cert->request == NULL || sig == NULL) {
-		sig = &nosig;	
+		sig = &nosig;
 	}
 	// \todo proper sig serialize
 	c = lq_signature_bytes(sig, &sigdata);
@@ -207,7 +208,7 @@ int lq_certificate_serialize(LQCert *cert, char *out, size_t *out_len, LQResolve
 	// Set response signature if exists
 	sig = cert->response_sig;
 	if (cert->response == NULL || sig == NULL) {
-		sig = &nosig;	
+		sig = &nosig;
 	}
 	// \todo proper sig serialize
 	c = lq_signature_bytes(sig, &sigdata);
@@ -243,7 +244,6 @@ int lq_certificate_serialize(LQCert *cert, char *out, size_t *out_len, LQResolve
 	if (r != ASN1_SUCCESS) {
 		return ERR_ENCODING;
 	}
-
 
 	return ERR_OK;
 }
