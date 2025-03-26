@@ -35,8 +35,6 @@ START_TEST(check_cert_symmetric_nomsg) {
 	LQCtx ctx;
 	char buf[4096];
 
-	lq_config_init();
-	lq_crypto_init();
 	lq_set(&ctx, 0, sizeof(LQCtx));
 	cert = lq_certificate_new(NULL, &ctx, NULL, NULL);
 	c = 4096;
@@ -58,8 +56,6 @@ START_TEST(check_cert_symmetric_req_nosig) {
 	LQCtx ctx;
 	char buf[4096];
 
-	lq_config_init();
-	lq_crypto_init();
 	lq_set(&ctx, 0, sizeof(LQCtx));
 	req = lq_msg_new(data, strlen(data) + 1);
 	cert = lq_certificate_new(NULL, &ctx, req, NULL);
@@ -83,8 +79,6 @@ START_TEST(check_cert_symmetric_req_sig) {
 	LQCtx ctx;
 	char buf[4096];
 
-	lq_config_init();
-	lq_crypto_init();
 	pk = lq_privatekey_new(privkeydata, 32, passphrase, 32);
 	lq_set(&ctx, 0, sizeof(LQCtx));
 	req = lq_msg_new(data, strlen(data) + 1);
@@ -114,8 +108,6 @@ START_TEST(check_cert_symmetric_rsp_onesig) {
 	LQCtx ctx;
 	char buf[4096];
 
-	lq_config_init();
-	lq_crypto_init();
 	pk = lq_privatekey_new(privkeydata, 32, passphrase, 32);
 	lq_set(&ctx, 0, sizeof(LQCtx));
 	req = lq_msg_new(data, strlen(data) + 1);
@@ -146,8 +138,6 @@ START_TEST(check_cert_symmetric_rsp_bothsig) {
 	LQCtx ctx;
 	char buf[4096];
 
-	lq_config_init();
-	lq_crypto_init();
 	pk = lq_privatekey_new(privkeydata, 32, passphrase, 32);
 	lq_set(&ctx, 0, sizeof(LQCtx));
 	req = lq_msg_new(data, strlen(data) + 1);
@@ -174,6 +164,9 @@ END_TEST
 Suite * common_suite(void) {
 	Suite *s;
 	TCase *tc;
+
+	lq_config_init();
+	lq_crypto_init();
 
 	s = suite_create("cert");
 	tc = tcase_create("serialize");
