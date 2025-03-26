@@ -1,5 +1,8 @@
 all:
-	make -C src
+	make -C src all
+
+lib:
+	make -C src lib
 
 test: all
 	make -C src test
