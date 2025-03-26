@@ -10,6 +10,10 @@ void lq_free(void *o) {
 	free(o);
 }
 
+int lq_cmp(const void *dst, const void *src, size_t len) {
+	return memcmp(dst, src, len);
+}
+
 void* lq_cpy(void *dst, const void *src, size_t len) {
 	return memcpy(dst, src, len);
 }

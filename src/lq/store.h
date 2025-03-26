@@ -25,6 +25,7 @@ struct lq_store_t {
 	void *userdata; ///< Implementation specific data required by the specific store.
 	int (*get)(enum payload_e typ, LQStore *store, const char *key, size_t key_len, char *value, size_t *value_len); ///< Interface for retrieving data corresponding to a key.
 	int (*put)(enum payload_e typ, LQStore *store, const char *key, size_t *key_len, char *value, size_t value_len); ///< Interface for storing data corresponding to a key.
+	int (*count)(enum payload_e typ, LQStore *store, const char *key, size_t key_len); ///< Interface for returning number of entries under a key.
 	void (*free)(LQStore *store); ///< Interface for cleaning up implementation specific resources in use by the store.
 };
 

@@ -13,6 +13,22 @@
 
 static const int store_typ_file = 3;
 
+int lq_file_content_count(enum payload_e typ, LQStore *store, const char *key, size_t key_len) {
+	int r;
+	char **out;
+	char pfx[1024];
+
+	out = lq_alloc(sizeof(char**) * LQ_DIRS_MAX);
+	pfx[0] = (char)typ + 0x30;
+	lq_cpy(pfx+1, key, key_len);
+
+	r = lq_files_pfx(store->userdata, out, LQ_DIRS_MAX, pfx, key_len + 1);
+
+	lq_free(out);
+
+	return r;
+}
+
 int lq_file_content_get(enum payload_e typ, LQStore *store, const char *key, size_t key_len, char *value, size_t *value_len) {
 	int f;
 	int r;
@@ -113,6 +129,7 @@ struct lq_store_t LQFileContent = {
 	.userdata = "",
 	.get = lq_file_content_get,	
 	.put = lq_file_content_put,
+	.count = lq_file_content_count,
 	.free = lq_file_content_free,
 };
 

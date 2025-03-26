@@ -8,7 +8,7 @@
 #endif
 
 #ifndef LQ_PUBKEY_LEN
-#define LQ_PUBKEY_LEN 65
+#define LQ_PUBKEY_LEN 64
 #endif
 
 #ifndef LQ_PRIVKEY_LEN
