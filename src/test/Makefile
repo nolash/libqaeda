@@ -23,11 +23,11 @@ build:
 #	$(CC) $(CFLAGS) test_msg.c -o test_msg_bin ../crypto/dummy.o ../mem/std.o ../store/dummy.o ../store/file.o ../io/std.o ../lq/msg.o $(LDFLAGS)
 	#$(CC) $(CFLAGS) test_cert.c -o test_cert_bin ../crypto/dummy.o ../mem/std.o ../store/dummy.o ../store/file.o ../io/std.o ../lq/msg.o ../lq/cert.o $(LDFLAGS)
 	#$(CC) $(CFLAGS) test_trust.c -o test_trust_bin ../crypto/dummy.o ../mem/std.o ../store/mem.o ../lq/trust.o -lhashmap $(LDFLAGS)
-	$(CC) $(CFLAGS) test_crypto.c -o test_crypto_bin ../crypto/gcrypt.o ../debug.o ../mem/std.o ../lq/config.o $(LDFLAGS) -lgcrypt
-	$(CC) $(CFLAGS) test_msg.c -o test_msg_bin ../crypto/gcrypt.o ../debug.o ../mem/std.o  ../lq/config.o ../store/dummy.o ../store/file.o ../io/std.o ../lq/msg.o $(LDFLAGS)
-	$(CC) $(CFLAGS) test_cert.c -o test_cert_bin ../crypto/gcrypt.o ../debug.o  ../lq/config.o ../mem/std.o ../store/dummy.o ../store/file.o ../io/std.o ../lq/msg.o ../lq/cert.o $(LDFLAGS)
-	$(CC) $(CFLAGS) test_trust.c -o test_trust_bin ../crypto/gcrypt.o ../debug.o  ../lq/config.o ../mem/std.o ../store/mem.o ../lq/trust.o -lhashmap $(LDFLAGS)
-	$(CC) $(CFLAGS) test_store.c -o test_store_bin ../crypto/gcrypt.o ../debug.o  ../lq/config.o ../mem/std.o ../store/file.o ../io/std.o -lhashmap $(LDFLAGS)
+	$(CC) $(CFLAGS) test_crypto.c -o test_crypto_bin  ../store/file.o ../io/std.o ../crypto/gcrypt.o ../debug.o ../mem/std.o ../lq/config.o $(LDFLAGS) -lgcrypt
+	$(CC) $(CFLAGS) test_msg.c -o test_msg_bin ../store/file.o ../io/std.o ../crypto/gcrypt.o ../debug.o ../mem/std.o  ../lq/config.o ../store/dummy.o ../lq/msg.o $(LDFLAGS)
+	$(CC) $(CFLAGS) test_cert.c -o test_cert_bin ../store/file.o ../io/std.o ../crypto/gcrypt.o ../debug.o  ../lq/config.o ../mem/std.o ../store/dummy.o ../lq/msg.o ../lq/cert.o $(LDFLAGS)
+	$(CC) $(CFLAGS) test_trust.c -o test_trust_bin ../mem/std.o ../store/mem.o ../crypto/gcrypt.o ../debug.o  ../lq/config.o ../lq/trust.o -lhashmap $(LDFLAGS)
+	$(CC) $(CFLAGS) test_store.c -o test_store_bin ../store/file.o ../io/std.o ../crypto/gcrypt.o ../debug.o  ../lq/config.o ../mem/std.o -lhashmap $(LDFLAGS)
 
 clean:
 	rm -vf test_*_bin

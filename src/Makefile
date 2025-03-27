@@ -7,7 +7,7 @@ all-gpg: asn1 aux core gpg
 lib: all
 
 lib:
-	ar rcs lq.a lq/config.o crypto/gcrypt.o store/file.o mem/std.o io/std.o debug.o aux/lib/libhashmap.a 
+	ar rcs liblq.a lq/config.o crypto/gcrypt.o store/file.o mem/std.o io/std.o debug.o aux/lib/libhashmap.a 
 
 core:
 	$(CC) $(CFLAGS) -c debug.c

@@ -99,147 +99,148 @@ struct lq_signature_t {
 typedef struct lq_signature_t LQSig;
 
 /**
- * @brief Perform necessary initializations of crypto component.
+ * \brief Perform necessary initializations of crypto component.
  *
- * @return ERR_OK on success.
+ * \return ERR_OK on success.
  */
 int lq_crypto_init();
 
 /**
- * @brief Perform necessary resource release of crypto component.
+ * \brief Perform necessary resource release of crypto component.
  */
 void lq_crypto_free();
 
 /**
- * @brief Create a new private key
+ * \brief Create a new private key
  *
  * If passphrase is not null the passphrase will be encrypted using that passphrase by default.
  *
- * @param[in] Key material. If NULL, a new random private key will be generated.
- * @param[in] Length of key material. Ignored if seed parameter is NULL.
- * @param[in] Encryption passphrase for key.
- * @return Pointer to new private key. Freeing the object is the caller's responsibility.
- * @see lq_privatekey_free
+ * \param[in] Key material. If NULL, a new random private key will be generated.
+ * \param[in] Length of key material. Ignored if seed parameter is NULL.
+ * \param[in] Passphrase to encrypt key with. If NULL, key will be encrypted with a single 0-byte as passphrase.
+ * \param[in] Passphrase length. Ignored if passphrase is NULL.
+ * \return Pointer to new private key. Freeing the object is the caller's responsibility.
+ * \see lq_privatekey_free
  */
 LQPrivKey* lq_privatekey_new(const char *seed, size_t seed_len, const char *passphrase, size_t passphrase_len);
 
 /**
- * @brief Get raw private key bytes
+ * \brief Get raw private key bytes
  * 
- * @param[in] Private key object.
- * @param[out] Pointer to start of data.
- * @return Length of key. If 0, no key could be found.
+ * \param[in] Private key object.
+ * \param[out] Pointer to start of data.
+ * \return Length of key. If 0, no key could be found.
  */
 size_t lq_privatekey_bytes(LQPrivKey *pk, char **out);
 
 /**
- * @brief Create a new public key object. 
+ * \brief Create a new public key object. 
  *
- * @param[in] Uncompressed public key data.
- * @param[out] Pointer to new public key. Freeing the object is the caller's responsibility.
- * @see lq_publickey_free
+ * \param[in] Uncompressed public key data.
+ * \param[out] Pointer to new public key. Freeing the object is the caller's responsibility.
+ * \see lq_publickey_free
  */
 LQPubKey* lq_publickey_new(const char *full);
 
 /**
- * @brief Create a new public key object from a private key. 
+ * \brief Create a new public key object from a private key. 
  *
- * @param[in] Private key to generate public key from.
- * @return Pointer to new public key. Freeing the object is the caller's responsibility.
- * @see lq_publickey_free
+ * \param[in] Private key to generate public key from.
+ * \return Pointer to new public key. Freeing the object is the caller's responsibility.
+ * \see lq_publickey_free
  */
 LQPubKey* lq_publickey_from_privatekey(LQPrivKey *pk);
 
 /**
- * @brief Get raw public key bytes
+ * \brief Get raw public key bytes
  * 
- * @param[in] Public key object.
- * @param[out] Pointer to start of data.
- * @return Length of key. If 0, no key could be found.
+ * \param[in] Public key object.
+ * \param[out] Pointer to start of data.
+ * \return Length of key. If 0, no key could be found.
  */
 size_t lq_publickey_bytes(LQPubKey *pubk, char **out);
 
 /**
- * @brief Encrypt private key in place.
+ * \brief Encrypt private key in place.
  * 
  * Must clear sensistive memory.
  *
- * @param[in] Private Key object
- * @return ERR_OK if encrypted, ERR_NOOP if already encrypted, or ERR_INIT if encryption fails.
+ * \param[in] Private Key object
+ * \return ERR_OK if encrypted, ERR_NOOP if already encrypted, or ERR_INIT if encryption fails.
  */
 int lq_privatekey_lock(LQPrivKey *pk, const char *passphrase, size_t passphrase_len);
 
 /**
- * @brief Decrypt private key in place.
+ * \brief Decrypt private key in place.
  * 
- * @param[in] Private Key object
- * @return ERR_OK if decrypted, ERR_NOOP if not encrypted, or ERR_INIT if decryption fails.
+ * \param[in] Private Key object
+ * \return ERR_OK if decrypted, ERR_NOOP if not encrypted, or ERR_INIT if decryption fails.
  */
 int lq_privatekey_unlock(LQPrivKey *pk, const char *passphrase, size_t passphrase_len);
 
 /**
- * @brief Sign digest data using a private key.
+ * \brief Sign digest data using a private key.
  *
- * @param[in] Unencrypted private key to use for the signature.
- * @param[in] Message digest to sign.
- * @param[in] Length of message to sign.
- * @param[in] Salt data to use for the signature. Set to NULL if salt is not to be used. If not null, must be LQ_SALT_LEN long.
- * @return Signature object if signing was successful. Returns NULL if signature failed. It is the caller's responsiblity to free the signature.
- * @see lq_signature_free
+ * \param[in] Unencrypted private key to use for the signature.
+ * \param[in] Message digest to sign.
+ * \param[in] Length of message to sign.
+ * \param[in] Salt data to use for the signature. Set to NULL if salt is not to be used. If not null, must be LQ_SALT_LEN long.
+ * \return Signature object if signing was successful. Returns NULL if signature failed. It is the caller's responsiblity to free the signature.
+ * \see lq_signature_free
  */
 LQSig* lq_privatekey_sign(LQPrivKey *pk, const char *msg, size_t msg_len, const char *salt);
 
 /**
- * @brief Create a signature object from byte data.
+ * \brief Create a signature object from byte data.
  *
- * @param[in] Signature byte data.
- * @param[in] Length of data.
- * @param[in] Public key used in signature. Can be NULL for recoverable signatures.
- * @return Signature object if parse was successful. Returns NULL if parsing failed. It is the caller's responsiblity to free the signature.
+ * \param[in] Signature byte data.
+ * \param[in] Length of data.
+ * \param[in] Public key used in signature. Can be NULL for recoverable signatures.
+ * \return Signature object if parse was successful. Returns NULL if parsing failed. It is the caller's responsiblity to free the signature.
  */
 LQSig* lq_signature_from_bytes(const char *sig_data, size_t sig_len, LQPubKey *pubkey);
 
 /**
- * @brief Get raw signature bytes
+ * \brief Get raw signature bytes
  * 
- * @param[in] Signature object.
- * @param[out] Pointer to start of data.
- * @return Length of signature. If 0, no signature data could be found.
+ * \param[in] Signature object.
+ * \param[out] Pointer to start of data.
+ * \return Length of signature. If 0, no signature data could be found.
  */
 size_t lq_signature_bytes(LQSig *sig, char **out);
 
 /**
- * @brief Verify a signature against a private key and message.
+ * \brief Verify a signature against a private key and message.
  *
  */
 int lq_signature_verify(LQSig *sig, const char *msg, size_t msg_len);
 
 /**
- * @brief Free an allocated public key.
- * @param[in] Public key to free.
+ * \brief Free an allocated public key.
+ * \param[in] Public key to free.
  */
 void lq_publickey_free(LQPubKey *pubk);
 
 /**
- * @brief Free an allocated private key.
- * @param[in] Private key to free.
+ * \brief Free an allocated private key.
+ * \param[in] Private key to free.
  */
 void lq_privatekey_free(LQPrivKey *pk);
 
 
 /**
- * @brief Free an allocated signature object.
- * @param[in] Private key to free.
+ * \brief Free an allocated signature object.
+ * \param[in] Private key to free.
  */
 void lq_signature_free(LQSig *sig);
 
 
 /**
- * @brief Calculate digest over arbitrary data.
- * @param[in] Data to calculate digest over.
- * @param[in] Length of data.
- * @param[out] Output buffer. Must be allocated to at least LQ_DIGEST_LENGTH
- * @return ERR_OK on success.
+ * \brief Calculate digest over arbitrary data.
+ * \param[in] Data to calculate digest over.
+ * \param[in] Length of data.
+ * \param[out] Output buffer. Must be allocated to at least LQ_DIGEST_LENGTH
+ * \return ERR_OK on success.
  */
 int lq_digest(const char *in, size_t in_len, char *out);
 

@@ -133,6 +133,23 @@ struct lq_store_t LQFileContent = {
 	.free = lq_file_content_free,
 };
 
+LQStore* lq_store_new(const char *spec) {
+	int l;
+	LQStore *store;
+
+	l = strlen(spec) + 1;
+	store = lq_alloc(sizeof(LQStore));
+	lq_cpy(store, &LQFileContent, sizeof(LQFileContent));
+	store->userdata = lq_alloc(l);
+	lq_cpy(store->userdata, spec, l);
+	return store;
+}
+
+void lq_store_free(LQStore *store) {
+	lq_free(store->userdata);
+	lq_free(store);
+}
+
 //LQStore* lq_file_content_new(const char *dir) {
 //	char path[1024];
 //	LQStore *store;

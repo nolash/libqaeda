@@ -104,3 +104,15 @@ struct lq_store_t LQMemContent = {
 	.put = lq_mem_content_put,
 	.free = lq_mem_content_free,
 };
+
+LQStore* lq_store_new(const char *spec) {
+	LQStore *store;
+
+	store = lq_alloc(sizeof(LQStore));
+	lq_cpy(store, &LQMemContent, sizeof(LQMemContent));
+	return store;
+}
+
+void lq_store_free(LQStore *store) {
+	lq_free(store);
+}

@@ -45,4 +45,8 @@ struct lq_resolve_t {
 	LQResolve *next; ///< Provides access to next store implementation to store to or retrieve from. Setting to NULL stops any further action.
 };
 
+LQStore* lq_store_new(const char *spec);
+void lq_store_free(LQStore *store);
+
+
 #endif // LIBQAEDA_STORE_H_

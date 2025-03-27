@@ -20,16 +20,17 @@ START_TEST(check_msg_symmetric) {
 	LQMsg *msg;
 	LQResolve resolve;
 	LQResolve resolve_dummy;
-	LQStore store;
+	LQStore *store;
 
-	lq_cpy(&store, &LQFileContent, sizeof(LQStore));
+	//lq_cpy(&store, &LQFileContent, sizeof(LQStore));
 	lq_cpy(path, "/tmp/lqstore_file_XXXXXX", 25);
-	store.userdata = (void*)mktempdir(path);
-	ck_assert_ptr_nonnull(store.userdata);
+	//store.userdata = (void*)mktempdir(path);
+	store = lq_store_new(mktempdir(path));
+	ck_assert_ptr_nonnull(store->userdata);
 
 	resolve_dummy.store = &LQDummyContent;
 	resolve_dummy.next = NULL;
-	resolve.store = &store;
+	resolve.store = store;
 	resolve.next = &resolve_dummy;
 	msg = lq_msg_new(data, strlen(data) + 1);
 	msg->pubkey = lq_publickey_new(data);
@@ -45,6 +46,8 @@ START_TEST(check_msg_symmetric) {
 	lq_msg_free(msg);
 	resolve.store->free(resolve.store);
 	resolve_dummy.store->free(resolve_dummy.store);
+
+	lq_store_free(store);
 }
 END_TEST
 
