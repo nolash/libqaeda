@@ -31,7 +31,7 @@ shared: all
 	$(CC) $(CFLAGS) -shared -o liblash.so endian/strip.so.o endian/endian.so.o hex/hex.so.o llog/llog.so.o rerr/rerr.so.o case/case.so.o
 
 install: shared
-	cat -v endian/*.h >> $(DESTDIR)/include/lash.h
+	cat -v endian/*.h > $(DESTDIR)/include/lash.h
 	install -m0644 -v endian/*.h -t $(DESTDIR)/include
 	cat -v hex/*.h >> $(DESTDIR)/include/lash.h
 	install -m0644 -v hex/*.h -t $(DESTDIR)/include
