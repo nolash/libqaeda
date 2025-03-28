@@ -3,13 +3,22 @@
 
 #include <stddef.h>
 
+#ifndef LQ_STORE_KEY_MAX
+#define LQ_STORE_KEY_MAX 64
+#endif
+
+#ifndef LQ_STORE_VAL_MAX
+#define LQ_STORE_VAL_MAX 65536
+#endif
+
 /// Payload type hint to control how and what a store implementation executes persistence.
 /// Not currently in active use.
 enum payload_e {
 	LQ_CONTENT_RAW, ///< Arbitrary data.
 	LQ_CONTENT_MSG, ///< Data is a message type.
 	LQ_CONTENT_CERT, ///< Data is a cert type.
-	LQ_CONTENT_KEY, ///< Data is a public key type.
+	LQ_CONTENT_KEY, ///< Data is a private key type.
+	LQ_CONTENT_KEY_PUBLIC, ///< Data is a public key type.
 };
 
 /**

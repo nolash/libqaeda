@@ -31,6 +31,10 @@
 #define LQ_CRYPTO_BUFLEN 524288
 #endif
 
+#ifndef LQ_CRYPTO_BLOCKSIZE
+#define LQ_CRYPTO_BLOCKSIZE 4096
+#endif
+
 #ifndef LQ_POINT_LEN
 #define LQ_POINT_LEN 32
 #endif

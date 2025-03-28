@@ -108,148 +108,6 @@ int lq_crypto_init(const char *base) {
 	return ERR_OK;
 }
 
-// DIGEST SECTION
-
-/// Calculate a digest according to the specified algo.
-static int calculate_digest_algo(const char *in, size_t in_len, char *out, enum gcry_md_algos algo) {
-	gcry_error_t e;
-	gcry_md_hd_t h;
-	unsigned char *v;
-	static unsigned int digest_len;
-
-	if (algo == GCRY_MD_NONE) {
-		algo = GCRY_MD_SHA256;
-	}
-	digest_len = gcry_md_get_algo_dlen(algo);
-
-	e = gcry_md_open(&h, algo, GCRY_MD_FLAG_SECURE);
-	if (e) {
-		return ERR_ENCODING;
-	}
-
-	gcry_md_write(h, in, in_len);
-	v = gcry_md_read(h, 0);
-	lq_cpy(out, v, digest_len);
-	gcry_md_close(h);
-	return ERR_OK;
-}
-
-/// Calculate digest using the default hashing algorithm (SHA256)
-/// using the gcrypt library.
-int lq_digest(const char *in, size_t in_len, char *out) {
-	return calculate_digest_algo(in, in_len, out, GCRY_MD_NONE);
-}
-
-
-/// Apply public key to the gpg_store struct.
-static int key_apply_public(struct gpg_store *gpg, gcry_sexp_t key) {
-	char *p;
-	size_t c;
-	gcry_sexp_t pubkey;
-
-	pubkey = gcry_sexp_find_token(key, "public-key", 10);
-	if (pubkey == NULL) {
-		return debug_logerr(LLOG_ERROR, ERR_CRYPTO, NULL);
-	}
-	pubkey = gcry_sexp_find_token(pubkey, "q", 1);
-	if (pubkey == NULL) {
-		return debug_logerr(LLOG_ERROR, ERR_CRYPTO, NULL);
-	}
-	c = LQ_PUBKEY_LEN;
-	p = (char*)gcry_sexp_nth_data(pubkey, 1, &c);
-	if (p == NULL) {
-		return debug_logerr(LLOG_ERROR, ERR_CRYPTO, NULL);
-	}
-	lq_cpy(gpg->public_key, p, LQ_PUBKEY_LEN);
-	return ERR_OK;
-}
-
-/// Create a new gcrypt keypair.
-static int key_create(struct gpg_store *gpg) {
-	int r;
-	const char *p;
-	const char *sexp_quick = "(genkey(ecc(flags eddsa)(curve Ed25519)))";
-	gcry_sexp_t in;
-	gcry_error_t e;
-
-	e = gcry_sexp_new(&in, (const void*)sexp_quick, strlen(sexp_quick), 0);
-	if (e) {
-		p = gcry_strerror(e);
-		return debug_logerr(LLOG_ERROR, ERR_KEYFAIL, (char*)p);
-	}
-	e = gcry_pk_genkey(&gpg->k, in);
-	if (e) {
-		p = gcry_strerror(e);
-		return debug_logerr(LLOG_ERROR, ERR_KEYFAIL, (char*)p);
-	}
-	p = (char*)gcry_pk_get_keygrip(gpg->k, (unsigned char*)gpg->fingerprint);
-	if (p == NULL) {
-		p = gcry_strerror(e);
-		return debug_logerr(LLOG_ERROR, ERR_KEYFAIL, (char*)p);
-	}
-
-	r = key_apply_public(gpg, gpg->k);
-	if (r) {
-		return debug_logerr(LLOG_ERROR, ERR_KEYFAIL, NULL);
-	}
-
-	return ERR_OK;
-}
-
-
-/// Create a new keypair, encrypted with given passphrase.
-static LQPrivKey* privatekey_alloc(const char *seed, size_t seed_len, const char *passphrase, size_t passphrase_len) {
-	int r;
-	LQPrivKey *o;
-	struct gpg_store *gpg;
-
-	// allocate private key memory
-	o = lq_alloc(sizeof(LQPrivKey));
-	if (o == NULL) {
-		return NULL;
-	}
-
-	// allocate gpg internal private key memory
-	gpg = lq_alloc(sizeof(struct gpg_store));
-	if (gpg == NULL) {
-		lq_free(o);
-		return NULL;
-	}
-
-	// create the underlying private key.
-	r = key_create(gpg);
-	if (r) {
-		lq_free(gpg);
-		lq_free(o);
-		return NULL;
-	}
-
-	// populate the internal key structure
-	o->impl = (void*)gpg;
-	o->key_typ = GPG_KEY_TYP;
-	o->key_state = LQ_KEY_INIT;
-
-	debug_x(LLOG_INFO, "gpg", "created new private key", 1, MORGEL_TYP_BIN, LQ_FP_LEN, "fingerprint", gpg->fingerprint);
-
-	return o;
-}
-
-/// Implements the interface to create a new private key.
-LQPrivKey* lq_privatekey_new(const char *seed, size_t seed_len, const char *passphrase, size_t passphrase_len) {
-	int r;
-	LQPrivKey *o;
-
-	o = privatekey_alloc(seed, seed_len, passphrase, passphrase_len);
-	if (o == NULL) {
-		return NULL;
-	}
-	r = lq_privatekey_lock(o, passphrase, passphrase_len);
-	if (r) {
-		return NULL;
-	}
-	return o;	
-}
-
 size_t get_padsize(size_t insize, size_t blocksize) {
 	size_t c;
 	size_t l;
@@ -398,6 +256,244 @@ int decrypt(char *outdata, const char *ciphertext, size_t ciphertext_len, const 
 
 	return ERR_OK;
 }
+
+
+// DIGEST SECTION
+
+/// Calculate a digest according to the specified algo.
+static int calculate_digest_algo(const char *in, size_t in_len, char *out, enum gcry_md_algos algo) {
+	gcry_error_t e;
+	gcry_md_hd_t h;
+	unsigned char *v;
+	static unsigned int digest_len;
+
+	if (algo == GCRY_MD_NONE) {
+		algo = GCRY_MD_SHA256;
+	}
+	digest_len = gcry_md_get_algo_dlen(algo);
+
+	e = gcry_md_open(&h, algo, GCRY_MD_FLAG_SECURE);
+	if (e) {
+		return ERR_ENCODING;
+	}
+
+	gcry_md_write(h, in, in_len);
+	v = gcry_md_read(h, 0);
+	lq_cpy(out, v, digest_len);
+	gcry_md_close(h);
+	return ERR_OK;
+}
+
+/// Calculate digest using the default hashing algorithm (SHA256)
+/// using the gcrypt library.
+int lq_digest(const char *in, size_t in_len, char *out) {
+	return calculate_digest_algo(in, in_len, out, GCRY_MD_NONE);
+}
+
+
+/// Apply public key to the gpg_store struct.
+static int key_apply_public(struct gpg_store *gpg, gcry_sexp_t key) {
+	char *p;
+	size_t c;
+	gcry_sexp_t pubkey;
+
+	pubkey = gcry_sexp_find_token(key, "public-key", 10);
+	if (pubkey == NULL) {
+		return debug_logerr(LLOG_ERROR, ERR_CRYPTO, NULL);
+	}
+	pubkey = gcry_sexp_find_token(pubkey, "q", 1);
+	if (pubkey == NULL) {
+		return debug_logerr(LLOG_ERROR, ERR_CRYPTO, NULL);
+	}
+	c = LQ_PUBKEY_LEN;
+	p = (char*)gcry_sexp_nth_data(pubkey, 1, &c);
+	if (p == NULL) {
+		return debug_logerr(LLOG_ERROR, ERR_CRYPTO, NULL);
+	}
+	lq_cpy(gpg->public_key, p, LQ_PUBKEY_LEN);
+	return ERR_OK;
+}
+
+/// Create a new gcrypt keypair.
+static int key_create(struct gpg_store *gpg) {
+	int r;
+	const char *p;
+	const char *sexp_quick = "(genkey(ecc(flags eddsa)(curve Ed25519)))";
+	gcry_sexp_t in;
+	gcry_error_t e;
+
+	e = gcry_sexp_new(&in, (const void*)sexp_quick, strlen(sexp_quick), 0);
+	if (e) {
+		p = gcry_strerror(e);
+		return debug_logerr(LLOG_ERROR, ERR_CRYPTO, (char*)p);
+	}
+	e = gcry_pk_genkey(&gpg->k, in);
+	if (e) {
+		p = gcry_strerror(e);
+		return debug_logerr(LLOG_ERROR, ERR_CRYPTO, (char*)p);
+	}
+	p = (char*)gcry_pk_get_keygrip(gpg->k, (unsigned char*)gpg->fingerprint);
+	if (p == NULL) {
+		p = gcry_strerror(e);
+		return debug_logerr(LLOG_ERROR, ERR_CRYPTO, (char*)p);
+	}
+
+	r = key_apply_public(gpg, gpg->k);
+	if (r) {
+		return debug_logerr(LLOG_ERROR, ERR_CRYPTO, NULL);
+	}
+
+	return ERR_OK;
+}
+
+LQStore *key_store_get() {
+	int r;
+	char *p;
+
+	r = lq_config_get(gpg_cfg_idx_dir, (void**)&p);
+	if (r) {
+		return NULL;
+	}
+	return lq_store_new(p);
+}
+//
+//static char *key_filename(LQStore *store, struct gpg_store *gpg, char *out, size_t *out_len) {
+//	int l;
+//
+//	l = strlen(store->userdata);
+//	if (*out_len < (20 + 1 + l)) {
+//		*out_len = 0;
+//		return NULL;
+//	}
+//
+//	lq_cpy(out, store->userdata, l);
+//	b2h((unsigned char*)gpg->fingerprint, 20, (unsigned char*)out+len);
+//
+//	return out;
+//}
+
+/**
+ * \todo consistent endianness for key length in persistent storage (fwrite)
+ * \todo doc must have enough in path for path + fingerprint hex
+ *
+ */
+//static int key_create_file(struct gpg_store *gpg, gcry_sexp_t *key, const char *passphrase) {
+static int key_create_store(LQStore *store, struct gpg_store *gpg, const char *passphrase) {
+	char *p;
+	int r;
+	int kl;
+	char v[LQ_CRYPTO_BUFLEN];
+	int i;
+	int l;
+	size_t c;
+	size_t m;
+	//FILE *f;
+	char nonce[CHACHA20_NONCE_LENGTH_BYTES];
+	char buf_key[LQ_STORE_KEY_MAX];
+	char buf_val[LQ_STORE_VAL_MAX];
+	char ciphertext[LQ_CRYPTO_BUFLEN];
+
+	//r = key_create(gpg, key);
+	r = key_create(gpg);
+	if (r) {
+		return debug_logerr(LLOG_ERROR, ERR_CRYPTO, NULL);
+	}
+
+	kl = gcry_sexp_sprint(gpg->k, GCRYSEXP_FMT_CANON, NULL, 0);
+	m = (size_t)kl + 1;
+	p = (char*)v + sizeof(int);
+	c = 0;
+	kl = gcry_sexp_sprint(gpg->k, GCRYSEXP_FMT_CANON, p, LQ_CRYPTO_BUFLEN - m);
+	m -= (size_t)(kl + 1);
+	c += kl;
+//	while (m > 0) {
+//		kl = gcry_sexp_sprint(*key, GCRYSEXP_FMT_CANON, p, BUFLEN-m);
+//		m -= (size_t)(kl + 1);
+//		p += kl;
+//		c += kl;
+//	}
+	memcpy(v, &c, sizeof(int));
+
+	m = c;
+	c = get_padsize(m, LQ_CRYPTO_BLOCKSIZE);
+	gcry_create_nonce(nonce, CHACHA20_NONCE_LENGTH_BYTES);
+	r = encryptb(ciphertext, c, v, m+sizeof(int), passphrase, nonce);
+	if (r) {
+		return debug_logerr(LLOG_ERROR, ERR_CRYPTO, "encrypt private key");
+	}
+
+	lq_cpy(buf_val, nonce, CHACHA20_NONCE_LENGTH_BYTES);
+	lq_cpy(buf_val + CHACHA20_NONCE_LENGTH_BYTES, ciphertext, l);
+	*buf_key = LQ_CONTENT_KEY;
+	b2h((unsigned char*)gpg->fingerprint, 20, (unsigned char*)buf_key+1);
+	store = key_store_get();
+	if (store == NULL) {
+		return debug_logerr(LLOG_ERROR, ERR_CRYPTO, "create store");
+	}
+	
+	c = CHACHA20_NONCE_LENGTH_BYTES + 1;
+	r = store->put(LQ_CONTENT_KEY, store, buf_key, &c, buf_val, l);
+	if (r) {
+		return debug_logerr(LLOG_ERROR, ERR_CRYPTO, "put key in store");
+	}
+	lq_free(store);
+
+	return ERR_OK;
+}
+
+/// Create a new keypair, encrypted with given passphrase.
+static LQPrivKey* privatekey_alloc(const char *seed, size_t seed_len, const char *passphrase, size_t passphrase_len) {
+	int r;
+	LQPrivKey *o;
+	struct gpg_store *gpg;
+
+	// allocate private key memory
+	o = lq_alloc(sizeof(LQPrivKey));
+	if (o == NULL) {
+		return NULL;
+	}
+
+	// allocate gpg internal private key memory
+	gpg = lq_alloc(sizeof(struct gpg_store));
+	if (gpg == NULL) {
+		lq_free(o);
+		return NULL;
+	}
+
+	// create the underlying private key.
+	r = key_create(gpg);
+	if (r) {
+		lq_free(gpg);
+		lq_free(o);
+		return NULL;
+	}
+
+	// populate the internal key structure
+	o->impl = (void*)gpg;
+	o->key_typ = GPG_KEY_TYP;
+	o->key_state = LQ_KEY_INIT;
+
+	debug_x(LLOG_INFO, "gpg", "created new private key", 1, MORGEL_TYP_BIN, LQ_FP_LEN, "fingerprint", gpg->fingerprint);
+
+	return o;
+}
+
+/// Implements the interface to create a new private key.
+LQPrivKey* lq_privatekey_new(const char *seed, size_t seed_len, const char *passphrase, size_t passphrase_len) {
+	int r;
+	LQPrivKey *o;
+
+	o = privatekey_alloc(seed, seed_len, passphrase, passphrase_len);
+	if (o == NULL) {
+		return NULL;
+	}
+	r = lq_privatekey_lock(o, passphrase, passphrase_len);
+	if (r) {
+		return NULL;
+	}
+	return o;	
+}
+
 static int key_from_data(gcry_sexp_t *key, const char *indata, size_t indata_len) {
 	gcry_error_t e;
 
@@ -463,7 +559,7 @@ static int gpg_key_load(LQStore *store, struct gpg_store *gpg, const char *passp
 			strcpy(p, GPG_PK_FILENAME);
 			r = key_from_file(&gpg->k, path, passphrase);
 			if (r) {
-				return debug_logerr(LLOG_WARNING, ERR_KEYFAIL, NULL);
+				return debug_logerr(LLOG_WARNING, ERR_CRYPTO, NULL);
 			}
 			break;
 		case GPG_FIND_FINGERPRINT:
@@ -472,7 +568,7 @@ static int gpg_key_load(LQStore *store, struct gpg_store *gpg, const char *passp
 			b2h((const unsigned char*)criteria, LQ_FP_LEN, (unsigned char*)p);
 			r = key_from_file(&gpg->k, path, passphrase);
 			if (r) {
-				return debug_logerr(LLOG_WARNING, ERR_KEYFAIL, NULL);
+				return debug_logerr(LLOG_WARNING, ERR_CRYPTO, NULL);
 			}
 			break;
 		default:
@@ -481,7 +577,7 @@ static int gpg_key_load(LQStore *store, struct gpg_store *gpg, const char *passp
 
 	p = (char*)gcry_pk_get_keygrip(gpg->k, (unsigned char*)gpg->fingerprint);
 	if (p == NULL) {
-		return debug_logerr(LLOG_ERROR, ERR_KEYFAIL, NULL);
+		return debug_logerr(LLOG_ERROR, ERR_CRYPTO, NULL);
 	}
 
 	r = key_apply_public(gpg, gpg->k);
@@ -492,6 +588,7 @@ static int gpg_key_load(LQStore *store, struct gpg_store *gpg, const char *passp
 	
 	return ERR_OK;
 }
+
 
 /// Implements the interface to load a private key from storage.
 LQPrivKey* lq_privatekey_load(const char *passphrase, size_t passphrase_len) {
@@ -508,17 +605,12 @@ LQPrivKey* lq_privatekey_load(const char *passphrase, size_t passphrase_len) {
 		return NULL;
 	}
 	
-	r = lq_config_get(gpg_cfg_idx_dir, (void**)&p);
-	if (r) {
-		return NULL;
-	}
-
-	gpg = lq_alloc(sizeof(struct gpg_store));
-	store = lq_store_new(p);
+	store = key_store_get();
 	if (store == NULL) {
 		return NULL;
 	}
 
+	gpg = lq_alloc(sizeof(struct gpg_store));
 	r = gpg_key_load(store, gpg, passphrase_hash, GPG_FIND_MAIN, NULL);
 	if (r) {
 		return NULL;	
@@ -527,6 +619,7 @@ LQPrivKey* lq_privatekey_load(const char *passphrase, size_t passphrase_len) {
 	pk->key_typ = GPG_KEY_TYP;
 	pk->key_state = LQ_KEY_INIT;
 	pk->impl = gpg;
+	lq_free(store);
 
 	return pk;
 }
