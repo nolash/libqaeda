@@ -166,7 +166,7 @@ Suite * common_suite(void) {
 	TCase *tc;
 
 	lq_config_init();
-	lq_crypto_init();
+	lq_crypto_init("./testdata");
 
 	s = suite_create("cert");
 	tc = tcase_create("serialize");

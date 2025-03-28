@@ -32,9 +32,10 @@ char *_rerr[7] = {
 };
 #endif
 
+/// Lookup mode for key in store.
 enum gpg_find_mode_e {
-	GPG_FIND_MAIN,
-	GPG_FIND_FINGERPRINT,	
+	GPG_FIND_MAIN, ///< Use default key filename.
+	GPG_FIND_FINGERPRINT, ///< 
 };
 
 /**
@@ -67,10 +68,11 @@ static int gpg_passphrase_digest_len;
  * Verifies that installed gpg version is supported.
  * Sets up crypto keys dir and sets passphrase digest length.
  */
-int lq_crypto_init() {
+int lq_crypto_init(const char *base) {
 #ifdef RERR
 	rerr_register(RERR_PFX_GPG, "crypto", _rerr);
 #endif
+	int r;
 	const char *v;
 
 	if (gpg_version == NULL) {
@@ -84,6 +86,10 @@ int lq_crypto_init() {
 
 	gpg_passphrase_digest_len = gcry_md_get_algo_dlen(GCRY_MD_SHA256);
 	gpg_cfg_idx_dir = lq_config_register(LQ_TYP_STR, "CRYPTODIR");
+	r = lq_config_set(gpg_cfg_idx_dir, base);
+	if (r) {
+		return ERR_FAIL;
+	}
 
 //	strcpy(gpg->path, path);
 //	c = strlen(gpg->path);
@@ -492,10 +498,11 @@ LQPrivKey* lq_privatekey_load(const char *passphrase, size_t passphrase_len) {
 		return NULL;
 	}
 	
-	r = lq_config_get(LQ_TYP_STR, (void**)&p);
+	r = lq_config_get(gpg_cfg_idx_dir, (void**)&p);
 	if (r) {
 		return NULL;
 	}
+
 	gpg = lq_alloc(sizeof(struct gpg_store));
 	store = lq_store_new(p);
 	if (store == NULL) {
@@ -506,8 +513,12 @@ LQPrivKey* lq_privatekey_load(const char *passphrase, size_t passphrase_len) {
 	if (r) {
 		return NULL;	
 	}
+	pk = lq_alloc(sizeof(LQPrivKey));
+	pk->key_typ = GPG_KEY_TYP;
+	pk->key_state = LQ_KEY_INIT;
+	pk->impl = gpg;
 
-	return NULL;
+	return pk;
 }
 
 size_t lq_publickey_bytes(LQPubKey *pubk, char **out) {

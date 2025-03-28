@@ -18,12 +18,20 @@ static const char privkeydata[32] = {
 };
 
 // sha256sum "bar" fcde2b2edba56bf408601fb721fe9b5c338d10ee429ea04fae5511b68fbf8fb9
-static const char passphrase[32] = {
-	0xfc, 0xde, 0x2b, 0x2e, 0xdb, 0xa5, 0x6b, 0xf4,
-	0x08, 0x60, 0x1f, 0xb7, 0x21, 0xfe, 0x9b, 0x5c,
-	0x33, 0x8d, 0x10, 0xee, 0x42, 0x9e, 0xa0, 0x4f,
-	0xae, 0x55, 0x11, 0xb6, 0x8f, 0xbf, 0x8f, 0xb9,
+//static const char passphrase[32] = {
+//	0xfc, 0xde, 0x2b, 0x2e, 0xdb, 0xa5, 0x6b, 0xf4,
+//	0x08, 0x60, 0x1f, 0xb7, 0x21, 0xfe, 0x9b, 0x5c,
+//	0x33, 0x8d, 0x10, 0xee, 0x42, 0x9e, 0xa0, 0x4f,
+//	0xae, 0x55, 0x11, 0xb6, 0x8f, 0xbf, 0x8f, 0xb9,
+//};
+
+
+// "1234"
+static const size_t passphrase_len = 4;
+static const char passphrase[4] = {
+	0x31, 0x32, 0x33, 0x34,
 };
+
 
 struct dummycrypto {
 	void *data; ///< Literal private key data.
@@ -43,11 +51,6 @@ START_TEST(check_privatekey) {
 	int r;
 	LQPrivKey *pk;
 
-	r = lq_config_init();
-	ck_assert_int_eq(r, 0);
-
-	r = lq_crypto_init();
-	ck_assert_int_eq(r, 0);
 
 	pk = lq_privatekey_new(privkeydata, LQ_PRIVKEY_LEN, NULL, 0);
 	ck_assert_ptr_nonnull(pk);
@@ -62,7 +65,7 @@ START_TEST(check_publickey) {
 	char *keydata;
 	char *keydata_manual;
 
-	pk = lq_privatekey_new(privkeydata, LQ_PRIVKEY_LEN, passphrase, 32);
+	pk = lq_privatekey_new(privkeydata, LQ_PRIVKEY_LEN, passphrase, passphrase_len);
 	pubk = lq_publickey_from_privatekey(pk);
 	lq_publickey_bytes(pubk, &keydata);
 	pubk_manual = lq_publickey_new(keydata);
@@ -81,7 +84,7 @@ START_TEST(check_signature) {
 	LQSig *sig;
 	char *sigdata;
 
-	pk = lq_privatekey_new(privkeydata, 32, passphrase, 32);
+	pk = lq_privatekey_new(privkeydata, 32, passphrase, passphrase_len);
 	sig = lq_privatekey_sign(pk, data, strlen(data), salt);
 	ck_assert_ptr_null(sig);
 
@@ -122,27 +125,50 @@ START_TEST(check_verify) {
 }
 END_TEST
 
+START_TEST(check_load) {
+	LQPrivKey *pk;
+
+	pk = lq_privatekey_load(passphrase, passphrase_len);
+	ck_assert_ptr_nonnull(pk);
+
+	lq_privatekey_free(pk);
+}
+END_TEST
+
 Suite * common_suite(void) {
+	int r;
 	Suite *s;
 	TCase *tc;
 
 	s = suite_create("crypto");
-	tc = tcase_create("dummy");
+	tc = tcase_create("file");
 	tcase_add_test(tc, check_digest);
 	tcase_add_test(tc, check_privatekey);
 	tcase_add_test(tc, check_publickey);
 	tcase_add_test(tc, check_signature);
 	tcase_add_test(tc, check_verify);
+	tcase_add_test(tc, check_load);
 	suite_add_tcase(s, tc);
 
 	return s;
 }
 
 int main(void) {
+	int r;
 	int n_fail;
 
 	Suite *s;
 	SRunner *sr;
+
+	r = lq_config_init();
+	if (r) {
+		return 1;
+	}
+
+	r = lq_crypto_init("./testdata/");
+	if (r) {
+		return 1;
+	}
 
 	s = common_suite();	
 	sr = srunner_create(s);
