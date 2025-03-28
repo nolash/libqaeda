@@ -18,22 +18,24 @@ enum debug_typ_e {
  * \param[in] Namespace string. If NULL, will use the default namespace.
  * \param[in] Literal message to log.
  */
-void debug_dbg(const char *ns, const char *msg);
+void debug(enum lloglvl_e lvl, const char *ns, const char *msg);
 
 /**
  * \brief Log a structured message with the given namespace.
  *
- * Each structured argument consist of three parameters:
+ * Each structured parameter consist of four arguments:
  *	1. An enum debug_typ_e specifying the type of value (and thus how to format it)
  *	2. An int value specifying the length of the value behind the pointer, in bytes. Currently only used with MORGEL_TYPE_BIN
- *	3. Pointer to value.
+ *	3. Pointer to key string.
+ *	4. Pointer to value.
  *
+ * \param[in] The log level.
  * \param[in] Namespace string. If NULL, will use the default namespace.
  * \param[in] Main message to log.
- * \param[in] Number of structured key/value arguments.
+ * \param[in] Number of structured values. 
  * \param[in] Key/value list (see above)
  */
-void debug_dbg_x(const char *ns, const char *msg, int argc, ...);
+void debug_x(enum lloglvl_e lvl, const char *ns, const char *msg, int argc, ...);
 
 /**
  * \brief Convenience function to log a single error, using rerr for error code to string resolution.

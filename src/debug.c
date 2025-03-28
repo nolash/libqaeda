@@ -46,15 +46,15 @@ void llog_out(const char *s) {
 static void debug_out(enum lloglvl_e lvl, const char *ns, const char *msg) {
 	char *p;
 
-	p = llog_new_ns(LLOG_DEBUG, (char*)msg, (char*)ns);
+	p = llog_new_ns(lvl, (char*)msg, (char*)ns);
 	llog_out(p);
 }
 
-void debug_dbg(const char *ns, const char *msg) {
-	debug_out(LLOG_DEBUG, (char*)ns, (char*)msg);
+void debug(enum lloglvl_e lvl, const char *ns, const char *msg) {
+	debug_out(lvl, (char*)ns, (char*)msg);
 }
 
-void debug_dbg_x(const char *ns, const char *msg, int argc, ...) {
+void debug_x(enum lloglvl_e lvl, const char *ns, const char *msg, int argc, ...) {
 	int i;
 	long long l;
 	char *k;
@@ -65,7 +65,7 @@ void debug_dbg_x(const char *ns, const char *msg, int argc, ...) {
 
 	va_start(vv, argc);
 
-	p = llog_new_ns(LLOG_DEBUG, (char*)msg, (char*)ns);
+	p = llog_new_ns(lvl, (char*)msg, (char*)ns);
 
 	for (i = 0; i < argc; i++) {
 		typ = va_arg(vv, enum debug_typ_e);

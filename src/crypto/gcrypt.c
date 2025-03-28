@@ -82,7 +82,7 @@ int lq_crypto_init(const char *base) {
 		}
 	}
 	gpg_version = v;
-	debug_dbg_x("gpg", "using gpg", 1, MORGEL_TYP_STR, 0, "version", gpg_version);
+	debug_x(LLOG_DEBUG, "gpg", "using gpg", 1, MORGEL_TYP_STR, 0, "version", gpg_version);
 
 	gpg_passphrase_digest_len = gcry_md_get_algo_dlen(GCRY_MD_SHA256);
 	gpg_cfg_idx_dir = lq_config_register(LQ_TYP_STR, "CRYPTODIR");
@@ -441,6 +441,7 @@ static int key_from_file(gcry_sexp_t *key, const char *path, const char *passphr
 	free(outdata);
 	return ERR_OK;
 }
+
 static int gpg_key_load(LQStore *store, struct gpg_store *gpg, const char *passphrase, enum gpg_find_mode_e mode, const void *criteria) {
 	int r;
 	char *p;
@@ -478,9 +479,9 @@ static int gpg_key_load(LQStore *store, struct gpg_store *gpg, const char *passp
 	if (r) {
 		return debug_logerr(LLOG_ERROR, ERR_FAIL, NULL);
 	}
+	debug_x(LLOG_INFO, "gpg", "loaded private key", 1, MORGEL_TYP_BIN, LQ_FP_LEN, "fingerprint", gpg->fingerprint);
 	
 	return ERR_OK;
-
 }
 
 /// Implements the interface to load a private key from storage.

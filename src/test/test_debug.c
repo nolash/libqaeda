@@ -1,13 +1,14 @@
 #include <check.h>
 #include <stdlib.h>
+#include <llog.h>
 
 #include "debug.h"
 
 START_TEST(check_debug_novar) {
-	debug_dbg("test", "foo");
-	debug_dbg_x("test", "foo", 1, MORGEL_TYP_STR, 0, "bar", "baz");
-	debug_dbg_x("test", "foo", 1, MORGEL_TYP_BIN, 3, "inky", "pinky");
-	debug_dbg_x("test", "foo", 1, MORGEL_TYP_NUM, 0, "xyzzy", 42);
+	debug(LLOG_DEBUG, "test", "foo");
+	debug_x(LLOG_DEBUG, "test", "foo", 1, MORGEL_TYP_STR, 0, "bar", "baz");
+	debug_x(LLOG_DEBUG, "test", "foo", 1, MORGEL_TYP_BIN, 3, "inky", "pinky");
+	debug_x(LLOG_DEBUG, "test", "foo", 1, MORGEL_TYP_NUM, 0, "xyzzy", 42);
 }
 END_TEST
 
