@@ -67,13 +67,17 @@ static int gpg_passphrase_digest_len;
 /**
  * Verifies that installed gpg version is supported.
  * Sets up crypto keys dir and sets passphrase digest length.
+ *
+ * \todo replace path massage with cwalk lib
  */
 int lq_crypto_init(const char *base) {
 #ifdef RERR
 	rerr_register(RERR_PFX_GPG, "crypto", _rerr);
 #endif
 	int r;
-	const char *v;
+	int l;
+	char *v;
+	char path[LQ_PATH_MAX];
 
 	if (gpg_version == NULL) {
 		v = gcry_check_version(GPG_MIN_VERSION);
@@ -86,18 +90,20 @@ int lq_crypto_init(const char *base) {
 
 	gpg_passphrase_digest_len = gcry_md_get_algo_dlen(GCRY_MD_SHA256);
 	gpg_cfg_idx_dir = lq_config_register(LQ_TYP_STR, "CRYPTODIR");
-	r = lq_config_set(gpg_cfg_idx_dir, base);
+
+	v = path;
+	l = strlen(base);
+	lq_cpy(v, base, l);
+	v += l;
+	if (*v != '/') {
+		*v = '/';
+		*(v+1) = 0;
+	}
+
+	r = lq_config_set(gpg_cfg_idx_dir, path);
 	if (r) {
 		return ERR_FAIL;
 	}
-
-//	strcpy(gpg->path, path);
-//	c = strlen(gpg->path);
-//	p = gpg->path+c;
-//	if (*p != '/') {
-//		*p = '/';
-//		*(p+1) = 0;
-//	}
 
 	return ERR_OK;
 }
@@ -218,10 +224,13 @@ static LQPrivKey* privatekey_alloc(const char *seed, size_t seed_len, const char
 		return NULL;
 	}
 
-	// 
+	// populate the internal key structure
 	o->impl = (void*)gpg;
 	o->key_typ = GPG_KEY_TYP;
 	o->key_state = LQ_KEY_INIT;
+
+	debug_x(LLOG_INFO, "gpg", "created new private key", 1, MORGEL_TYP_BIN, LQ_FP_LEN, "fingerprint", gpg->fingerprint);
+
 	return o;
 }
 
@@ -800,6 +809,7 @@ LQPubKey* lq_publickey_new(const char *full) {
 	pubk->impl = (void*)gpg;
 	pubk->key_typ = GPG_KEY_TYP;
 	pubk->pk = NULL;
+
 	return pubk;
 }
 
