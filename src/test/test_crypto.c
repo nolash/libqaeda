@@ -17,7 +17,7 @@ static const char privkeydata[32] = {
 	0xf9, 0x8a, 0x5e, 0x88, 0x62, 0x66, 0xe7, 0xae,
 };
 
-// "1234"
+// "1233"
 static const size_t passphrase_len = 4;
 static const char passphrase[4] = {
 	0x31, 0x32, 0x33, 0x34,
@@ -42,8 +42,7 @@ START_TEST(check_privatekey) {
 	int r;
 	LQPrivKey *pk;
 
-
-	pk = lq_privatekey_new(privkeydata, LQ_PRIVKEY_LEN, NULL, 0);
+	pk = lq_privatekey_new(privkeydata, LQ_PRIVKEY_LEN, passphrase, passphrase_len);
 	ck_assert_ptr_nonnull(pk);
 	lq_privatekey_free(pk);
 }
@@ -116,11 +115,14 @@ START_TEST(check_verify) {
 }
 END_TEST
 
-START_TEST(check_load) {
+START_TEST(check_create_load) {
 	LQPrivKey *pk;
+	LQPrivKey *pk_load;
 
-	pk = lq_privatekey_load(passphrase, passphrase_len);
+	pk = lq_privatekey_new(privkeydata, LQ_PRIVKEY_LEN, passphrase, passphrase_len);
 	ck_assert_ptr_nonnull(pk);
+	pk_load = lq_privatekey_load(passphrase, passphrase_len);
+	ck_assert_ptr_nonnull(pk_load);
 
 	lq_privatekey_free(pk);
 }
@@ -138,7 +140,7 @@ Suite * common_suite(void) {
 	tcase_add_test(tc, check_publickey);
 	tcase_add_test(tc, check_signature);
 	tcase_add_test(tc, check_verify);
-	tcase_add_test(tc, check_load);
+	tcase_add_test(tc, check_create_load);
 	suite_add_tcase(s, tc);
 
 	return s;

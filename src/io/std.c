@@ -54,6 +54,7 @@ int lq_files(const char *path, char **files, size_t files_len) {
 	}
 	*(files+i+1) = NULL;
 	lq_free(ls);
+	return r;
 }
 
 int lq_files_pfx(const char *path, char **files, size_t files_len, const char *prefix, char prefix_len) {

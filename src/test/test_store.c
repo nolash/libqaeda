@@ -2,8 +2,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <lq/store.h>
-#include <lq/mem.h>
+#include "lq/store.h"
+#include "lq/mem.h"
+#include "lq/io.h"
 
 
 extern LQStore LQFileContent;
@@ -11,9 +12,59 @@ extern LQStore LQFileContent;
 START_TEST(check_store_count) {
 	int r;
 	LQStore store;
+	char *k;
+	char *v;
+	size_t kl;
+	size_t vl;
+	char path[LQ_PATH_MAX];
 
 	lq_cpy(&store, &LQFileContent, sizeof(LQStore));
-	store.userdata = "./testdata";
+	lq_cpy(path, "/tmp/lqstore_file_XXXXXX", 25);
+	store.userdata = mktempdir(path);
+	*((char*)(store.userdata+24)) = '/';
+	*((char*)(store.userdata+25)) = 0x0;
+	
+	k = "aaa";
+	v = "foo";
+	kl = 3;
+	vl = 3;
+	store.put(LQ_CONTENT_RAW, &store, k, &kl, v, vl), 
+
+	k = "ab";
+	v = "bar";
+	kl = 2;
+	vl = 3;
+	store.put(LQ_CONTENT_RAW, &store, k, &kl, v, vl), 
+
+	k = "aaa";
+	v = "inky";
+	kl = 3;
+	vl = 4;
+	store.put(LQ_CONTENT_MSG, &store, k, &kl, v, vl), 
+
+	k = "aab";
+	v = "pinky";
+	kl = 3;
+	vl = 5;
+	store.put(LQ_CONTENT_MSG, &store, k, &kl, v, vl), 
+
+	k = "b";
+	v = "blinky";
+	kl = 1;
+	vl = 6;
+	store.put(LQ_CONTENT_MSG, &store, k, &kl, v, vl), 
+
+	k = "bbc";
+	v = "clyde";
+	kl = 3;
+	vl = 5;
+	store.put(LQ_CONTENT_MSG, &store, k, &kl, v, vl), 
+
+	k = "bbc";
+	v = "clyde";
+	kl = 3;
+	vl = 5;
+	store.put(LQ_CONTENT_CERT, &store, k, &kl, v, vl), 
 
 	r = store.count(LQ_CONTENT_MSG, &store, "aa", 2);
 

@@ -172,7 +172,7 @@ int encryptb (char *ciphertext, size_t ciphertext_len, const char *indata, size_
 	if (r) {
 		return debug_logerr(LLOG_ERROR, ERR_NOCRYPTO, NULL);
 	}
-	memcpy(indata_raw, indata, indata_len);
+	lq_cpy(indata_raw, indata, indata_len);
 	padb(indata_raw, ciphertext_len, indata_len);
 	e = gcry_cipher_encrypt(h, (unsigned char*)ciphertext, ciphertext_len, (const unsigned char*)indata_raw, ciphertext_len);
 	if (e) {
@@ -381,7 +381,7 @@ LQStore *key_store_get() {
  *
  */
 //static int key_create_file(struct gpg_store *gpg, gcry_sexp_t *key, const char *passphrase) {
-static int key_create_store(LQStore *store, struct gpg_store *gpg, const char *passphrase) {
+static int key_create_store(struct gpg_store *gpg, const char *passphrase) {
 	char *p;
 	int r;
 	int kl;
@@ -391,6 +391,7 @@ static int key_create_store(LQStore *store, struct gpg_store *gpg, const char *p
 	size_t c;
 	size_t m;
 	//FILE *f;
+	LQStore *store;
 	char nonce[CHACHA20_NONCE_LENGTH_BYTES];
 	char buf_key[LQ_STORE_KEY_MAX];
 	char buf_val[LQ_STORE_VAL_MAX];
@@ -426,17 +427,19 @@ static int key_create_store(LQStore *store, struct gpg_store *gpg, const char *p
 	}
 
 	lq_cpy(buf_val, nonce, CHACHA20_NONCE_LENGTH_BYTES);
-	lq_cpy(buf_val + CHACHA20_NONCE_LENGTH_BYTES, ciphertext, l);
-	*buf_key = LQ_CONTENT_KEY;
-	b2h((unsigned char*)gpg->fingerprint, 20, (unsigned char*)buf_key+1);
+	lq_cpy(buf_val + CHACHA20_NONCE_LENGTH_BYTES, ciphertext, c);
+	//*buf_key = LQ_CONTENT_KEY;
+	//b2h((unsigned char*)gpg->fingerprint, 20, (unsigned char*)buf_key+1);
+	//lq_cpy(buf_key+1, gpg->fingerprint, LQ_FP_LEN);
+	lq_cpy(buf_key, gpg->fingerprint, LQ_FP_LEN);
 	store = key_store_get();
 	if (store == NULL) {
 		lq_free(store);
 		return debug_logerr(LLOG_ERROR, ERR_CRYPTO, "create store");
 	}
 	
+	l = c + CHACHA20_NONCE_LENGTH_BYTES;
 	c = LQ_FP_LEN + 1;
-	l += CHACHA20_NONCE_LENGTH_BYTES;
 	r = store->put(LQ_CONTENT_KEY, store, buf_key, &c, buf_val, l);
 	if (r) {
 		lq_free(store);
@@ -485,7 +488,7 @@ static LQPrivKey* privatekey_alloc(const char *seed, size_t seed_len, const char
 	}
 
 	// create the underlying private key.
-	r = key_create(gpg);
+	r = key_create_store(gpg, passphrase);
 	if (r) {
 		lq_free(gpg);
 		lq_free(o);
@@ -502,10 +505,14 @@ static LQPrivKey* privatekey_alloc(const char *seed, size_t seed_len, const char
 	return o;
 }
 
+
 /// Implements the interface to create a new private key.
 LQPrivKey* lq_privatekey_new(const char *seed, size_t seed_len, const char *passphrase, size_t passphrase_len) {
 	int r;
 	LQPrivKey *o;
+	if (passphrase == NULL) {
+		return NULL;
+	}
 
 	o = privatekey_alloc(seed, seed_len, passphrase, passphrase_len);
 	if (o == NULL) {
@@ -558,15 +565,18 @@ static int key_from_file(gcry_sexp_t *key, const char *path, const char *passphr
 	}
 	fclose(f);
 
-	outdata = malloc(i);
+	outdata = lq_alloc(i);
 	r = decryptb((char*)outdata, v, i, passphrase, nonce);
 	if (r) {
 		return r;
 	}
-	//r = key_from_data(key, (char*)outdata, l);
-	c = (size_t)(*((int*)outdata));
-	p = (char*)(outdata+sizeof(int));
-	r = key_from_data(key, p, c);
+	r = key_from_data(key, (char*)outdata, strlen(outdata));
+	if (r) {
+		return ERR_CRYPTO;
+	}
+	//c = (size_t)(*((int*)outdata));
+	//p = (char*)(outdata+sizeof(int));
+	//r = key_from_data(key, p, c);
 	free(outdata);
 	return ERR_OK;
 }
@@ -759,8 +769,6 @@ static int sign(struct gpg_store *gpg, const char *data, size_t data_len, const 
 		return 1;
 	}
 	lq_cpy(gpg->last_signature + LQ_POINT_LEN, p, c);
-
-	//gcry_sexp_release(gpg->k);
 
 	return 0;
 }

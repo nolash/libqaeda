@@ -16,14 +16,17 @@
 
 static const int store_typ_file = 3;
 
+/// \todo key and val limits proper
 int lq_file_content_count(enum payload_e typ, LQStore *store, const char *key, size_t key_len) {
 	int r;
 	char **out;
+	char buf[LQ_DIGEST_LEN * 2 + 1];
 	char pfx[1024];
 
 	out = lq_alloc(sizeof(char**) * LQ_DIRS_MAX);
 	pfx[0] = (char)typ + 0x30;
-	lq_cpy(pfx+1, key, key_len);
+	b2h((const unsigned char*)key, (int)key_len, (unsigned char*)buf);
+	lq_cpy(pfx+1, buf, strlen(buf));
 
 	r = lq_files_pfx(store->userdata, out, LQ_DIRS_MAX, pfx, key_len + 1);
 
@@ -50,7 +53,7 @@ int lq_file_content_get(enum payload_e typ, LQStore *store, const char *key, siz
 	lq_cpy(path, p, strlen(p) + 1);
 	p = path + strlen(path);
 	b2h((const unsigned char*)key, (int)key_len, (unsigned char*)buf);
-	sprintf(p, "/%s", buf);
+	sprintf(p, "%d%s", (char)typ, buf);
 	f = lq_open(path, O_RDONLY, S_IRUSR);
 	if (f < 0) {
 		return ERR_NOENT;
@@ -94,7 +97,7 @@ int lq_file_content_put(enum payload_e typ, LQStore *store, const char *key, siz
 	lq_cpy(path, p, strlen(p) + 1);
 	p = path + strlen(path);
 	b2h((const unsigned char*)key, (int)*key_len, (unsigned char*)buf);
-	sprintf(p, "/%s", buf);
+	sprintf(p, "%d%s", (char)typ, buf);
 	f = lq_open(path, O_CREAT | O_TRUNC | O_WRONLY, S_IRUSR | S_IWUSR);
 	if (f < 0) {
 		return ERR_NOENT;
