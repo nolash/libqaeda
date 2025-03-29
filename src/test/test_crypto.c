@@ -31,7 +31,7 @@ struct dummycrypto {
 
 START_TEST(check_digest) {
 	int r;
-	char out[32];
+	char out[LQ_DIGEST_LEN];
 
 	r = lq_digest(data, strlen(data), (char*)out);
 	ck_assert(r == 0);

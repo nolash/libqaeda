@@ -59,7 +59,8 @@ static const char *gpg_version = NULL;
 static int gpg_cfg_idx_dir;
 
 /// default digest id.
-static int gpg_passphrase_digest = GCRY_MD_SHA256;
+//static int gpg_passphrase_digest = GCRY_MD_SHA256;
+static int gpg_passphrase_digest = GCRY_MD_SHA512;
 
 /// digest length of hashed password.
 static int gpg_passphrase_digest_len;
@@ -88,7 +89,8 @@ int lq_crypto_init(const char *base) {
 	gpg_version = v;
 	debug_x(LLOG_DEBUG, "gpg", "using gpg", 1, MORGEL_TYP_STR, 0, "version", gpg_version);
 
-	gpg_passphrase_digest_len = gcry_md_get_algo_dlen(GCRY_MD_SHA256);
+	//gpg_passphrase_digest_len = gcry_md_get_algo_dlen(GCRY_MD_SHA256);
+	gpg_passphrase_digest_len = gcry_md_get_algo_dlen(GCRY_MD_SHA512);
 	gpg_cfg_idx_dir = lq_config_register(LQ_TYP_STR, "CRYPTODIR");
 
 	v = path;
@@ -268,7 +270,8 @@ static int calculate_digest_algo(const char *in, size_t in_len, char *out, enum 
 	static unsigned int digest_len;
 
 	if (algo == GCRY_MD_NONE) {
-		algo = GCRY_MD_SHA256;
+		//algo = GCRY_MD_SHA256;
+		algo = GCRY_MD_SHA512;
 	}
 	digest_len = gcry_md_get_algo_dlen(algo);
 
@@ -428,14 +431,35 @@ static int key_create_store(LQStore *store, struct gpg_store *gpg, const char *p
 	b2h((unsigned char*)gpg->fingerprint, 20, (unsigned char*)buf_key+1);
 	store = key_store_get();
 	if (store == NULL) {
+		lq_free(store);
 		return debug_logerr(LLOG_ERROR, ERR_CRYPTO, "create store");
 	}
 	
-	c = CHACHA20_NONCE_LENGTH_BYTES + 1;
+	c = LQ_FP_LEN + 1;
+	l += CHACHA20_NONCE_LENGTH_BYTES;
 	r = store->put(LQ_CONTENT_KEY, store, buf_key, &c, buf_val, l);
 	if (r) {
+		lq_free(store);
 		return debug_logerr(LLOG_ERROR, ERR_CRYPTO, "put key in store");
 	}
+
+	// check if already exists default, if not, set it
+	*buf_key = LQ_CONTENT_KEY;
+	c = LQ_STORE_VAL_MAX; 
+	r = store->get(LQ_CONTENT_KEY, store, buf_key, 1, buf_val, &c);
+	if (r) {
+		if (r != ERR_NOENT) {
+			lq_free(store);
+			return debug_logerr(LLOG_ERROR, ERR_CRYPTO, "default key");
+		}
+		c = 1;
+		r = store->put(LQ_CONTENT_KEY, store, buf_key, &c, buf_val, l);
+		if (r) {
+			lq_free(store);
+			return debug_logerr(LLOG_ERROR, ERR_CRYPTO, "write default key");
+		}
+	}
+
 	lq_free(store);
 
 	return ERR_OK;

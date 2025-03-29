@@ -4,12 +4,15 @@
 #include <unistd.h>
 #include <fcntl.h>
 
+#include <llog.h>
+#include <hex.h>
+
 #include "lq/crypto.h"
 #include "lq/io.h"
 #include "lq/store.h"
 #include "lq/err.h"
 #include "lq/mem.h"
-#include "hex.h"
+#include "debug.h"
 
 static const int store_typ_file = 3;
 
@@ -47,14 +50,10 @@ int lq_file_content_get(enum payload_e typ, LQStore *store, const char *key, siz
 	lq_cpy(path, p, strlen(p) + 1);
 	p = path + strlen(path);
 	b2h((const unsigned char*)key, (int)key_len, (unsigned char*)buf);
-	r = sprintf(p, "/%s", buf);
-
-	if (r < 0) {
-		return ERR_READ;
-	}
+	sprintf(p, "/%s", buf);
 	f = lq_open(path, O_RDONLY, S_IRUSR);
 	if (f < 0) {
-		return ERR_READ;
+		return ERR_NOENT;
 	}
 
 	p = value;
@@ -95,13 +94,10 @@ int lq_file_content_put(enum payload_e typ, LQStore *store, const char *key, siz
 	lq_cpy(path, p, strlen(p) + 1);
 	p = path + strlen(path);
 	b2h((const unsigned char*)key, (int)*key_len, (unsigned char*)buf);
-	r = sprintf(p, "/%s", buf);
-	if (r < 0) {
-		return ERR_WRITE;
-	}
+	sprintf(p, "/%s", buf);
 	f = lq_open(path, O_CREAT | O_TRUNC | O_WRONLY, S_IRUSR | S_IWUSR);
 	if (f < 0) {
-		return ERR_WRITE;
+		return ERR_NOENT;
 	}
 	l = value_len;
 	p = value;
@@ -117,6 +113,7 @@ int lq_file_content_put(enum payload_e typ, LQStore *store, const char *key, siz
 		l -= c;
 		p += c;
 	}
+	debug_x(LLOG_DEBUG, "store.file", "put file", 2, MORGEL_TYP_STR, 0, "path", path, MORGEL_TYP_NUM, 0, "bytes", c);
 	lq_close(f);
 	return ERR_OK;
 }

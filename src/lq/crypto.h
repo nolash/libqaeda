@@ -7,6 +7,10 @@
 #define LQ_DIGEST_LEN 64
 #endif
 
+#ifndef LQ_DIGEST_SIG_LEN
+#define LQ_DIGEST_SIG_LEN 64
+#endif
+
 #ifndef LQ_PUBKEY_LEN
 #define LQ_PUBKEY_LEN 64
 #endif
