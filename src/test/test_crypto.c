@@ -4,6 +4,7 @@
 
 #include "lq/crypto.h"
 #include "lq/config.h"
+#include "lq/io.h"
 
 
 const char *data = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
@@ -19,8 +20,8 @@ static const char privkeydata[32] = {
 
 // "1233"
 static const size_t passphrase_len = 4;
-static const char passphrase[4] = {
-	0x31, 0x32, 0x33, 0x34,
+static const char passphrase[5] = {
+	0x31, 0x32, 0x33, 0x34, 0x00,
 };
 
 
@@ -149,6 +150,7 @@ Suite * common_suite(void) {
 int main(void) {
 	int r;
 	int n_fail;
+	char path[LQ_PATH_MAX];
 
 	Suite *s;
 	SRunner *sr;
@@ -158,7 +160,8 @@ int main(void) {
 		return 1;
 	}
 
-	r = lq_crypto_init("./testdata");
+	lq_cpy(path, "/tmp/lqcrypto_test_XXXXXX", 26);
+	r = lq_crypto_init(mktempdir(path));
 	if (r) {
 		return 1;
 	}
