@@ -35,7 +35,8 @@ char *_rerr[7] = {
 /// Lookup mode for key in store.
 enum gpg_find_mode_e {
 	GPG_FIND_MAIN, ///< Use default key filename.
-	GPG_FIND_FINGERPRINT, ///< 
+	GPG_FIND_ORCREATE, ///< Create a new key if not found.
+	GPG_FIND_FINGERPRINT, ///< Load only the key matching the fingerprint.
 };
 
 /**
@@ -538,13 +539,6 @@ static int key_from_data(gcry_sexp_t *key, const char *indata, size_t indata_len
 }
 
 static int key_from_store(struct gpg_store *gpg, const char *passphrase) {
-//	char *p;
-//	char v[LQ_CRYPTO_BUFLEN];
-//	size_t c;
-//	size_t i;
-//	FILE *f;
-//	char nonce[CHACHA20_NONCE_LENGTH_BYTES];
-//	void *outdata;
 	char *nonce;
 	char *p;
 	int l;
@@ -585,65 +579,31 @@ static int key_from_store(struct gpg_store *gpg, const char *passphrase) {
 	return ERR_OK;
 }
 
-//static int key_from_file(gcry_sexp_t *key, const char *path, const char *passphrase) {
-//	char *p;
-//	int r;
-//	char v[LQ_CRYPTO_BUFLEN];
-//	size_t c;
-//	size_t i;
-//	FILE *f;
-//	char nonce[CHACHA20_NONCE_LENGTH_BYTES];
-//	void *outdata;
-//
-//	f = fopen(path, "r");
-//	if (f == NULL) {
-//		return debug_logerr(LLOG_ERROR, ERR_NOENT, NULL);
-//	}
-//
-//	/// \todo length must be in the ciphertext
-//	//c = fread(&l, sizeof(int), 1, f);
-//	c = fread(nonce, CHACHA20_NONCE_LENGTH_BYTES, 1, f);
-//	i = 0;
-//	c = 1;
-//	while (c != 0 && i < LQ_CRYPTO_BUFLEN) {
-//		c = fread(v+i, 1024, 1, f);
-//		c *= 1024;
-//		i += c;
-//	}
-//	if (i == 0) {
-//		return debug_logerr(LLOG_ERROR, ERR_CRYPTO, (char*)path);
-//	}
-//	fclose(f);
-//
-//	outdata = lq_alloc(i);
-//	r = decryptb((char*)outdata, v, i, passphrase, nonce);
-//	if (r) {
-//		return r;
-//	}
-//	r = key_from_data(key, (char*)outdata, strlen(outdata));
-//	if (r) {
-//		return ERR_CRYPTO;
-//	}
-//	//c = (size_t)(*((int*)outdata));
-//	//p = (char*)(outdata+sizeof(int));
-//	//r = key_from_data(key, p, c);
-//	free(outdata);
-//	return ERR_OK;
-//}
-
-static int gpg_key_load(struct gpg_store *gpg, const char *passphrase, enum gpg_find_mode_e mode, const void *criteria) {
+static int gpg_key_load(struct gpg_store *gpg, const char *passphrase, size_t passphrase_len, enum gpg_find_mode_e mode, const void *criteria) {
 	int r;
 	char *p;
 
 	switch(mode) {
 		case GPG_FIND_MAIN:
-			//strcpy(p, GPG_PK_FILENAME);
-			//r = key_from_file(&gpg->k, path, passphrase);
 			r = key_from_store(gpg, passphrase);
 			if (r) {
 				return debug_logerr(LLOG_WARNING, ERR_CRYPTO, NULL);
 			}
 			break;
+		case GPG_FIND_ORCREATE:
+			r = key_from_store(gpg, passphrase);
+			if (r == ERR_OK) {
+				break;
+			}
+			if (!lq_cmp(gpg_fingerprint_zero, gpg->fingerprint, LQ_FP_LEN)) {
+				debug(LLOG_DEBUG, "gpg", "default private key not found, attempting create new");
+				r = key_create_store(gpg, passphrase);
+				if (r) {
+					return debug_logerr(LLOG_WARNING, ERR_CRYPTO, "create key when no default found");
+				}
+			}
+			break;
+
 //		case GPG_FIND_FINGERPRINT:
 //			strcpy(path, store->userdata);
 //			p = path + strlen(path);
@@ -690,7 +650,7 @@ LQPrivKey* lq_privatekey_load(const char *passphrase, size_t passphrase_len) {
 	gpg = lq_alloc(sizeof(struct gpg_store));
 	lq_zero(gpg, sizeof(struct gpg_store));
 	//r = gpg_key_load(gpg, passphrase_hash, GPG_FIND_MAIN, NULL);
-	r = gpg_key_load(gpg, passphrase, GPG_FIND_MAIN, NULL);
+	r = gpg_key_load(gpg, passphrase, passphrase_len, GPG_FIND_ORCREATE, NULL);
 	if (r) {
 		return NULL;	
 	}
