@@ -394,7 +394,7 @@ static int key_create_store(struct gpg_store *gpg, const char *passphrase, size_
 	char buf_key[LQ_STORE_KEY_MAX];
 	char buf_val[LQ_STORE_VAL_MAX];
 	char ciphertext[LQ_CRYPTO_BUFLEN];
-	char passphrase_hash[GCRY_MD_SHA256];
+	char passphrase_hash[LQ_DIGEST_LEN];
 
 	// Create the private key and corresponding public key.
 	r = key_create(gpg);
@@ -562,7 +562,7 @@ static int key_from_store(struct gpg_store *gpg, const char *passphrase, size_t 
 	char in[LQ_CRYPTO_BUFLEN];
 	size_t in_len;
 	size_t out_len;
-	char passphrase_hash[GCRY_MD_SHA256];
+	char passphrase_hash[LQ_DIGEST_LEN];
 
 	// Instantiate the store.
 	store = key_store_get();
