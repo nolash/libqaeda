@@ -4,7 +4,7 @@
 #include <stddef.h>
 
 #ifndef LQ_STORE_KEY_MAX
-#define LQ_STORE_KEY_MAX 64
+#define LQ_STORE_KEY_MAX 256
 #endif
 
 #ifndef LQ_STORE_VAL_MAX

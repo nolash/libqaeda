@@ -12,7 +12,7 @@
 #endif
 
 #ifndef LQ_PUBKEY_LEN
-#define LQ_PUBKEY_LEN 64
+#define LQ_PUBKEY_LEN 32
 #endif
 
 #ifndef LQ_PRIVKEY_LEN
@@ -143,7 +143,7 @@ LQPrivKey* lq_privatekey_new(const char *seed, size_t seed_len, const char *pass
  * \see lq_privatekey_free
  */
 
-LQPrivKey* lq_privatekey_load(const char *passphrase, size_t passphrase_len);
+LQPrivKey* lq_privatekey_load(const char *passphrase, size_t passphrase_len, const char *fingerprint);
 /**
  * \brief Get raw private key bytes
  * 
@@ -172,13 +172,22 @@ LQPubKey* lq_publickey_new(const char *full);
 LQPubKey* lq_publickey_from_privatekey(LQPrivKey *pk);
 
 /**
- * \brief Get raw public key bytes
+ * \brief Get raw public key bytes.
  * 
  * \param[in] Public key object.
  * \param[out] Pointer to start of data.
  * \return Length of key. If 0, no key could be found.
  */
 size_t lq_publickey_bytes(LQPubKey *pubk, char **out);
+
+/**
+ * \brief Get the public key fingerprint bytes.
+ *
+ * \param[in] Public key object
+ * \param[out] Pointer to start of data.
+ * \return Length of fingerprint data. If 0, no fingerprint could be found.
+ */
+size_t lq_publickey_fingerprint(LQPubKey *pubk, char **out);
 
 /**
  * \brief Encrypt private key in place.

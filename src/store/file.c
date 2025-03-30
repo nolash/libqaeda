@@ -85,11 +85,14 @@ int lq_file_content_put(enum payload_e typ, LQStore *store, const char *key, siz
 	int r;
 	size_t c;
 	size_t l;
-	char buf[LQ_DIGEST_LEN * 2 + 1];
+	char buf[LQ_STORE_KEY_MAX - 1];
 	char path[1024];
 	char *p;
 	int f;
 
+	if (*key_len > (LQ_STORE_KEY_MAX / 2) - 1) {
+		return ERR_OVERFLOW;
+	}
 	if (store->store_typ != store_typ_file) {
 		return ERR_COMPAT;
 	}
@@ -97,7 +100,7 @@ int lq_file_content_put(enum payload_e typ, LQStore *store, const char *key, siz
 	lq_cpy(path, p, strlen(p) + 1);
 	p = path + strlen(path);
 	b2h((const unsigned char*)key, (int)*key_len, (unsigned char*)buf);
-	sprintf(p, "%d%s", (char)typ, buf);
+	sprintf(p, "%d%s", (char)typ, (unsigned char*)buf);
 	f = lq_open(path, O_CREAT | O_TRUNC | O_WRONLY, S_IRUSR | S_IWUSR);
 	if (f < 0) {
 		return ERR_NOENT;

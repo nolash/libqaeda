@@ -69,6 +69,8 @@ static int gpg_passphrase_digest_len;
 /// zero fp value
 const static char gpg_fingerprint_zero[LQ_FP_LEN];
 
+const static char gpg_default_store_key;
+
 /**
  * Verifies that installed gpg version is supported.
  * Sets up crypto keys dir and sets passphrase digest length.
@@ -318,6 +320,12 @@ static int key_apply_public(struct gpg_store *gpg, gcry_sexp_t key) {
 		return debug_logerr(LLOG_ERROR, ERR_CRYPTO, NULL);
 	}
 	lq_cpy(gpg->public_key, p, LQ_PUBKEY_LEN);
+	
+	p = (char*)gcry_pk_get_keygrip(key, (unsigned char*)gpg->fingerprint);
+	if (p == NULL) {
+		return debug_logerr(LLOG_ERROR, ERR_CRYPTO, NULL);
+	}
+
 	return ERR_OK;
 }
 
@@ -339,12 +347,12 @@ static int key_create(struct gpg_store *gpg) {
 		p = gcry_strerror(e);
 		return debug_logerr(LLOG_ERROR, ERR_CRYPTO, (char*)p);
 	}
-	p = (char*)gcry_pk_get_keygrip(gpg->k, (unsigned char*)gpg->fingerprint);
-	if (p == NULL) {
-		p = gcry_strerror(e);
-		return debug_logerr(LLOG_ERROR, ERR_CRYPTO, (char*)p);
-	}
-
+//	p = (char*)gcry_pk_get_keygrip(gpg->k, (unsigned char*)gpg->fingerprint);
+//	if (p == NULL) {
+//		p = gcry_strerror(e);
+//		return debug_logerr(LLOG_ERROR, ERR_CRYPTO, (char*)p);
+//	}
+//
 	r = key_apply_public(gpg, gpg->k);
 	if (r) {
 		return debug_logerr(LLOG_ERROR, ERR_CRYPTO, NULL);
@@ -396,6 +404,7 @@ static int key_create_store(struct gpg_store *gpg, const char *passphrase) {
 	size_t m;
 	//FILE *f;
 	LQStore *store;
+	LQPubKey *pubk;
 	char nonce[CHACHA20_NONCE_LENGTH_BYTES];
 	char buf_key[LQ_STORE_KEY_MAX];
 	char buf_val[LQ_STORE_VAL_MAX];
@@ -404,7 +413,12 @@ static int key_create_store(struct gpg_store *gpg, const char *passphrase) {
 	//r = key_create(gpg, key);
 	r = key_create(gpg);
 	if (r) {
-		return debug_logerr(LLOG_ERROR, ERR_CRYPTO, NULL);
+		return debug_logerr(LLOG_ERROR, ERR_CRYPTO, "key create");
+	}
+
+	pubk = lq_publickey_new(gpg->public_key);
+	if (pubk == NULL) {
+		return debug_logerr(LLOG_ERROR, ERR_CRYPTO, "publickey");
 	}
 
 	kl = gcry_sexp_sprint(gpg->k, GCRYSEXP_FMT_CANON, NULL, 0);
@@ -432,6 +446,10 @@ static int key_create_store(struct gpg_store *gpg, const char *passphrase) {
 
 	lq_cpy(buf_val, nonce, CHACHA20_NONCE_LENGTH_BYTES);
 	lq_cpy(buf_val + CHACHA20_NONCE_LENGTH_BYTES, ciphertext, c);
+
+	// we don't need the inner private key anymore.
+	// use the pointer for the public key now.
+	gpg = (struct gpg_store*)pubk->impl;
 	lq_cpy(buf_key, gpg->fingerprint, LQ_FP_LEN);
 	store = key_store_get();
 	if (store == NULL) {
@@ -440,7 +458,7 @@ static int key_create_store(struct gpg_store *gpg, const char *passphrase) {
 	}
 	
 	l = c + CHACHA20_NONCE_LENGTH_BYTES;
-	c = LQ_FP_LEN + 1;
+	c = LQ_FP_LEN;
 	r = store->put(LQ_CONTENT_KEY, store, buf_key, &c, buf_val, l);
 	if (r) {
 		lq_free(store);
@@ -448,7 +466,7 @@ static int key_create_store(struct gpg_store *gpg, const char *passphrase) {
 	}
 
 	// check if already exists default, if not, set it
-	*buf_key = '_';
+	*buf_key = gpg_default_store_key;
 	c = LQ_STORE_VAL_MAX; 
 	r = store->get(LQ_CONTENT_KEY, store, buf_key, 1, buf_val, &c);
 	if (r) {
@@ -587,7 +605,7 @@ static int gpg_key_load(struct gpg_store *gpg, const char *passphrase, size_t pa
 		case GPG_FIND_MAIN:
 			r = key_from_store(gpg, passphrase);
 			if (r) {
-				return debug_logerr(LLOG_WARNING, ERR_CRYPTO, NULL);
+				return debug_logerr(LLOG_WARNING, ERR_CRYPTO, "default key not found");
 			}
 			break;
 		case GPG_FIND_ORCREATE:
@@ -595,12 +613,19 @@ static int gpg_key_load(struct gpg_store *gpg, const char *passphrase, size_t pa
 			if (r == ERR_OK) {
 				break;
 			}
+			// if no key could be loaded, attempt to create one.
 			if (!lq_cmp(gpg_fingerprint_zero, gpg->fingerprint, LQ_FP_LEN)) {
 				debug(LLOG_DEBUG, "gpg", "default private key not found, attempting create new");
 				r = key_create_store(gpg, passphrase);
 				if (r) {
 					return debug_logerr(LLOG_WARNING, ERR_CRYPTO, "create key when no default found");
 				}
+			}
+			break;
+		case GPG_FIND_FINGERPRINT:
+			r = key_from_store(gpg, passphrase);
+			if (r) {
+				return debug_logerr(LLOG_WARNING, ERR_CRYPTO, "fingerprint key not found");
 			}
 			break;
 
@@ -633,11 +658,11 @@ static int gpg_key_load(struct gpg_store *gpg, const char *passphrase, size_t pa
 
 
 /// Implements the interface to load a private key from storage.
-LQPrivKey* lq_privatekey_load(const char *passphrase, size_t passphrase_len) {
+LQPrivKey* lq_privatekey_load(const char *passphrase, size_t passphrase_len, const char *fingerprint) {
 	LQStore *store;
 	LQPrivKey *pk;
 	char *p;
-
+	enum gpg_find_mode_e m;
 	struct gpg_store *gpg;
 	int r;
 
@@ -649,8 +674,13 @@ LQPrivKey* lq_privatekey_load(const char *passphrase, size_t passphrase_len) {
 	
 	gpg = lq_alloc(sizeof(struct gpg_store));
 	lq_zero(gpg, sizeof(struct gpg_store));
+	m = GPG_FIND_ORCREATE;
+	if (fingerprint != NULL) {
+		lq_cpy(gpg->fingerprint, fingerprint, LQ_FP_LEN);
+		m = GPG_FIND_FINGERPRINT;
+	}
 	//r = gpg_key_load(gpg, passphrase_hash, GPG_FIND_MAIN, NULL);
-	r = gpg_key_load(gpg, passphrase, passphrase_len, GPG_FIND_ORCREATE, NULL);
+	r = gpg_key_load(gpg, passphrase, passphrase_len, m, NULL);
 	if (r) {
 		return NULL;	
 	}
@@ -894,14 +924,6 @@ void lq_signature_free(LQSig *sig) {
 	lq_free(sig);
 }
 
-char *lq_publickey_fingerprint(LQPubKey *pubk) {
-	struct gpg_store *gpg;
-	char *p;
-
-	gpg = (struct gpg_store*)pubk->impl;
-	return gpg->fingerprint;
-}
-
 LQPubKey* lq_publickey_from_privatekey(LQPrivKey *pk) {
 	struct gpg_store *gpg;
 	LQPubKey *pubk;
@@ -940,6 +962,15 @@ LQPubKey* lq_publickey_new(const char *full) {
 	pubk->pk = NULL;
 
 	return pubk;
+}
+
+size_t lq_publickey_fingerprint(LQPubKey* pubk, char **out) {
+	size_t c;
+	struct gpg_store *gpg;
+
+	gpg = (struct gpg_store*)pubk->impl;
+	*out = gpg->fingerprint;
+	return LQ_FP_LEN;
 }
 
 #endif

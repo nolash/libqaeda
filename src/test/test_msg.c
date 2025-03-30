@@ -17,15 +17,17 @@ START_TEST(check_msg_symmetric) {
 	size_t c;
 	char buf[4096];
 	char path[1024];
+	char *p;
 	LQMsg *msg;
 	LQResolve resolve;
 	LQResolve resolve_dummy;
 	LQStore *store;
 
-	//lq_cpy(&store, &LQFileContent, sizeof(LQStore));
 	lq_cpy(path, "/tmp/lqstore_file_XXXXXX", 25);
-	//store.userdata = (void*)mktempdir(path);
-	store = lq_store_new(mktempdir(path));
+	p = mktempdir(path);
+	*(p+24) = '/';
+	*(p+25) = 0x0;
+	store = lq_store_new(p);
 	ck_assert_ptr_nonnull(store->userdata);
 
 	resolve_dummy.store = &LQDummyContent;

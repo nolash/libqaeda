@@ -122,7 +122,27 @@ START_TEST(check_create_load) {
 
 	pk = lq_privatekey_new(privkeydata, LQ_PRIVKEY_LEN, passphrase, passphrase_len);
 	ck_assert_ptr_nonnull(pk);
-	pk_load = lq_privatekey_load(passphrase, passphrase_len);
+	pk_load = lq_privatekey_load(passphrase, passphrase_len, NULL);
+	ck_assert_ptr_nonnull(pk_load);
+
+	lq_privatekey_free(pk);
+}
+END_TEST
+
+START_TEST(check_load_specific) {
+	LQPrivKey *pk;
+	LQPubKey *pubk;
+	LQPrivKey *pk_load;
+	char *p;
+	size_t c;
+
+	pk = lq_privatekey_new(privkeydata, LQ_PRIVKEY_LEN, passphrase, passphrase_len);
+	ck_assert_ptr_nonnull(pk);
+	pubk = lq_publickey_from_privatekey(pk);
+	ck_assert_ptr_nonnull(pubk);
+	c = lq_publickey_fingerprint(pubk, &p);
+	ck_assert_int_gt(c, 0);
+	pk_load = lq_privatekey_load(passphrase, passphrase_len, p);
 	ck_assert_ptr_nonnull(pk_load);
 
 	lq_privatekey_free(pk);
@@ -142,6 +162,7 @@ Suite * common_suite(void) {
 	tcase_add_test(tc, check_signature);
 	tcase_add_test(tc, check_verify);
 	tcase_add_test(tc, check_create_load);
+	tcase_add_test(tc, check_load_specific);
 	suite_add_tcase(s, tc);
 
 	return s;
