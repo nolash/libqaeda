@@ -55,6 +55,7 @@ static long unsigned int pair_hash(const void *item, long unsigned int s0, long 
 struct hashmap* lq_mem_init(LQStore *store) {
 	if (store->userdata == NULL) {
 		store->userdata = (void*)hashmap_new(sizeof(struct pair_t) , 1024*1024, 0, 0, pair_hash, pair_cmp, NULL, NULL);
+		debug(LLOG_INFO, "store.mem", "created new hashmap for mem store");
 	}
 	return (struct hashmap *)store->userdata;
 }
@@ -71,6 +72,8 @@ int lq_mem_content_get(enum payload_e typ, LQStore *store, const char *key, size
 	lq_cpy(path+1, key, key_len);
 	v.key = path;
 	v.key_len = key_len + 1;
+	v.val = value;
+	v.val_len = *value_len;
 
 	debug_x(LLOG_DEBUG, "store.mem", "store get req", 1, MORGEL_TYP_BIN, v.key_len, "key", v.key);
 
@@ -87,9 +90,12 @@ int lq_mem_content_get(enum payload_e typ, LQStore *store, const char *key, size
 }
 
 int lq_mem_content_put(enum payload_e typ, LQStore *store, const char *key, size_t *key_len, char *value, size_t value_len) {
+	char *r;
 	struct hashmap *o;
 	struct pair_t v;
 	char path[LQ_PATH_MAX];
+
+	o = lq_mem_init(store);
 
 	path[0] = (char)typ;
 	lq_cpy(path+1, key, *key_len);
@@ -98,10 +104,16 @@ int lq_mem_content_put(enum payload_e typ, LQStore *store, const char *key, size
 	v.val = value;
 	v.val_len = value_len;
 
-	o = lq_mem_init(store);
-	hashmap_set(o, &v);
+	debug_x(LLOG_DEBUG, "store.mem", "store put req", 2, MORGEL_TYP_BIN, v.key_len, "key", v.key, MORGEL_TYP_NUM, 0, "bytes", value_len);
 
-	debug_x(LLOG_DEBUG, "store.mem", "store put", 2, MORGEL_TYP_BIN, v.key_len, "key", v.key, MORGEL_TYP_NUM, 0, "bytes", value_len);
+	r = hashmap_set(o, &v);
+	if (r != NULL) {
+		if (hashmap_oom(o)) {
+			return ERR_WRITE;
+		}
+	}
+
+	debug_x(LLOG_DEBUG, "store.mem", "store put res", 2, MORGEL_TYP_BIN, v.key_len, "key", v.key, MORGEL_TYP_NUM, 0, "bytes", value_len);
 
 	return ERR_OK;
 }
@@ -127,6 +139,7 @@ LQStore* lq_store_new(const char *spec) {
 	debug(LLOG_DEBUG, "store.mem", "ignoring spec in mem store init");
 	store = lq_alloc(sizeof(LQStore));
 	lq_cpy(store, &LQMemContent, sizeof(LQMemContent));
+	store->userdata = NULL;
 	return store;
 }
 

@@ -27,7 +27,7 @@ build:
 	#$(CC) $(CFLAGS) test_cert.c -o test_cert_bin ../crypto/dummy.o ../mem/std.o ../store/dummy.o ../store/file.o ../io/std.o ../lq/msg.o ../lq/cert.o $(LDFLAGS)
 	#$(CC) $(CFLAGS) test_trust.c -o test_trust_bin ../crypto/dummy.o ../mem/std.o ../store/mem.o ../lq/trust.o -lhashmap $(LDFLAGS)
 	#$(CC) $(CFLAGS) test_crypto.c -o test_crypto_bin $(COMMONOBJS)  ../store/file.o ../io/std.o ../crypto/gcrypt.o $(LDFLAGS) -lgcrypt
-	$(CC) $(CFLAGS) test_crypto.c -o test_crypto_bin $(COMMONOBJS)  ../store/mem.o ../io/std.o ../crypto/gcrypt.o $(LDFLAGS) -lgcrypt
+	$(CC) $(CFLAGS) test_crypto.c -o test_crypto_bin $(COMMONOBJS)  ../store/file.o ../io/std.o ../crypto/gcrypt.o $(LDFLAGS) -lgcrypt
 	$(CC) $(CFLAGS) test_msg.c -o test_msg_bin $(COMMONOBJS) ../store/file.o ../store/dummy.o ../io/std.o ../crypto/gcrypt.o ../lq/msg.o $(LDFLAGS)
 	$(CC) $(CFLAGS) test_cert.c -o test_cert_bin $(COMMONOBJS) ../store/file.o ../io/std.o ../crypto/gcrypt.o ../store/dummy.o ../lq/msg.o ../lq/cert.o $(LDFLAGS)
 	$(CC) $(CFLAGS) test_trust.c -o test_trust_bin $(COMMONOBJS) ../store/mem.o ../crypto/gcrypt.o ../lq/trust.o $(LDFLAGS)

@@ -57,6 +57,8 @@ const static char gpg_fingerprint_zero[LQ_FP_LEN];
 
 const static char gpg_default_store_key;
 
+const static LQStore *gpg_key_store;
+
 /**
  * Verifies that installed gpg version is supported.
  * Sets up crypto keys dir and sets passphrase digest length.
@@ -94,6 +96,10 @@ int lq_crypto_init(const char *base) {
 	r = lq_config_set(gpg_cfg_idx_dir, path);
 	if (r) {
 		return ERR_FAIL;
+	}
+	gpg_key_store = lq_store_new(path);
+	if (gpg_key_store == NULL) {
+		return ERR_STORE_AVAIL;
 	}
 
 	return ERR_OK;
@@ -351,11 +357,12 @@ LQStore *key_store_get() {
 	int r;
 	char *p;
 
-	r = lq_config_get(gpg_cfg_idx_dir, (void**)&p);
-	if (r) {
-		return NULL;
-	}
-	return lq_store_new(p);
+//	r = lq_config_get(gpg_cfg_idx_dir, (void**)&p);
+//	if (r) {
+//		return NULL;
+//	}
+//	return lq_store_new(p);
+	return gpg_key_store;
 }
 
 /**
@@ -426,7 +433,6 @@ static int key_create_store(struct gpg_store *gpg, const char *passphrase, size_
 	// Instantiate the store.
 	store = key_store_get();
 	if (store == NULL) {
-		lq_free(store);
 		return debug_logerr(LLOG_ERROR, ERR_KEYFILE, "create store");
 	}
 
@@ -435,7 +441,6 @@ static int key_create_store(struct gpg_store *gpg, const char *passphrase, size_
 	c = LQ_FP_LEN;
 	r = store->put(LQ_CONTENT_KEY, store, buf_key, &c, buf_val, l);
 	if (r) {
-		lq_free(store);
 		return debug_logerr(LLOG_ERROR, ERR_KEYFILE, "put key in store");
 	}
 
@@ -446,21 +451,16 @@ static int key_create_store(struct gpg_store *gpg, const char *passphrase, size_
 	r = store->get(LQ_CONTENT_KEY, store, buf_key, 1, buf_val, &c);
 	if (r) {
 		if (r != ERR_NOENT) {
-			lq_free(store);
 			debug(LLOG_ERROR, "crypto.gcrypt", "no default");
 			return debug_logerr(LLOG_ERROR, ERR_KEYFILE, "default key");
 		}
 		c = 1;
 		r = store->put(LQ_CONTENT_KEY, store, buf_key, &c, buf_val, l);
 		if (r) {
-			lq_free(store);
 			debug(LLOG_ERROR, "crypto.gcrypt", "fail put default");
 			return debug_logerr(LLOG_ERROR, ERR_KEYFILE, "write default key");
 		}
 	}
-
-	// Clean up.
-	lq_free(store);
 
 	return ERR_OK;
 }
@@ -563,7 +563,6 @@ static int key_from_store(struct gpg_store *gpg, const char *passphrase, size_t 
 	}
 	r = store->get(LQ_CONTENT_KEY, store, inkey, inkey_len, in, &in_len);
 	if (r) {
-		lq_free(store);
 		return ERR_NOENT;
 	}
 
@@ -580,7 +579,6 @@ static int key_from_store(struct gpg_store *gpg, const char *passphrase, size_t 
 	in_len -= CHACHA20_NONCE_LENGTH_BYTES;
 	r = decryptb(out, p, in_len, passphrase_hash, nonce);
 	if (r) {
-		lq_free(store);
 		return ERR_KEY_UNLOCK;
 	}
 
@@ -589,11 +587,9 @@ static int key_from_store(struct gpg_store *gpg, const char *passphrase, size_t 
 	p = (char*)(out+sizeof(int));
 	r = key_from_data(&gpg->k, p, out_len);
 	if (r) {
-		lq_free(store);
 		return ERR_KEYFAIL;
 	}
 
-	lq_free(store);
 	return ERR_OK;
 }
 
@@ -945,6 +941,10 @@ size_t lq_publickey_fingerprint(LQPubKey* pubk, char **out) {
 	gpg = (struct gpg_store*)pubk->impl;
 	*out = gpg->fingerprint;
 	return LQ_FP_LEN;
+}
+
+void lq_crypto_free() {
+	lq_free(gpg_key_store);
 }
 
 #endif

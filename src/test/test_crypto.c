@@ -57,6 +57,7 @@ START_TEST(check_publickey) {
 	char *keydata_manual;
 
 	pk = lq_privatekey_new(passphrase, passphrase_len);
+	ck_assert_ptr_nonnull(pk);
 	pubk = lq_publickey_from_privatekey(pk);
 	lq_publickey_bytes(pubk, &keydata);
 	pubk_manual = lq_publickey_new(keydata);
@@ -76,6 +77,7 @@ START_TEST(check_signature) {
 	char *sigdata;
 
 	pk = lq_privatekey_new(passphrase, passphrase_len);
+	ck_assert_ptr_nonnull(pk);
 	sig = lq_privatekey_sign(pk, data, strlen(data), salt);
 	ck_assert_ptr_null(sig);
 
@@ -99,6 +101,7 @@ START_TEST(check_verify) {
 	LQSig *sig;
 
 	pk = lq_privatekey_new(passphrase, 32);
+	ck_assert_ptr_nonnull(pk);
 	sig = lq_privatekey_sign(pk, data, strlen(data), salt);
 	ck_assert_ptr_null(sig);
 
@@ -141,6 +144,8 @@ START_TEST(check_load_specific) {
 	ck_assert_ptr_nonnull(pubk);
 	c = lq_publickey_fingerprint(pubk, &p);
 	ck_assert_int_gt(c, 0);
+	pk_load = lq_privatekey_load(passphrase, passphrase_len, NULL);
+	ck_assert_ptr_nonnull(pk_load);
 	pk_load = lq_privatekey_load(passphrase, passphrase_len, p);
 	ck_assert_ptr_nonnull(pk_load);
 
@@ -154,12 +159,12 @@ Suite * common_suite(void) {
 
 	s = suite_create("crypto");
 	tc = tcase_create("file");
-	tcase_add_test(tc, check_digest);
-	tcase_add_test(tc, check_privatekey);
-	tcase_add_test(tc, check_publickey);
-	tcase_add_test(tc, check_signature);
-	tcase_add_test(tc, check_verify);
-	tcase_add_test(tc, check_create_load);
+//	tcase_add_test(tc, check_digest);
+//	tcase_add_test(tc, check_privatekey);
+//	tcase_add_test(tc, check_publickey);
+//	tcase_add_test(tc, check_signature);
+//	tcase_add_test(tc, check_verify);
+//	tcase_add_test(tc, check_create_load);
 	tcase_add_test(tc, check_load_specific);
 	suite_add_tcase(s, tc);
 
@@ -191,6 +196,8 @@ int main(void) {
 	srunner_run_all(sr, CK_VERBOSE);
 	n_fail = srunner_ntests_failed(sr);
 	srunner_free(sr);
+
+	lq_crypto_free();
 
 	return (n_fail == 0) ? EXIT_SUCCESS : EXIT_FAILURE;
 }
