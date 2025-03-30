@@ -43,7 +43,7 @@ START_TEST(check_privatekey) {
 	int r;
 	LQPrivKey *pk;
 
-	pk = lq_privatekey_new(privkeydata, LQ_PRIVKEY_LEN, passphrase, passphrase_len);
+	pk = lq_privatekey_new(passphrase, passphrase_len);
 	ck_assert_ptr_nonnull(pk);
 	lq_privatekey_free(pk);
 }
@@ -56,7 +56,7 @@ START_TEST(check_publickey) {
 	char *keydata;
 	char *keydata_manual;
 
-	pk = lq_privatekey_new(privkeydata, LQ_PRIVKEY_LEN, passphrase, passphrase_len);
+	pk = lq_privatekey_new(passphrase, passphrase_len);
 	pubk = lq_publickey_from_privatekey(pk);
 	lq_publickey_bytes(pubk, &keydata);
 	pubk_manual = lq_publickey_new(keydata);
@@ -75,7 +75,7 @@ START_TEST(check_signature) {
 	LQSig *sig;
 	char *sigdata;
 
-	pk = lq_privatekey_new(privkeydata, 32, passphrase, passphrase_len);
+	pk = lq_privatekey_new(passphrase, passphrase_len);
 	sig = lq_privatekey_sign(pk, data, strlen(data), salt);
 	ck_assert_ptr_null(sig);
 
@@ -99,7 +99,7 @@ START_TEST(check_verify) {
 	LQSig *sig;
 	char *sigdata;
 
-	pk = lq_privatekey_new(privkeydata, LQ_PRIVKEY_LEN, passphrase, 32);
+	pk = lq_privatekey_new(passphrase, 32);
 	sig = lq_privatekey_sign(pk, data, strlen(data), salt);
 	ck_assert_ptr_null(sig);
 
@@ -120,7 +120,7 @@ START_TEST(check_create_load) {
 	LQPrivKey *pk;
 	LQPrivKey *pk_load;
 
-	pk = lq_privatekey_new(privkeydata, LQ_PRIVKEY_LEN, passphrase, passphrase_len);
+	pk = lq_privatekey_new(passphrase, passphrase_len);
 	ck_assert_ptr_nonnull(pk);
 	pk_load = lq_privatekey_load(passphrase, passphrase_len, NULL);
 	ck_assert_ptr_nonnull(pk_load);
@@ -136,7 +136,7 @@ START_TEST(check_load_specific) {
 	char *p;
 	size_t c;
 
-	pk = lq_privatekey_new(privkeydata, LQ_PRIVKEY_LEN, passphrase, passphrase_len);
+	pk = lq_privatekey_new(passphrase, passphrase_len);
 	ck_assert_ptr_nonnull(pk);
 	pubk = lq_publickey_from_privatekey(pk);
 	ck_assert_ptr_nonnull(pubk);

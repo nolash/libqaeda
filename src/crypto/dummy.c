@@ -1,3 +1,5 @@
+#include <stdlib.h>
+
 #include "lq/crypto.h"
 #include "lq/mem.h"
 #include "lq/err.h"
@@ -48,6 +50,14 @@ struct dummycrypto {
 	size_t len; ///< Length of private key data.
 };
 
+void fill_random(char *buf, size_t len) {
+	int i;
+
+	for (i = 0; i < len; i++) {
+		*(buf+i) = (char)(rand()%255);
+	}
+}
+
 void keylock_xor(LQPrivKey *pk, const char *passphrase_digest) {
 	int i;
 	struct dummycrypto *o;
@@ -90,15 +100,15 @@ int lq_privatekey_lock(LQPrivKey *pk, const char *passphrase, size_t passphrase_
 	return ERR_OK;
 }
 
-LQPrivKey* lq_privatekey_new(const char *seed, size_t seed_len, const char *passphrase, size_t passphrase_len) {
+LQPrivKey* lq_privatekey_new(const char *passphrase, size_t passphrase_len) {
 	LQPrivKey *pk;
 	struct dummycrypto *o;
 
 	o = lq_alloc(sizeof(struct dummycrypto));
 	pk = lq_alloc(sizeof(LQPrivKey));
-	o->data = lq_alloc(seed_len);
-	lq_cpy(o->data, seed, seed_len);
-	o->len = seed_len;
+	o->data = lq_alloc(LQ_PRIVKEY_LEN);
+	fill_random(o->data, LQ_PRIVKEY_LEN);
+	o->len = LQ_PRIVKEY_LEN;
 	pk->impl = o;
 	pk->key_typ = 0;
 	pk->key_state = 0;

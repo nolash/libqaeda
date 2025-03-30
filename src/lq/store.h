@@ -54,8 +54,23 @@ struct lq_resolve_t {
 	LQResolve *next; ///< Provides access to next store implementation to store to or retrieve from. Setting to NULL stops any further action.
 };
 
+/**
+ * \brief Instantiate a new store from the given path or connection spec.
+ * 
+ * Caller must free the store after use with lq_store_free.
+ *
+ * \param[in] Connection string or path.
+ * \return A new store object, or NULL by failure.
+ *
+ * \see lq_store_free
+ */
 LQStore* lq_store_new(const char *spec);
-void lq_store_free(LQStore *store);
 
+/**
+ * \brief Free resources used by store instance.
+ *
+ * \param[in] Store object.
+ */
+void lq_store_free(LQStore *store);
 
 #endif // LIBQAEDA_STORE_H_

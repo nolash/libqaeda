@@ -79,7 +79,7 @@ START_TEST(check_cert_symmetric_req_sig) {
 	LQCtx ctx;
 	char buf[4096];
 
-	pk = lq_privatekey_new(privkeydata, 32, passphrase, 32);
+	pk = lq_privatekey_new(passphrase, 32);
 	lq_set(&ctx, 0, sizeof(LQCtx));
 	req = lq_msg_new(data, strlen(data) + 1);
 	cert = lq_certificate_new(NULL, &ctx, req, NULL);
@@ -108,7 +108,7 @@ START_TEST(check_cert_symmetric_rsp_onesig) {
 	LQCtx ctx;
 	char buf[4096];
 
-	pk = lq_privatekey_new(privkeydata, 32, passphrase, 32);
+	pk = lq_privatekey_new(passphrase, 32);
 	lq_set(&ctx, 0, sizeof(LQCtx));
 	req = lq_msg_new(data, strlen(data) + 1);
 	rsp = lq_msg_new(data_two, strlen(data_two) + 1);
@@ -138,7 +138,7 @@ START_TEST(check_cert_symmetric_rsp_bothsig) {
 	LQCtx ctx;
 	char buf[4096];
 
-	pk = lq_privatekey_new(privkeydata, 32, passphrase, 32);
+	pk = lq_privatekey_new(passphrase, 32);
 	lq_set(&ctx, 0, sizeof(LQCtx));
 	req = lq_msg_new(data, strlen(data) + 1);
 	cert = lq_certificate_new(NULL, &ctx, req, NULL);

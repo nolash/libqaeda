@@ -9,7 +9,7 @@ lib: all
 lib:
 	ar rcs liblq.a lq/config.o crypto/gcrypt.o store/file.o mem/std.o io/std.o debug.o aux/lib/libhashmap.a 
 
-core:
+core: dummy
 	$(CC) $(CFLAGS) -c debug.c
 	make -C lq
 

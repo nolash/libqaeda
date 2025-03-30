@@ -130,7 +130,7 @@ void lq_crypto_free();
  * \return Pointer to new private key. Freeing the object is the caller's responsibility.
  * \see lq_privatekey_free
  */
-LQPrivKey* lq_privatekey_new(const char *seed, size_t seed_len, const char *passphrase, size_t passphrase_len);
+LQPrivKey* lq_privatekey_new(const char *passphrase, size_t passphrase_len);
 
 /**
  * \brief Load a private key from store.

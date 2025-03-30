@@ -337,22 +337,21 @@ static int key_create(struct gpg_store *gpg) {
 	gcry_sexp_t in;
 	gcry_error_t e;
 
+	// Set up parameters for key creation.
 	e = gcry_sexp_new(&in, (const void*)sexp_quick, strlen(sexp_quick), 0);
 	if (e) {
 		p = gcry_strerror(e);
 		return debug_logerr(LLOG_ERROR, ERR_CRYPTO, (char*)p);
 	}
+
+	// Generate a new key with the given parameters.
 	e = gcry_pk_genkey(&gpg->k, in);
 	if (e) {
 		p = gcry_strerror(e);
 		return debug_logerr(LLOG_ERROR, ERR_CRYPTO, (char*)p);
 	}
-//	p = (char*)gcry_pk_get_keygrip(gpg->k, (unsigned char*)gpg->fingerprint);
-//	if (p == NULL) {
-//		p = gcry_strerror(e);
-//		return debug_logerr(LLOG_ERROR, ERR_CRYPTO, (char*)p);
-//	}
-//
+
+	// Apply the public part of the key to the underlying key structure.
 	r = key_apply_public(gpg, gpg->k);
 	if (r) {
 		return debug_logerr(LLOG_ERROR, ERR_CRYPTO, NULL);
@@ -361,6 +360,9 @@ static int key_create(struct gpg_store *gpg) {
 	return ERR_OK;
 }
 
+// Create a new store instance using the crypto partition path
+// set in the configuration.
+// Caller must free it.
 LQStore *key_store_get() {
 	int r;
 	char *p;
@@ -371,6 +373,7 @@ LQStore *key_store_get() {
 	}
 	return lq_store_new(p);
 }
+
 //
 //static char *key_filename(LQStore *store, struct gpg_store *gpg, char *out, size_t *out_len) {
 //	int l;
@@ -490,7 +493,7 @@ static int key_create_store(struct gpg_store *gpg, const char *passphrase) {
 }
 
 /// Create a new keypair, encrypted with given passphrase.
-static LQPrivKey* privatekey_alloc(const char *seed, size_t seed_len, const char *passphrase, size_t passphrase_len) {
+static LQPrivKey* privatekey_alloc(const char *passphrase, size_t passphrase_len) {
 	int r;
 	LQPrivKey *o;
 	struct gpg_store *gpg;
@@ -527,14 +530,14 @@ static LQPrivKey* privatekey_alloc(const char *seed, size_t seed_len, const char
 
 
 /// Implements the interface to create a new private key.
-LQPrivKey* lq_privatekey_new(const char *seed, size_t seed_len, const char *passphrase, size_t passphrase_len) {
+LQPrivKey* lq_privatekey_new(const char *passphrase, size_t passphrase_len) {
 	int r;
 	LQPrivKey *o;
 	if (passphrase == NULL) {
 		return NULL;
 	}
 
-	o = privatekey_alloc(seed, seed_len, passphrase, passphrase_len);
+	o = privatekey_alloc(passphrase, passphrase_len);
 	if (o == NULL) {
 		return NULL;
 	}
@@ -545,6 +548,7 @@ LQPrivKey* lq_privatekey_new(const char *seed, size_t seed_len, const char *pass
 	return o;	
 }
 
+/// Parse data from buffer as S-expression text representing a key.
 static int key_from_data(gcry_sexp_t *key, const char *indata, size_t indata_len) {
 	gcry_error_t e;
 
@@ -555,6 +559,7 @@ static int key_from_data(gcry_sexp_t *key, const char *indata, size_t indata_len
 	return ERR_OK;
 }
 
+/// Load a private key from the store's crypto partition.
 static int key_from_store(struct gpg_store *gpg, const char *passphrase) {
 	char *nonce;
 	char *p;
@@ -567,32 +572,49 @@ static int key_from_store(struct gpg_store *gpg, const char *passphrase) {
 	char in[LQ_CRYPTO_BUFLEN];
 	size_t in_len;
 	size_t out_len;
- 
+
+	// Instantiate the store.
+	store = key_store_get();
+
+	// If a valid fingerprint is found in the gpg structure,
+	// retrieve the key matching that fingerprint.
+	// Otherwise, retrieve the main key.
+	// Or fail if none of them can be found.
 	inkey_len = LQ_FP_LEN;
 	in_len = LQ_CRYPTO_BUFLEN;
-	store = key_store_get();
 	if (lq_cmp(gpg->fingerprint, gpg_fingerprint_zero, LQ_FP_LEN)) {
 		lq_cpy(inkey, gpg->fingerprint, LQ_FP_LEN);	
 	} else {
-		*inkey = '_';
+		*inkey = gpg_default_store_key;
 		inkey_len = 1;
 	}
 	r = store->get(LQ_CONTENT_KEY, store, inkey, inkey_len, in, &in_len);
 	if (r) {
+		lq_free(store);
 		return ERR_NOENT;
 	}
 
+	// The private key in the store is encrypted.
+	// Decrypt it with the provided passphrase.
 	nonce = in;
 	p = (char*)in + CHACHA20_NONCE_LENGTH_BYTES;
 	in_len -= CHACHA20_NONCE_LENGTH_BYTES;
 	r = decryptb(out, p, in_len, passphrase, nonce);
 	if (r) {
-		return r;
+		lq_free(store);
+		return ERR_CRYPTO;
 	}
-	
+
+	// Attempt to parse and instantiate the key from the decrypted data.
 	out_len = (size_t)(*((int*)out));
 	p = (char*)(out+sizeof(int));
 	r = key_from_data(&gpg->k, p, out_len);
+	if (r) {
+		lq_free(store);
+		return ERR_COMPAT;
+	}
+
+	lq_free(store);
 	return ERR_OK;
 }
 
