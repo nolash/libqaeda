@@ -77,6 +77,8 @@ int lq_file_content_get(enum payload_e typ, LQStore *store, const char *key, siz
 
 	*value_len = l;
 
+	debug_x(LLOG_DEBUG, "store.file", "get file", 2, MORGEL_TYP_STR, 0, "path", path, MORGEL_TYP_NUM, 0, "bytes", *value_len);
+
 	return ERR_OK;
 
 }

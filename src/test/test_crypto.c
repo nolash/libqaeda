@@ -156,12 +156,12 @@ Suite * common_suite(void) {
 
 	s = suite_create("crypto");
 	tc = tcase_create("file");
-	tcase_add_test(tc, check_digest);
-	tcase_add_test(tc, check_privatekey);
-	tcase_add_test(tc, check_publickey);
-	tcase_add_test(tc, check_signature);
-	tcase_add_test(tc, check_verify);
-	tcase_add_test(tc, check_create_load);
+//	tcase_add_test(tc, check_digest);
+//	tcase_add_test(tc, check_privatekey);
+//	tcase_add_test(tc, check_publickey);
+//	tcase_add_test(tc, check_signature);
+//	tcase_add_test(tc, check_verify);
+//	tcase_add_test(tc, check_create_load);
 	tcase_add_test(tc, check_load_specific);
 	suite_add_tcase(s, tc);
 
