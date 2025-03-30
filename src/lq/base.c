@@ -10,3 +10,6 @@ int lq_init() {
 	return r;
 }
 
+void lq_finish() {
+	lq_config_free();
+}

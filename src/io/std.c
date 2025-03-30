@@ -4,12 +4,24 @@
 #include <unistd.h>
 #include <dirent.h>
 #include <string.h>
+#include <errno.h>
+#include <sys/stat.h>
 
 #include "lq/mem.h"
 
 
 char *mktempdir(char *s) {
 	return mkdtemp(s);
+}
+
+char *ensuredir(char *s) {
+	int r;
+
+	r = mkdir(s, S_IRWXU);
+	if (r && r != EEXIST) {
+		return NULL;	
+	}
+	return s;
 }
 
 int lq_open(const char *pathname, int flags, int mode) {

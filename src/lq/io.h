@@ -16,6 +16,7 @@
  * @return Pointer to valid path string. NULL if directory could not be created.
  */
 char* mktempdir(char *s);
+char* ensuredir(char *s);
 int lq_open(const char *pathname, int flags, int mode);
 int lq_read(int f, char *buf, int c);
 int lq_files(const char *path, char **files, size_t files_len);

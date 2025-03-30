@@ -9,3 +9,5 @@ build/
 *.tar.gz
 *.so
 *.a
+vgcore.*
+a.out

@@ -153,6 +153,26 @@ START_TEST(check_load_specific) {
 }
 END_TEST
 
+START_TEST(check_many) {
+	LQPrivKey *pk;
+	LQPubKey *pubk;
+	LQPubKey *pubk_manual;
+	char *keydata;
+	char *keydata_manual;
+
+	pk = lq_privatekey_new(passphrase, passphrase_len);
+	ck_assert_ptr_nonnull(pk);
+	pubk = lq_publickey_from_privatekey(pk);
+	lq_publickey_bytes(pubk, &keydata);
+	pubk_manual = lq_publickey_new(keydata);
+	lq_publickey_bytes(pubk_manual, &keydata_manual);
+	ck_assert_mem_eq(keydata_manual, keydata, 65);
+	lq_publickey_free(pubk_manual);
+	lq_publickey_free(pubk);
+	lq_privatekey_free(pk);
+}
+END_TEST
+
 Suite * common_suite(void) {
 	Suite *s;
 	TCase *tc;
@@ -166,6 +186,7 @@ Suite * common_suite(void) {
 	tcase_add_test(tc, check_verify);
 	tcase_add_test(tc, check_create_load);
 	tcase_add_test(tc, check_load_specific);
+	tcase_add_test(tc, check_many);
 	suite_add_tcase(s, tc);
 
 	return s;

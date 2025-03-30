@@ -13,7 +13,7 @@ static char *_rerr[3] = {
 static char *_rerr_crypto[10] = {
 	"",
 	"Crypto backend",
-	"Auth fail",
+	"Key fail",
 	"Key storage fail",
 	"Sign reject",
 	"Resource fail",

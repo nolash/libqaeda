@@ -41,7 +41,7 @@ struct gpg_store {
 };
 
 /// store gpg library version.
-static const char *gpg_version = NULL;
+static char *gpg_version = NULL;
 
 /// directory holding crypto keys.
 static int gpg_cfg_idx_dir;
@@ -67,30 +67,33 @@ static LQStore *gpg_key_store;
  */
 int lq_crypto_init(const char *base) {
 	int r;
-	int l;
-	char *v;
+	int l = 0;
+	char *p = NULL;
 	char path[LQ_PATH_MAX];
 
 	if (gpg_version == NULL) {
-		v = (char*)gcry_check_version(GPG_MIN_VERSION);
-		if (v == NULL) {
-			return ERR_NOCRYPTO;
+		gpg_version = (char*)gcry_check_version(GPG_MIN_VERSION);
+		if (gpg_version == NULL) {
+			return debug_logerr(LLOG_ERROR, ERR_NOCRYPTO, "broken");
+		}
+		gcry_control (GCRYCTL_INITIALIZATION_FINISHED, 0);
+		if (!gcry_control (GCRYCTL_INITIALIZATION_FINISHED_P)) {
+			return debug_logerr(LLOG_ERROR, ERR_NOCRYPTO, "init gcrypt");
 		}
 	}
-	gpg_version = v;
 	debug_x(LLOG_DEBUG, "gpg", "using gpg", 1, MORGEL_TYP_STR, 0, "version", gpg_version);
 
 	//gpg_passphrase_digest_len = gcry_md_get_algo_dlen(GCRY_MD_SHA256);
 	gpg_passphrase_digest_len = gcry_md_get_algo_dlen(GCRY_MD_SHA512);
 	gpg_cfg_idx_dir = lq_config_register(LQ_TYP_STR, "CRYPTODIR");
 
-	v = path;
+	p = path;
 	l = strlen(base);
-	lq_cpy(v, base, l);
-	v += l;
-	if (*v != '/') {
-		*v = '/';
-		*(v+1) = 0;
+	lq_cpy(p, base, l);
+	p += l;
+	if (*p != '/') {
+		*p = '/';
+		*(p+1) = 0;
 	}
 
 	r = lq_config_set(gpg_cfg_idx_dir, path);
@@ -291,27 +294,33 @@ int lq_digest(const char *in, size_t in_len, char *out) {
 
 
 /// Apply public key to the gpg_store struct.
-static int key_apply_public(struct gpg_store *gpg, gcry_sexp_t key) {
+static int key_apply_public(struct gpg_store *gpg) {
 	char *p;
 	size_t c;
-	gcry_sexp_t pubkey;
+	gcry_sexp_t one;
+	gcry_sexp_t two;
 
-	pubkey = gcry_sexp_find_token(key, "public-key", 10);
-	if (pubkey == NULL) {
+	one = gcry_sexp_find_token(gpg->k, "public-key", 10);
+	if (one == NULL) {
 		return debug_logerr(LLOG_ERROR, ERR_KEYFAIL, "sexp pubkey");
 	}
-	pubkey = gcry_sexp_find_token(pubkey, "q", 1);
-	if (pubkey == NULL) {
+	two = gcry_sexp_find_token(one, "q", 1);
+	if (two == NULL) {
+		gcry_sexp_release(one);
 		return debug_logerr(LLOG_ERROR, ERR_KEYFAIL, "sexp q");
 	}
 	c = LQ_PUBKEY_LEN;
-	p = (char*)gcry_sexp_nth_data(pubkey, 1, &c);
+	p = (char*)gcry_sexp_nth_data(two, 1, &c);
 	if (p == NULL) {
+		gcry_sexp_release(two);
+		gcry_sexp_release(one);
 		return debug_logerr(LLOG_ERROR, ERR_KEYFAIL, "sexp first data");
 	}
+
 	lq_cpy(gpg->public_key, p, LQ_PUBKEY_LEN);
-	
-	p = (char*)gcry_pk_get_keygrip(key, (unsigned char*)gpg->fingerprint);
+	gcry_sexp_release(two);
+	gcry_sexp_release(one);
+	p = (char*)gcry_pk_get_keygrip(gpg->k, (unsigned char*)gpg->fingerprint);
 	if (p == NULL) {
 		return debug_logerr(LLOG_ERROR, ERR_KEYFAIL, "pubkey fingerprint");
 	}
@@ -342,7 +351,7 @@ static int key_create(struct gpg_store *gpg) {
 	}
 
 	// Apply the public part of the key to the underlying key structure.
-	r = key_apply_public(gpg, gpg->k);
+	r = key_apply_public(gpg);
 	if (r) {
 		return debug_logerr(LLOG_ERROR, ERR_KEYFAIL, "private create apply public");
 	}
@@ -627,7 +636,7 @@ static int gpg_key_load(struct gpg_store *gpg, const char *passphrase, size_t pa
 			return debug_logerr(LLOG_WARNING, ERR_FAIL, NULL);
 	}
 
-	r = key_apply_public(gpg, gpg->k);
+	r = key_apply_public(gpg);
 	if (r) {
 		return debug_logerr(LLOG_ERROR, ERR_KEYFAIL, "apply public key");
 	}
@@ -644,8 +653,19 @@ LQPrivKey* lq_privatekey_load(const char *passphrase, size_t passphrase_len, con
 	struct gpg_store *gpg;
 	int r;
 	
-	gpg = lq_alloc(sizeof(struct gpg_store));
-	lq_zero(gpg, sizeof(struct gpg_store));
+	pk = lq_alloc(sizeof(LQPrivKey));
+	if (pk == NULL) {
+		debug_logerr(LLOG_ERROR, ERR_KEYFAIL, "allocate object");
+		return NULL;
+	}
+	pk->impl = (struct gpg_store*)lq_alloc(sizeof(struct gpg_store));
+	if (pk->impl == NULL) {
+		lq_free(pk);
+		debug_logerr(LLOG_ERROR, ERR_KEYFAIL, "allocate internal structure");
+		return NULL;
+	}
+	lq_zero(pk->impl, sizeof(struct gpg_store));
+	gpg = (struct gpg_store*)pk->impl;
 	m = GPG_FIND_ORCREATE;
 	if (fingerprint != NULL) {
 		lq_cpy(gpg->fingerprint, fingerprint, LQ_FP_LEN);
@@ -653,12 +673,13 @@ LQPrivKey* lq_privatekey_load(const char *passphrase, size_t passphrase_len, con
 	}
 	r = gpg_key_load(gpg, passphrase, passphrase_len, m, NULL);
 	if (r) {
+		lq_free(pk->impl);
+		lq_free(pk);
+		debug_logerr(LLOG_ERROR, ERR_KEYFAIL, "key load fail");
 		return NULL;	
 	}
-	pk = lq_alloc(sizeof(LQPrivKey));
 	pk->key_typ = GPG_KEY_TYP;
 	pk->key_state = LQ_KEY_INIT;
-	pk->impl = gpg;
 
 	return pk;
 }
@@ -882,11 +903,20 @@ int lq_signature_verify(LQSig *sig, const char *data, size_t data_len) {
 }
 
 void lq_privatekey_free(LQPrivKey *pk) {
+	struct gpg_store *gpg;
+
+	gpg = (struct gpg_store*)pk->impl;
+	gcry_sexp_release(gpg->k);
 	lq_free(pk->impl);
 	lq_free(pk);
 }
 
 void lq_publickey_free(LQPubKey *pubk) {
+	struct gpg_store *gpg;
+
+	gpg = (struct gpg_store*)pubk->impl;
+	gcry_sexp_release(gpg->k);
+	lq_free(pubk->impl);
 	lq_free(pubk);
 }
 
@@ -906,6 +936,7 @@ LQPubKey* lq_publickey_from_privatekey(LQPrivKey *pk) {
 }
 
 LQPubKey* lq_publickey_new(const char *full) {
+	const char *p;
 	const char *r;
 	gcry_error_t e;
 	size_t c;
@@ -919,12 +950,15 @@ LQPubKey* lq_publickey_new(const char *full) {
 	c = 0;
 	e = gcry_sexp_build(&gpg->k, &c, "(key-data(public-key(ecc(curve Ed25519)(q %b))))", LQ_PUBKEY_LEN, full);
 	if (e != GPG_ERR_NO_ERROR) {
+		p = gcry_strerror(e);
+		debug_logerr(LLOG_DEBUG, ERR_KEYFAIL, (char*)p);
 		return NULL;
 	}
 	lq_cpy(gpg->public_key, full, LQ_PUBKEY_LEN);
 
 	r = (char*)gcry_pk_get_keygrip(gpg->k, (unsigned char*)gpg->fingerprint);
 	if (r == NULL) {
+		debug_logerr(LLOG_ERROR, ERR_KEYFAIL, "fingerprint fail");
 		return NULL;
 	}
 
@@ -944,7 +978,9 @@ size_t lq_publickey_fingerprint(LQPubKey* pubk, char **out) {
 }
 
 void lq_crypto_free() {
-	lq_free((void*)gpg_key_store);
+	lq_store_free((void*)gpg_key_store);
+	gpg_key_store = NULL;
+	gpg_version = NULL;
 }
 
 #endif
