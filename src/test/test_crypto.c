@@ -10,13 +10,13 @@
 const char *data = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
 const char *salt = "spamspamspamspamspamspamspamspam";
 
-// sha256sum "foo" 2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae
-static const char privkeydata[32] = {
-	0x2c, 0x26, 0xb4, 0x6b, 0x68, 0xff, 0xc6, 0x8f,
-	0xf9, 0x9b, 0x45, 0x3c, 0x1d, 0x30, 0x41, 0x34,
-	0x13, 0x42, 0x2d, 0x70, 0x64, 0x83, 0xbf, 0xa0,
-	0xf9, 0x8a, 0x5e, 0x88, 0x62, 0x66, 0xe7, 0xae,
-};
+//// sha256sum "foo" 2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae
+//static const char privkeydata[32] = {
+//	0x2c, 0x26, 0xb4, 0x6b, 0x68, 0xff, 0xc6, 0x8f,
+//	0xf9, 0x9b, 0x45, 0x3c, 0x1d, 0x30, 0x41, 0x34,
+//	0x13, 0x42, 0x2d, 0x70, 0x64, 0x83, 0xbf, 0xa0,
+//	0xf9, 0x8a, 0x5e, 0x88, 0x62, 0x66, 0xe7, 0xae,
+//};
 
 // "1233"
 static const size_t passphrase_len = 4;
@@ -40,7 +40,6 @@ START_TEST(check_digest) {
 END_TEST
 
 START_TEST(check_privatekey) {
-	int r;
 	LQPrivKey *pk;
 
 	pk = lq_privatekey_new(passphrase, passphrase_len);
@@ -97,7 +96,6 @@ START_TEST(check_verify) {
 	char r;
 	LQPrivKey *pk;
 	LQSig *sig;
-	char *sigdata;
 
 	pk = lq_privatekey_new(passphrase, 32);
 	sig = lq_privatekey_sign(pk, data, strlen(data), salt);
@@ -150,18 +148,17 @@ START_TEST(check_load_specific) {
 END_TEST
 
 Suite * common_suite(void) {
-	int r;
 	Suite *s;
 	TCase *tc;
 
 	s = suite_create("crypto");
 	tc = tcase_create("file");
-//	tcase_add_test(tc, check_digest);
-//	tcase_add_test(tc, check_privatekey);
-//	tcase_add_test(tc, check_publickey);
-//	tcase_add_test(tc, check_signature);
-//	tcase_add_test(tc, check_verify);
-//	tcase_add_test(tc, check_create_load);
+	tcase_add_test(tc, check_digest);
+	tcase_add_test(tc, check_privatekey);
+	tcase_add_test(tc, check_publickey);
+	tcase_add_test(tc, check_signature);
+	tcase_add_test(tc, check_verify);
+	tcase_add_test(tc, check_create_load);
 	tcase_add_test(tc, check_load_specific);
 	suite_add_tcase(s, tc);
 

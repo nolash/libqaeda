@@ -37,7 +37,6 @@ int lq_file_content_count(enum payload_e typ, LQStore *store, const char *key, s
 
 int lq_file_content_get(enum payload_e typ, LQStore *store, const char *key, size_t key_len, char *value, size_t *value_len) {
 	int f;
-	int r;
 	size_t l;
 	size_t c;
 	char buf[LQ_DIGEST_LEN * 2 + 1];
@@ -84,7 +83,6 @@ int lq_file_content_get(enum payload_e typ, LQStore *store, const char *key, siz
 }
 
 int lq_file_content_put(enum payload_e typ, LQStore *store, const char *key, size_t *key_len, char *value, size_t value_len) {
-	int r;
 	size_t c;
 	size_t l;
 	char buf[LQ_STORE_KEY_MAX - 1];

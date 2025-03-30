@@ -87,7 +87,7 @@ int lq_config_register(enum lq_typ_e typ, const char *name) {
 		return -1;
 	}
 	*(config.typs+config.last) = typ;
-	*(config_idx + config.last) = name; // name must survive, or NULL for no reverse.
+	*(config_idx + config.last) = (char*)name; // name must survive, or NULL for no reverse.
 	l = config.last;
 	config.last++;
 

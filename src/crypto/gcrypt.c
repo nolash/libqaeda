@@ -59,8 +59,7 @@ static const char *gpg_version = NULL;
 static int gpg_cfg_idx_dir;
 
 /// default digest id.
-//static int gpg_passphrase_digest = GCRY_MD_SHA256;
-static int gpg_passphrase_digest = GCRY_MD_SHA512;
+static int gpg_passphrase_digest = GCRY_MD_SHA256;
 
 /// digest length of hashed password.
 static int gpg_passphrase_digest_len;
@@ -86,7 +85,7 @@ int lq_crypto_init(const char *base) {
 	char path[LQ_PATH_MAX];
 
 	if (gpg_version == NULL) {
-		v = gcry_check_version(GPG_MIN_VERSION);
+		v = (char*)gcry_check_version(GPG_MIN_VERSION);
 		if (v == NULL) {
 			return ERR_NOCRYPTO;
 		}
@@ -142,7 +141,7 @@ static void pad(char *indata_raw, size_t outsize, const char *indata) { //std::s
 }
 
 static int create_handle(gcry_cipher_hd_t *h, const char *key, const char *nonce) {
-	char *p;
+	const char *p;
 	gcry_error_t e;
 
 	e = gcry_cipher_open(h, GCRY_CIPHER_CHACHA20, GCRY_CIPHER_MODE_POLY1305, GCRY_CIPHER_SECURE);
@@ -384,7 +383,6 @@ static int key_create_store(struct gpg_store *gpg, const char *passphrase, size_
 	int r;
 	int kl;
 	char v[LQ_CRYPTO_BUFLEN];
-	int i;
 	int l;
 	size_t c;
 	size_t m;
@@ -421,7 +419,7 @@ static int key_create_store(struct gpg_store *gpg, const char *passphrase, size_
 	c = get_padsize(m, LQ_CRYPTO_BLOCKSIZE);
 
 	// Hash the encryption key to the expected length.
-	r = calculate_digest_algo(passphrase, passphrase_len, passphrase_hash, GCRY_MD_SHA256);
+	r = calculate_digest_algo(passphrase, passphrase_len, passphrase_hash, gpg_passphrase_digest);
 	if (r) {
 		return debug_logerr(LLOG_ERROR, ERR_CRYPTO, "passphrase hash");
 	}
@@ -553,7 +551,6 @@ static int key_from_data(gcry_sexp_t *key, const char *indata, size_t indata_len
 static int key_from_store(struct gpg_store *gpg, const char *passphrase, size_t passphrase_len) {
 	char *nonce;
 	char *p;
-	int l;
 	int r;
 	LQStore *store;
 	char inkey[LQ_FP_LEN];
@@ -586,7 +583,7 @@ static int key_from_store(struct gpg_store *gpg, const char *passphrase, size_t 
 	}
 
 	// Hash the encryption key to the expected length.
-	r = calculate_digest_algo(passphrase, passphrase_len, passphrase_hash, GCRY_MD_SHA256);
+	r = calculate_digest_algo(passphrase, passphrase_len, passphrase_hash, gpg_passphrase_digest);
 	if (r) {
 		return debug_logerr(LLOG_ERROR, ERR_CRYPTO, "passphrase hash");
 	}
@@ -667,18 +664,10 @@ static int gpg_key_load(struct gpg_store *gpg, const char *passphrase, size_t pa
 
 /// Implements the interface to load a private key from storage.
 LQPrivKey* lq_privatekey_load(const char *passphrase, size_t passphrase_len, const char *fingerprint) {
-	LQStore *store;
 	LQPrivKey *pk;
-	char *p;
 	enum gpg_find_mode_e m;
 	struct gpg_store *gpg;
 	int r;
-
-	//char passphrase_hash[gpg_passphrase_digest_len];
-	//r = calculate_digest_algo(passphrase, passphrase_len, passphrase_hash, gpg_passphrase_digest);
-	//if (r) {
-	//	return NULL;
-	//}
 	
 	gpg = lq_alloc(sizeof(struct gpg_store));
 	lq_zero(gpg, sizeof(struct gpg_store));
@@ -687,7 +676,6 @@ LQPrivKey* lq_privatekey_load(const char *passphrase, size_t passphrase_len, con
 		lq_cpy(gpg->fingerprint, fingerprint, LQ_FP_LEN);
 		m = GPG_FIND_FINGERPRINT;
 	}
-	//r = gpg_key_load(gpg, passphrase_hash, GPG_FIND_MAIN, NULL);
 	r = gpg_key_load(gpg, passphrase, passphrase_len, m, NULL);
 	if (r) {
 		return NULL;	
@@ -844,7 +832,7 @@ LQSig* lq_privatekey_sign(LQPrivKey *pk, const char *data, size_t data_len, cons
 }
 
 LQSig* lq_signature_from_bytes(const char *sig_data, size_t sig_len, LQPubKey *pubkey) {
-
+	return NULL;
 }
 
 size_t lq_signature_bytes(LQSig *sig, char **out) {
@@ -973,7 +961,6 @@ LQPubKey* lq_publickey_new(const char *full) {
 }
 
 size_t lq_publickey_fingerprint(LQPubKey* pubk, char **out) {
-	size_t c;
 	struct gpg_store *gpg;
 
 	gpg = (struct gpg_store*)pubk->impl;
