@@ -11,9 +11,9 @@
 static const int store_typ_mem = 2;
 
 struct pair_t {
-	const char *key;
+	char *key;
 	size_t key_len;
-	const char *val;
+	char *val;
 	size_t val_len;
 };
 
@@ -57,6 +57,8 @@ static void free_item(void *o) {
 
 	v = (struct pair_t*)o;
 	debug_x(LLOG_DEBUG, "store.mem", "freeing key", 1, MORGEL_TYP_BIN, v->key_len, "key", v->key);
+	lq_free(v->key);
+	lq_free(v->val);
 	lq_free((void*)v);
 }
 
@@ -109,10 +111,12 @@ int lq_mem_content_put(enum payload_e typ, LQStore *store, const char *key, size
 
 	path[0] = (char)typ;
 	lq_cpy(path+1, key, *key_len);
-	v->key = path;
+	v->key = lq_alloc(LQ_STORE_KEY_MAX);
 	v->key_len = *key_len + 1;
-	v->val = value;
+	lq_cpy(v->key, path, v->key_len);
+	v->val = lq_alloc(LQ_STORE_VAL_MAX);
 	v->val_len = value_len;
+	lq_cpy(v->val, value, value_len);
 
 	debug_x(LLOG_DEBUG, "store.mem", "store put req", 2, MORGEL_TYP_BIN, v->key_len, "key", v->key, MORGEL_TYP_NUM, 0, "bytes", value_len);
 
@@ -130,10 +134,10 @@ int lq_mem_content_put(enum payload_e typ, LQStore *store, const char *key, size
 
 void lq_mem_content_free(LQStore *store) {
 	if (store->userdata != NULL) {
-		hashmap_clear((struct hashmap*)store->userdata, false);
 		hashmap_free((struct hashmap*)store->userdata);
 		store->userdata = NULL;
 	}
+	lq_free(store);
 }
 
 struct lq_store_t LQMemContent = {
@@ -152,7 +156,4 @@ LQStore* lq_store_new(const char *spec) {
 	lq_cpy(store, &LQMemContent, sizeof(LQMemContent));
 	store->userdata = NULL;
 	return store;
-}
-
-void lq_store_free(LQStore *store) {
 }

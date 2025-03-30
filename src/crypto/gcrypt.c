@@ -68,9 +68,10 @@ static LQStore *gpg_key_store;
 int lq_crypto_init(const char *base) {
 	int r;
 	int l = 0;
-	char *p = NULL;
+	char *p;
 	char path[LQ_PATH_MAX];
 
+	lq_zero(path, LQ_PATH_MAX);
 	if (gpg_version == NULL) {
 		gpg_version = (char*)gcry_check_version(GPG_MIN_VERSION);
 		if (gpg_version == NULL) {
@@ -90,10 +91,9 @@ int lq_crypto_init(const char *base) {
 	p = path;
 	l = strlen(base);
 	lq_cpy(p, base, l);
-	p += l;
-	if (*p != '/') {
-		*p = '/';
-		*(p+1) = 0;
+	if (path[l] != '/') {
+		path[l] = '/';
+		path[l+1] = 0;
 	}
 
 	r = lq_config_set(gpg_cfg_idx_dir, path);

@@ -125,6 +125,8 @@ int lq_file_content_put(enum payload_e typ, LQStore *store, const char *key, siz
 }
 
 void lq_file_content_free(LQStore *store) {
+	lq_free(store->userdata);
+	lq_free(store);
 }
 
 struct lq_store_t LQFileContent = {
@@ -146,11 +148,6 @@ LQStore* lq_store_new(const char *spec) {
 	store->userdata = lq_alloc(l);
 	lq_cpy(store->userdata, spec, l);
 	return store;
-}
-
-void lq_store_free(LQStore *store) {
-	lq_free(store->userdata);
-	lq_free(store);
 }
 
 //LQStore* lq_file_content_new(const char *dir) {
