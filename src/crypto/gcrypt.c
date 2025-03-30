@@ -599,7 +599,6 @@ static int key_from_store(struct gpg_store *gpg, const char *passphrase, size_t 
 
 static int gpg_key_load(struct gpg_store *gpg, const char *passphrase, size_t passphrase_len, enum gpg_find_mode_e mode, const void *criteria) {
 	int r;
-	char *p;
 
 	switch(mode) {
 		case GPG_FIND_MAIN:

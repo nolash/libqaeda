@@ -1,8 +1,11 @@
 #include <hashmap.h>
+#include <llog.h>
 
 #include "lq/mem.h"
 #include "lq/store.h"
 #include "lq/err.h"
+#include "lq/io.h"
+#include "debug.h"
 
 
 static const int store_typ_mem = 2;
@@ -51,7 +54,7 @@ static long unsigned int pair_hash(const void *item, long unsigned int s0, long 
 
 struct hashmap* lq_mem_init(LQStore *store) {
 	if (store->userdata == NULL) {
-		store->userdata = (void*)hashmap_new(sizeof(struct pair_t) , 0, 0, 0, pair_hash, pair_cmp, NULL, NULL);
+		store->userdata = (void*)hashmap_new(sizeof(struct pair_t) , 1024*1024, 0, 0, pair_hash, pair_cmp, NULL, NULL);
 	}
 	return (struct hashmap *)store->userdata;
 }
@@ -60,11 +63,16 @@ int lq_mem_content_get(enum payload_e typ, LQStore *store, const char *key, size
 	struct hashmap *o;
 	struct pair_t v;
 	const struct pair_t *p;
+	char path[LQ_PATH_MAX];
 	
 	o = lq_mem_init(store);
 
-	v.key = key;
-	v.key_len = key_len;
+	path[0] = (char)typ;
+	lq_cpy(path+1, key, key_len);
+	v.key = path;
+	v.key_len = key_len + 1;
+
+	debug_x(LLOG_DEBUG, "store.mem", "store get req", 1, MORGEL_TYP_BIN, v.key_len, "key", v.key);
 
 	p = hashmap_get(o, &v);
 	if (p == NULL) {
@@ -73,20 +81,28 @@ int lq_mem_content_get(enum payload_e typ, LQStore *store, const char *key, size
 	*value_len = p->val_len;
 	lq_cpy(value, p->val, *value_len);
 	
+	debug_x(LLOG_DEBUG, "store.mem", "store get res", 2, MORGEL_TYP_BIN, v.key_len, "key", v.key, MORGEL_TYP_NUM, 0, "bytes", *value_len);
+
 	return ERR_OK;
 }
 
 int lq_mem_content_put(enum payload_e typ, LQStore *store, const char *key, size_t *key_len, char *value, size_t value_len) {
 	struct hashmap *o;
 	struct pair_t v;
+	char path[LQ_PATH_MAX];
 
-	v.key = key;
-	v.key_len = *key_len;
+	path[0] = (char)typ;
+	lq_cpy(path+1, key, *key_len);
+	v.key = path;
+	v.key_len = *key_len + 1;
 	v.val = value;
 	v.val_len = value_len;
 
 	o = lq_mem_init(store);
 	hashmap_set(o, &v);
+
+	debug_x(LLOG_DEBUG, "store.mem", "store put", 2, MORGEL_TYP_BIN, v.key_len, "key", v.key, MORGEL_TYP_NUM, 0, "bytes", value_len);
+
 	return ERR_OK;
 }
 
@@ -108,6 +124,7 @@ struct lq_store_t LQMemContent = {
 LQStore* lq_store_new(const char *spec) {
 	LQStore *store;
 
+	debug(LLOG_DEBUG, "store.mem", "ignoring spec in mem store init");
 	store = lq_alloc(sizeof(LQStore));
 	lq_cpy(store, &LQMemContent, sizeof(LQMemContent));
 	return store;

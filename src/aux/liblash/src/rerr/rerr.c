@@ -30,7 +30,6 @@ char *rerr_base[3] = {
 void rerr_init(const char *coreprefix) {
 #ifdef RERR
 	int i;
-	char *rerr_x;
 
 	for (i = 1; i < RERR_N_PFX + 1; i++) {
 		rerr[i] = 0x0;
