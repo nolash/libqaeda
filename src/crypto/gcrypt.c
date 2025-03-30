@@ -400,11 +400,7 @@ static int key_create_store(struct gpg_store *gpg, const char *passphrase, size_
 	if (r) {
 		return debug_logerr(LLOG_ERROR, ERR_KEYFAIL, "key create");
 	}
-	pubk = lq_publickey_new(gpg->public_key);
-	if (pubk == NULL) {
-		return debug_logerr(LLOG_ERROR, ERR_KEYFAIL, "publickey");
-	}
-
+	
 	// Export the S-expression to a text buffer for saving, canonical formatting
 	kl = gcry_sexp_sprint(gpg->k, GCRYSEXP_FMT_CANON, NULL, 0);
 	m = (size_t)kl + 1;
@@ -434,12 +430,17 @@ static int key_create_store(struct gpg_store *gpg, const char *passphrase, size_
 
 	// Export the key (fingerprint) and value (ciphertext) to put in the store.
 	// (We don't need the inner private key pointer anymore, so we re-use it.)
-	lq_cpy(buf_val, nonce, CHACHA20_NONCE_LENGTH_BYTES);
-	lq_cpy(buf_val + CHACHA20_NONCE_LENGTH_BYTES, ciphertext, c);
+	pubk = lq_publickey_new(gpg->public_key);
+	if (pubk == NULL) {
+		return debug_logerr(LLOG_ERROR, ERR_KEYFAIL, "publickey");
+	}
 	gpg = (struct gpg_store*)pubk->impl;
 	lq_cpy(buf_key, gpg->fingerprint, LQ_FP_LEN);
+	lq_cpy(buf_val, nonce, CHACHA20_NONCE_LENGTH_BYTES);
+	lq_cpy(buf_val + CHACHA20_NONCE_LENGTH_BYTES, ciphertext, c);
+	lq_publickey_free(pubk);
 
-	// Instantiate the store.
+	// Retrieve the store.
 	store = key_store_get();
 	if (store == NULL) {
 		return debug_logerr(LLOG_ERROR, ERR_KEYFILE, "create store");
@@ -978,7 +979,8 @@ size_t lq_publickey_fingerprint(LQPubKey* pubk, char **out) {
 }
 
 void lq_crypto_free() {
-	lq_store_free((void*)gpg_key_store);
+	//lq_store_free((void*)gpg_key_store);
+	gpg_key_store->free(gpg_key_store);
 	gpg_key_store = NULL;
 	gpg_version = NULL;
 }

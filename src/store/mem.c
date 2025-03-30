@@ -52,9 +52,17 @@ static long unsigned int pair_hash(const void *item, long unsigned int s0, long 
 	return r;
 }
 
+static void free_item(void *o) {
+	struct pair_t *v;
+
+	v = (struct pair_t*)o;
+	debug_x(LLOG_DEBUG, "store.mem", "freeing key", 1, MORGEL_TYP_BIN, v->key_len, "key", v->key);
+	lq_free((void*)v);
+}
+
 struct hashmap* lq_mem_init(LQStore *store) {
 	if (store->userdata == NULL) {
-		store->userdata = (void*)hashmap_new(sizeof(struct pair_t) , 1024*1024, 0, 0, pair_hash, pair_cmp, NULL, NULL);
+		store->userdata = (void*)hashmap_new(sizeof(struct pair_t) , 1024*1024, 0, 0, pair_hash, pair_cmp, free_item, NULL);
 		debug(LLOG_INFO, "store.mem", "created new hashmap for mem store");
 	}
 	return (struct hashmap *)store->userdata;
@@ -92,34 +100,37 @@ int lq_mem_content_get(enum payload_e typ, LQStore *store, const char *key, size
 int lq_mem_content_put(enum payload_e typ, LQStore *store, const char *key, size_t *key_len, char *value, size_t value_len) {
 	const char *r;
 	struct hashmap *o;
-	struct pair_t v;
+	struct pair_t *v;
 	char path[LQ_PATH_MAX];
 
 	o = lq_mem_init(store);
+	
+	v = lq_alloc(sizeof(struct pair_t));
 
 	path[0] = (char)typ;
 	lq_cpy(path+1, key, *key_len);
-	v.key = path;
-	v.key_len = *key_len + 1;
-	v.val = value;
-	v.val_len = value_len;
+	v->key = path;
+	v->key_len = *key_len + 1;
+	v->val = value;
+	v->val_len = value_len;
 
-	debug_x(LLOG_DEBUG, "store.mem", "store put req", 2, MORGEL_TYP_BIN, v.key_len, "key", v.key, MORGEL_TYP_NUM, 0, "bytes", value_len);
+	debug_x(LLOG_DEBUG, "store.mem", "store put req", 2, MORGEL_TYP_BIN, v->key_len, "key", v->key, MORGEL_TYP_NUM, 0, "bytes", value_len);
 
-	r = hashmap_set(o, &v);
+	r = hashmap_set(o, v);
 	if (r != NULL) {
 		if (hashmap_oom(o)) {
 			return ERR_WRITE;
 		}
 	}
 
-	debug_x(LLOG_DEBUG, "store.mem", "store put res", 2, MORGEL_TYP_BIN, v.key_len, "key", v.key, MORGEL_TYP_NUM, 0, "bytes", value_len);
+	debug_x(LLOG_DEBUG, "store.mem", "store put res", 2, MORGEL_TYP_BIN, v->key_len, "key", v->key, MORGEL_TYP_NUM, 0, "bytes", value_len);
 
 	return ERR_OK;
 }
 
 void lq_mem_content_free(LQStore *store) {
 	if (store->userdata != NULL) {
+		hashmap_clear((struct hashmap*)store->userdata, false);
 		hashmap_free((struct hashmap*)store->userdata);
 		store->userdata = NULL;
 	}
@@ -144,5 +155,4 @@ LQStore* lq_store_new(const char *spec) {
 }
 
 void lq_store_free(LQStore *store) {
-	lq_free(store);
 }

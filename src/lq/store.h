@@ -66,11 +66,4 @@ struct lq_resolve_t {
  */
 LQStore* lq_store_new(const char *spec);
 
-/**
- * \brief Free resources used by store instance.
- *
- * \param[in] Store object.
- */
-void lq_store_free(LQStore *store);
-
 #endif // LIBQAEDA_STORE_H_
