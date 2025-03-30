@@ -7,6 +7,8 @@
 #include "lq/mem.h"
 #include "lq/crypto.h"
 #include "lq/config.h"
+#include "lq/base.h"
+#include "lq/io.h"
 
 const char *data = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
 const char *data_two = "Que trata de la condición y ejercicio del famoso hidalgo D. Quijote de la Mancha En un lugar de la Mancha, de cuyo nombre no quiero acordarme, no ha mucho tiempo que vivía un hidalgo de los de lanza en astillero, adarga antigua, rocín flaco y galgo corredor.";
@@ -165,9 +167,6 @@ Suite * common_suite(void) {
 	Suite *s;
 	TCase *tc;
 
-	lq_config_init();
-	lq_crypto_init("./testdata");
-
 	s = suite_create("cert");
 	tc = tcase_create("serialize");
 	tcase_add_test(tc, check_cert_symmetric_nomsg);
@@ -181,10 +180,23 @@ Suite * common_suite(void) {
 }
 
 int main(void) {
+	int r;
 	int n_fail;
+	char path[LQ_PATH_MAX];
 
 	Suite *s;
 	SRunner *sr;
+
+	r = lq_init();
+	if (r) {
+		return 1;
+	}
+
+	lq_cpy(path, "/tmp/lqcrypto_test_XXXXXX", 26);
+	r = lq_crypto_init(mktempdir(path));
+	if (r) {
+		return 1;
+	}
 
 	s = common_suite();	
 	sr = srunner_create(s);

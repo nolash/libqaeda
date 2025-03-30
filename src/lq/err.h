@@ -6,22 +6,25 @@
 
 /// Error values used across all error contexts.
 enum err_e {
-	ERR_NOOP = 3, ///< No action taken.
-	ERR_BYTEORDER, ///< Errors related to endianness
-	ERR_OVERFLOW, ///< Not enough space to write
-	ERR_INIT, ///< Failure instantiating object or data
-	ERR_MEM, ///< Failure allocating memory
-	ERR_READ, ///< General data read failure
-	ERR_WRITE, ///< General data write failure
-	ERR_ENCODING, ///< Failure in serialization and data transformation
-	ERR_REQUEST, ///< Error related to certificate request messages
-	ERR_RESPONSE, ///< Error related to certificate response messages
-	ERR_NOENT, ///< Object not found
-	ERR_COMPAT, ///< Incompatible data or format
-	ERR_CRYPTO, ///< Crypto related error
+	RERR_PFX_LQ = 0x100,
+	ERR_REQUEST = 0x101, ///< Error related to certificate request messages
+	ERR_RESPONSE = 0x102, ///< Error related to certificate response messages
+	RERR_PFX_CRYPTO = 0x200,
+	ERR_NOCRYPTO = 0x201,
+	ERR_KEYFAIL = 0x202,
+	ERR_KEYFILE = 0x203,
+	ERR_KEY_UNLOCK = 0x204,
+	ERR_KEY_LOCK = 0x205,
+	ERR_KEY_REJECT = 0x206,
+	ERR_NOKEY = 0x207,
+	ERR_CIPHER = 0x208,
+	ERR_DIGEST = 0x209,
+	ERR_SIGFAIL = 0x210,
+	ERR_SIGVALID = 0x211,
+	RERR_PFX_STORE = 0x300,
+	ERR_STORE_AVAIL = 0x301,
 };
 
-typedef enum err_e LQErr;
+void lq_err_init();
 
 #endif // LIBQAEDA_ERR_H_
-

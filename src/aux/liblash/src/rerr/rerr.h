@@ -1,12 +1,29 @@
 #ifndef RERR_H_
 #define RERR_H_
 
-#define ERR_OK 0x0
-#define ERR_FAIL 0x1
-#define ERR_UNSUPPORTED 0x2
+enum err_base_e {
+	ERR_OK,
+	ERR_FAIL,
+	ERR_SUPPORT,
+	ERR_INIT,
+	ERR_NOOP,
+	ERR_NOENT,
+	ERR_READ,
+	ERR_WRITE,
+	ERR_MEM,
+	ERR_COMPAT,
+	ERR_ENCODING,
+	ERR_BYTEORDER,
+	ERR_OVERFLOW,
+	ERR_UNDERFLOW,
+};
 
 #ifndef RERR_N_PFX 
 #define RERR_N_PFX 0
+#endif
+
+#ifndef RERR_NOTFOUND_RESPONSE
+#define RERR_NOTFOUND_RESPONSE "(unregistered)"
 #endif
 
 void rerr_init(const char *coreprefix);

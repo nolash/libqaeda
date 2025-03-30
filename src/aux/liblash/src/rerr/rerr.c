@@ -3,21 +3,40 @@
 #ifdef RERR
 static char** rerr[RERR_N_PFX + 1];
 static const char* rerr_pfx[RERR_N_PFX + 1];
+#ifdef RERR_EXT
+char *rerr_base[14] = {
+#else
 char *rerr_base[3] = {
+#endif
 	"OK",
-	"FAIL",
-	"UNSUPPORTED",
+	"Failed",
+	"Not supported",
+#ifdef RERR_EXT
+	"Initialization",
+	"No change",
+	"Not found",
+	"Read",
+	"Write",
+	"Memory",
+	"Incompatible",
+	"Encoding",
+	"Wrong byteorder",
+	"Value too large",
+	"Value too small",
+#endif
 };
 #endif
 
 void rerr_init(const char *coreprefix) {
 #ifdef RERR
 	int i;
+	char *rerr_x;
 
 	for (i = 1; i < RERR_N_PFX + 1; i++) {
 		rerr[i] = 0x0;
 		rerr_pfx[i] = 0x0;	
 	}
+
 	rerr[0] = rerr_base;
 	rerr_pfx[0] = coreprefix;
 #endif
@@ -41,7 +60,13 @@ static void splitcode(int code, short *k, char *v) {
 }
 
 static char *strv(short k, char v) {
-	return (char*)(*(rerr[k]+v));
+	char **e;
+
+	e = rerr[k];
+	if (e == 0x0) {
+		return RERR_NOTFOUND_RESPONSE;
+	}
+	return (char*)(*(e+v));
 }
 #endif
 

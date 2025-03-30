@@ -1,5 +1,5 @@
 INCLUDES := -I. -I./aux/include
-CFLAGS +=  $(INCLUDES) -Wall
+CFLAGS +=  $(INCLUDES) -Wall -DRERR
 
 all: all-gpg
 all-dummy: asn1 aux core dummy

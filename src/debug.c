@@ -95,7 +95,7 @@ int debug_logerr(enum lloglvl_e lvl, int err, char *msg) {
 	char *s;
 
 	if (msg == 0) {
-		msg = "debug logerr";
+		msg = "(debug logerr)";
 	}
 	s = (char*)rerrpfx(err);
 	e = llog_new_ns(lvl, msg, s);

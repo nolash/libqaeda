@@ -43,19 +43,6 @@
 #define LQ_POINT_LEN 32
 #endif
 
-#define RERR_PFX_CRYPTO 0x100
-/// Crypto backend unavailable
-#define ERR_NOCRYPTO 0x101
-/// Crypto authentication fail
-#define ERR_KEYFAIL 0x102
-/// Fail access to keyfile
-#define ERR_KEYFILE 0x103
-/// Last attempt to unlock key failed
-#define ERR_KEY_UNLOCK 0x104
-/// Usage of key for signature has been rejected (by user)
-#define ERR_KEY_REJECT 0x105
-/// Crypto resource fail
-#define ERR_NOKEY 0x106
 
 enum lq_keystate_e {
 	LQ_KEY_INIT = 1,
