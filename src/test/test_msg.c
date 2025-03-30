@@ -48,8 +48,6 @@ START_TEST(check_msg_symmetric) {
 	lq_msg_free(msg);
 	resolve.store->free(resolve.store);
 	resolve_dummy.store->free(resolve_dummy.store);
-
-	lq_store_free(store);
 }
 END_TEST
 

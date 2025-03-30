@@ -54,7 +54,7 @@ START_TEST(check_hashmap) {
 
 	ck_assert_mem_eq(in, out, 8192);
 
-	lq_store_free(store);
+	store->free(store);
 }
 END_TEST
 

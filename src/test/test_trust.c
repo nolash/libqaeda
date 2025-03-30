@@ -6,6 +6,7 @@
 #include "lq/err.h"
 #include "lq/mem.h"
 #include "lq/crypto.h"
+#include "lq/io.h"
 
 static const char pubkey_data_alice[65] = { 0x40,
 	0xde, 0x58, 0x08, 0xe7, 0x24, 0x5e, 0x04, 0x72,
@@ -48,8 +49,15 @@ START_TEST(check_trust_none) {
 	LQStore *store;
 	char *lodata;
 	size_t lolen;
+	char path[1024];
+	char *p;
 
-	store = &LQMemContent;
+	lq_cpy(path, "/tmp/lqstore_file_XXXXXX", 25);
+	p = mktempdir(path);
+	*(p+24) = '/';
+	*(p+25) = 0x0;
+	store = lq_store_new(p);
+	ck_assert_ptr_nonnull(store->userdata);
 
 	pubkey_alice = lq_publickey_new(pubkey_data_alice);
 	pubkey_bob = lq_publickey_new(pubkey_data_bob);
@@ -80,8 +88,15 @@ START_TEST(check_trust_one) {
 	LQStore *store;
 	char *lodata;
 	size_t lolen;
+	char path[1024];
+	char *p;
 
-	store = &LQMemContent;
+	lq_cpy(path, "/tmp/lqstore_file_XXXXXX", 25);
+	p = mktempdir(path);
+	*(p+24) = '/';
+	*(p+25) = 0x0;
+	store = lq_store_new(p);
+	ck_assert_ptr_nonnull(store->userdata);
 
 	pubkey_alice = lq_publickey_new(pubkey_data_alice);
 
@@ -104,8 +119,15 @@ START_TEST(check_trust_best) {
 	LQStore *store;
 	char *lodata;
 	size_t lolen;
+	char path[1024];
+	char *p;
 
-	store = &LQMemContent;
+	lq_cpy(path, "/tmp/lqstore_file_XXXXXX", 25);
+	p = mktempdir(path);
+	*(p+24) = '/';
+	*(p+25) = 0x0;
+	store = lq_store_new(p);
+	ck_assert_ptr_nonnull(store->userdata);
 
 	pubkey_alice = lq_publickey_new(pubkey_data_alice);
 
@@ -128,8 +150,15 @@ START_TEST(check_trust_all) {
 	LQStore *store;
 	char *lodata;
 	size_t lolen;
+	char path[1024];
+	char *p;
 
-	store = &LQMemContent;
+	lq_cpy(path, "/tmp/lqstore_file_XXXXXX", 25);
+	p = mktempdir(path);
+	*(p+24) = '/';
+	*(p+25) = 0x0;
+	store = lq_store_new(p);
+	ck_assert_ptr_nonnull(store->userdata);
 
 	pubkey_alice = lq_publickey_new(pubkey_data_alice);
 
