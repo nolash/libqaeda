@@ -57,7 +57,7 @@ const static char gpg_fingerprint_zero[LQ_FP_LEN];
 
 const static char gpg_default_store_key;
 
-const static LQStore *gpg_key_store;
+static LQStore *gpg_key_store;
 
 /**
  * Verifies that installed gpg version is supported.
@@ -354,8 +354,8 @@ static int key_create(struct gpg_store *gpg) {
 // set in the configuration.
 // Caller must free it.
 LQStore *key_store_get() {
-	int r;
-	char *p;
+//	int r;
+//	char *p;
 
 //	r = lq_config_get(gpg_cfg_idx_dir, (void**)&p);
 //	if (r) {
@@ -944,7 +944,7 @@ size_t lq_publickey_fingerprint(LQPubKey* pubk, char **out) {
 }
 
 void lq_crypto_free() {
-	lq_free(gpg_key_store);
+	lq_free((void*)gpg_key_store);
 }
 
 #endif

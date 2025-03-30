@@ -90,7 +90,7 @@ int lq_mem_content_get(enum payload_e typ, LQStore *store, const char *key, size
 }
 
 int lq_mem_content_put(enum payload_e typ, LQStore *store, const char *key, size_t *key_len, char *value, size_t value_len) {
-	char *r;
+	const char *r;
 	struct hashmap *o;
 	struct pair_t v;
 	char path[LQ_PATH_MAX];
