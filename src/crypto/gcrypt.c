@@ -402,7 +402,6 @@ static int key_create_store(struct gpg_store *gpg, const char *passphrase) {
 	int l;
 	size_t c;
 	size_t m;
-	//FILE *f;
 	LQStore *store;
 	LQPubKey *pubk;
 	char nonce[CHACHA20_NONCE_LENGTH_BYTES];
@@ -410,17 +409,17 @@ static int key_create_store(struct gpg_store *gpg, const char *passphrase) {
 	char buf_val[LQ_STORE_VAL_MAX];
 	char ciphertext[LQ_CRYPTO_BUFLEN];
 
-	//r = key_create(gpg, key);
+	// Create the private key and corresponding public key.
 	r = key_create(gpg);
 	if (r) {
 		return debug_logerr(LLOG_ERROR, ERR_CRYPTO, "key create");
 	}
-
 	pubk = lq_publickey_new(gpg->public_key);
 	if (pubk == NULL) {
 		return debug_logerr(LLOG_ERROR, ERR_CRYPTO, "publickey");
 	}
 
+	// Export the S-expression to a text buffer for saving, canonical formatting
 	kl = gcry_sexp_sprint(gpg->k, GCRYSEXP_FMT_CANON, NULL, 0);
 	m = (size_t)kl + 1;
 	p = (char*)v + sizeof(int);
@@ -428,35 +427,34 @@ static int key_create_store(struct gpg_store *gpg, const char *passphrase) {
 	kl = gcry_sexp_sprint(gpg->k, GCRYSEXP_FMT_CANON, p, LQ_CRYPTO_BUFLEN - m);
 	m -= (size_t)(kl + 1);
 	c += kl;
-//	while (m > 0) {
-//		kl = gcry_sexp_sprint(*key, GCRYSEXP_FMT_CANON, p, BUFLEN-m);
-//		m -= (size_t)(kl + 1);
-//		p += kl;
-//		c += kl;
-//	}
 	lq_cpy(v, &c, sizeof(int));
 
+	// Pad the contents up to the blocksize boundary
 	m = c;
 	c = get_padsize(m, LQ_CRYPTO_BLOCKSIZE);
+
+	// Encrypt with nonce
 	gcry_create_nonce(nonce, CHACHA20_NONCE_LENGTH_BYTES);
 	r = encryptb(ciphertext, c, v, m+sizeof(int), passphrase, nonce);
 	if (r) {
 		return debug_logerr(LLOG_ERROR, ERR_CRYPTO, "encrypt private key");
 	}
 
+	// Export the key (fingerprint) and value (ciphertext) to put in the store.
+	// (We don't need the inner private key pointer anymore, so we re-use it.)
 	lq_cpy(buf_val, nonce, CHACHA20_NONCE_LENGTH_BYTES);
 	lq_cpy(buf_val + CHACHA20_NONCE_LENGTH_BYTES, ciphertext, c);
-
-	// we don't need the inner private key anymore.
-	// use the pointer for the public key now.
 	gpg = (struct gpg_store*)pubk->impl;
 	lq_cpy(buf_key, gpg->fingerprint, LQ_FP_LEN);
+
+	// Instantiate the store.
 	store = key_store_get();
 	if (store == NULL) {
 		lq_free(store);
 		return debug_logerr(LLOG_ERROR, ERR_CRYPTO, "create store");
 	}
-	
+
+	// Write the ciphertext to the store.	
 	l = c + CHACHA20_NONCE_LENGTH_BYTES;
 	c = LQ_FP_LEN;
 	r = store->put(LQ_CONTENT_KEY, store, buf_key, &c, buf_val, l);
@@ -465,7 +463,8 @@ static int key_create_store(struct gpg_store *gpg, const char *passphrase) {
 		return debug_logerr(LLOG_ERROR, ERR_CRYPTO, "put key in store");
 	}
 
-	// check if already exists default, if not, set it
+	// Check if a main key already exists in the store.
+	// If not, set this one as main.
 	*buf_key = gpg_default_store_key;
 	c = LQ_STORE_VAL_MAX; 
 	r = store->get(LQ_CONTENT_KEY, store, buf_key, 1, buf_val, &c);
@@ -484,6 +483,7 @@ static int key_create_store(struct gpg_store *gpg, const char *passphrase) {
 		}
 	}
 
+	// Clean up.
 	lq_free(store);
 
 	return ERR_OK;
@@ -495,20 +495,18 @@ static LQPrivKey* privatekey_alloc(const char *seed, size_t seed_len, const char
 	LQPrivKey *o;
 	struct gpg_store *gpg;
 
-	// allocate private key memory
+	// Allocate private key structures.
 	o = lq_alloc(sizeof(LQPrivKey));
 	if (o == NULL) {
 		return NULL;
 	}
-
-	// allocate gpg internal private key memory
 	gpg = lq_alloc(sizeof(struct gpg_store));
 	if (gpg == NULL) {
 		lq_free(o);
 		return NULL;
 	}
 
-	// create the underlying private key.
+	// Create the underlying private key.
 	r = key_create_store(gpg, passphrase);
 	if (r) {
 		lq_free(gpg);
@@ -516,11 +514,12 @@ static LQPrivKey* privatekey_alloc(const char *seed, size_t seed_len, const char
 		return NULL;
 	}
 
-	// populate the internal key structure
+	// Populate the internal key structure.
 	o->impl = (void*)gpg;
 	o->key_typ = GPG_KEY_TYP;
 	o->key_state = LQ_KEY_INIT;
 
+	// No cleanup = caller must free it.
 	debug_x(LLOG_INFO, "gpg", "created new private key", 1, MORGEL_TYP_BIN, LQ_FP_LEN, "fingerprint", gpg->fingerprint);
 
 	return o;
