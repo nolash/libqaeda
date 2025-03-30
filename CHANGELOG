@@ -1,0 +1,6 @@
+- 0.0.1
+	* Add pluggable interfaces for memory and io operations.
+	* Implement store (filesystem, dummy)
+	* Implement crypto backend (gcrypt, dummy)
+	* Implement serialization and deserialization for certs and messages.
+	* Implement rudimentary trust checker.

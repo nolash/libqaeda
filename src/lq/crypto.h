@@ -62,7 +62,6 @@ enum lq_keystate_e {
 	LQ_KEY_LOCK = 2,
 };
 
-
 /**
  * \struct LQPrivKey 
  * 
@@ -123,8 +122,6 @@ void lq_crypto_free();
  *
  * If passphrase is not null the passphrase will be encrypted using that passphrase by default.
  *
- * \param[in] Key material. If NULL, a new random private key will be generated.
- * \param[in] Length of key material. Ignored if seed parameter is NULL.
  * \param[in] Passphrase to encrypt key with. If NULL, key will be encrypted with a single 0-byte as passphrase.
  * \param[in] Passphrase length. Ignored if passphrase is NULL.
  * \return Pointer to new private key. Freeing the object is the caller's responsibility.
@@ -140,10 +137,11 @@ LQPrivKey* lq_privatekey_new(const char *passphrase, size_t passphrase_len);
  * \param[in] Passphrase to encrypt key with. If NULL, key will be encrypted with a single 0-byte as passphrase.
  * \param[in] Passphrase length. Ignored if passphrase is NULL.
  * \return Pointer to new private key. Freeing the object is the caller's responsibility.
+ *
  * \see lq_privatekey_free
  */
-
 LQPrivKey* lq_privatekey_load(const char *passphrase, size_t passphrase_len, const char *fingerprint);
+
 /**
  * \brief Get raw private key bytes
  * 
@@ -157,7 +155,7 @@ size_t lq_privatekey_bytes(LQPrivKey *pk, char **out);
  * \brief Create a new public key object. 
  *
  * \param[in] Uncompressed public key data.
- * \param[out] Pointer to new public key. Freeing the object is the caller's responsibility.
+ * \return Pointer to new public key. Freeing the object is the caller's responsibility.
  * \see lq_publickey_free
  */
 LQPubKey* lq_publickey_new(const char *full);
@@ -210,7 +208,7 @@ int lq_privatekey_unlock(LQPrivKey *pk, const char *passphrase, size_t passphras
 /**
  * \brief Sign digest data using a private key.
  *
- * \param[in] Unencrypted private key to use for the signature.
+ * \param[in] Decrypted private key to use for the signature.
  * \param[in] Message digest to sign.
  * \param[in] Length of message to sign.
  * \param[in] Salt data to use for the signature. Set to NULL if salt is not to be used. If not null, must be LQ_SALT_LEN long.
@@ -241,6 +239,9 @@ size_t lq_signature_bytes(LQSig *sig, char **out);
 /**
  * \brief Verify a signature against a private key and message.
  *
+ * \param[in] Message digest to sign.
+ * \param[in] Length of message to sign.
+ * \return ERR_OK if signature is verified.
  */
 int lq_signature_verify(LQSig *sig, const char *msg, size_t msg_len);
 
@@ -256,16 +257,15 @@ void lq_publickey_free(LQPubKey *pubk);
  */
 void lq_privatekey_free(LQPrivKey *pk);
 
-
 /**
  * \brief Free an allocated signature object.
  * \param[in] Private key to free.
  */
 void lq_signature_free(LQSig *sig);
 
-
 /**
- * \brief Calculate digest over arbitrary data.
+ * \brief Calculate digest over arbitrary data using the default algorithm.
+ *
  * \param[in] Data to calculate digest over.
  * \param[in] Length of data.
  * \param[out] Output buffer. Must be allocated to at least LQ_DIGEST_LENGTH
