@@ -34,11 +34,9 @@ START_TEST(check_cert_symmetric_nomsg) {
 	int r;
 	size_t c;
 	LQCert *cert;
-	LQCtx ctx;
 	char buf[4096];
 
-	lq_set(&ctx, 0, sizeof(LQCtx));
-	cert = lq_certificate_new(NULL, &ctx, NULL, NULL);
+	cert = lq_certificate_new(NULL, NULL, NULL);
 	c = 4096;
 	r = lq_certificate_serialize(cert, buf, &c, NULL);
 	ck_assert_int_eq(r, 0);
@@ -55,12 +53,10 @@ START_TEST(check_cert_symmetric_req_nosig) {
 	size_t c;
 	LQCert *cert;
 	LQMsg *req;
-	LQCtx ctx;
 	char buf[4096];
 
-	lq_set(&ctx, 0, sizeof(LQCtx));
 	req = lq_msg_new(data, strlen(data) + 1);
-	cert = lq_certificate_new(NULL, &ctx, req, NULL);
+	cert = lq_certificate_new(NULL, req, NULL);
 	c = 4096;
 	r = lq_certificate_serialize(cert, buf, &c, NULL);
 	ck_assert_int_eq(r, 0);
@@ -78,13 +74,11 @@ START_TEST(check_cert_symmetric_req_sig) {
 	LQCert *cert;
 	LQMsg *req;
 	LQPrivKey *pk;
-	LQCtx ctx;
 	char buf[4096];
 
 	pk = lq_privatekey_new(passphrase, 32);
-	lq_set(&ctx, 0, sizeof(LQCtx));
 	req = lq_msg_new(data, strlen(data) + 1);
-	cert = lq_certificate_new(NULL, &ctx, req, NULL);
+	cert = lq_certificate_new(NULL, req, NULL);
 	lq_privatekey_unlock(pk, passphrase, 32);
 	r = lq_certificate_sign(cert, pk);
 	ck_assert_int_eq(r, 0);
@@ -107,14 +101,12 @@ START_TEST(check_cert_symmetric_rsp_onesig) {
 	LQMsg *req;
 	LQMsg *rsp;
 	LQPrivKey *pk;
-	LQCtx ctx;
 	char buf[4096];
 
 	pk = lq_privatekey_new(passphrase, 32);
-	lq_set(&ctx, 0, sizeof(LQCtx));
 	req = lq_msg_new(data, strlen(data) + 1);
 	rsp = lq_msg_new(data_two, strlen(data_two) + 1);
-	cert = lq_certificate_new(NULL, &ctx, req, NULL);
+	cert = lq_certificate_new(NULL, req, NULL);
 	lq_privatekey_unlock(pk, passphrase, 32);
 	r = lq_certificate_sign(cert, pk);
 	ck_assert_int_eq(r, 0);
@@ -137,13 +129,11 @@ START_TEST(check_cert_symmetric_rsp_bothsig) {
 	LQCert *cert;
 	LQMsg *req;
 	LQPrivKey *pk;
-	LQCtx ctx;
 	char buf[4096];
 
 	pk = lq_privatekey_new(passphrase, 32);
-	lq_set(&ctx, 0, sizeof(LQCtx));
 	req = lq_msg_new(data, strlen(data) + 1);
-	cert = lq_certificate_new(NULL, &ctx, req, NULL);
+	cert = lq_certificate_new(NULL, req, NULL);
 	lq_privatekey_unlock(pk, passphrase, 32);
 	r = lq_certificate_sign(cert, pk);
 	ck_assert_int_eq(r, 0);

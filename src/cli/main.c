@@ -56,6 +56,10 @@ static LQPrivKey *get_key(const char *passphrase) {
 
 int main(int argc, char **argv) {
 	int r;
+	LQCert *cert;
+	LQMsg *req;
+	LQMsg *res;
+	LQCtx ctx;
 
 	r = lq_ui_init();
 	if (r) {

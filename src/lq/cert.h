@@ -6,7 +6,6 @@
 
 #include "lq/crypto.h"
 #include "lq/msg.h"
-#include "lq/ctx.h"
 #include "lq/store.h"
 
 #ifndef LQ_CERT_DOMAIN_LEN
@@ -27,7 +26,6 @@ struct lq_certificate_t {
 	LQSig *request_sig; ///< Signature over a request message and the linked certificate. If the linked certificate is NULL, the certificate data used in the signature with be a LQ_DIGEST_LEN string with all bytes set to 0.
 	LQMsg *response; ///< A response message encapsulates an arbitrary string of data that confirms a request. This field must be NULL unless a signed requests exists.
 	LQSig *response_sig; ///< Signature over a response message. This field must be NULL unless a response message is set. The signature is calculated over both the response and the signed request.
-	LQCtx ctx; ///< Context reflecting the behavior of state, validation and serialization of the certificate. (unused)
 	LQCert *parent; ///< Link to previous certificate. Optional. Set to NULL if no link exists.
 	char parent_hash[LQ_DIGEST_LEN];
 };
@@ -43,7 +41,7 @@ struct lq_certificate_t {
  * \todo request and response message does not make sense to set without option to set signature, factor out to separate functions.
  * \see lq_certificate_free
  */
-LQCert* lq_certificate_new(LQCert *parent, LQCtx *ctx, LQMsg *req, LQMsg *rsp);
+LQCert* lq_certificate_new(LQCert *parent, LQMsg *req, LQMsg *rsp);
 
 /**
  * @brief Set the domain of the certificate. If not set, the default domain value will be used, which is LQ_DOMAIN_LEN bytes set to 0.

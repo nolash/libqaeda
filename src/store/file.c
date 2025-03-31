@@ -149,21 +149,3 @@ LQStore* lq_store_new(const char *spec) {
 	lq_cpy(store->userdata, spec, l);
 	return store;
 }
-
-//LQStore* lq_file_content_new(const char *dir) {
-//	char path[1024];
-//	LQStore *store;
-//
-//	store = lq_alloc(sizeof(LQStore));
-//	if (store == NULL) {
-//		return NULL;
-//	}
-//	store->get = lq_file_content_get;
-//	store->put = lq_file_content_put;
-//
-//	return store;
-//}
-//
-//void lq_file_content_free(LQStore *store) {
-//	lq_free(store->userdata);
-//}
