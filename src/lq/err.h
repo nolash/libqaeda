@@ -9,6 +9,7 @@ enum err_e {
 	RERR_PFX_LQ = 0x100,
 	ERR_REQUEST = 0x101, ///< Error related to certificate request messages
 	ERR_RESPONSE = 0x102, ///< Error related to certificate response messages
+
 	RERR_PFX_CRYPTO = 0x200,
 	ERR_NOCRYPTO = 0x201,
 	ERR_KEYFAIL = 0x202,
@@ -21,8 +22,13 @@ enum err_e {
 	ERR_DIGEST = 0x209,
 	ERR_SIGFAIL = 0x210,
 	ERR_SIGVALID = 0x211,
+
 	RERR_PFX_STORE = 0x300,
 	ERR_STORE_AVAIL = 0x301,
+
+	RERR_PFX_CERT = 0x400,
+	ERR_DUP = 0x401,
+	ERR_SEQ = 0x402,
 };
 
 void lq_err_init();

@@ -20,7 +20,7 @@ LQMsg* lq_msg_new(const char *msg_data, size_t msg_len) {
 	LQMsg *msg;
 
 	msg = lq_alloc(sizeof(LQMsg));
-	lq_set(msg, 0, sizeof(LQMsg));
+	lq_zero(msg, sizeof(LQMsg));
 	clock_gettime(CLOCK_REALTIME, &msg->time);
 
 	msg->data = lq_alloc(msg_len);
@@ -56,9 +56,7 @@ LQSig* lq_msg_sign_extra(LQMsg *msg, LQPrivKey *pk, const char *salt, const char
 	if (r != ERR_OK) {
 		return NULL;
 	}
-	sig = lq_privatekey_sign(pk, digest, LQ_DIGEST_LEN, salt);
-
-	return sig;
+	return lq_privatekey_sign(pk, digest, LQ_DIGEST_LEN, salt);
 }
 
 void lq_msg_free(LQMsg *msg) {
@@ -167,8 +165,8 @@ int lq_msg_deserialize(LQMsg **msg, const char *in, size_t in_len, LQResolve *re
 	asn1_node item;
 	LQResolve *resolve_active;
 
-	lq_set(&node, 0, sizeof(node));
-	lq_set(&item, 0, sizeof(item));
+	lq_zero(&node, sizeof(node));
+	lq_zero(&item, sizeof(item));
 	r = asn1_array2tree(defs_asn1_tab, &node, err);
 	if (r != ASN1_SUCCESS) {
 		return ERR_INIT;

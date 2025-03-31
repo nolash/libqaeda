@@ -41,7 +41,7 @@ struct lq_certificate_t {
  * \todo request and response message does not make sense to set without option to set signature, factor out to separate functions.
  * \see lq_certificate_free
  */
-LQCert* lq_certificate_new(LQCert *parent, LQMsg *req, LQMsg *rsp);
+LQCert* lq_certificate_new(LQCert *parent);
 
 /**
  * @brief Set the domain of the certificate. If not set, the default domain value will be used, which is LQ_DOMAIN_LEN bytes set to 0.
@@ -108,7 +108,12 @@ int lq_certificate_deserialize(LQCert **cert, char *in, size_t in_len, LQResolve
  * @return ERR_OK if verified, or:
  * ....
  */
-int lq_certificate_verify(LQCert *cert);
+int lq_certificate_verify(LQCert *cert, LQPubKey *req_key, LQPubKey *res_key);
+
+
+int lq_certificate_request(LQCert *cert, LQMsg *req, LQPrivKey *pk);
+
+int lq_certificate_respond(LQCert *cert, LQMsg *rsp, LQPrivKey *pk);
 
 
 /**

@@ -27,6 +27,12 @@ static char *_rerr_store[2] = {
 	"",
 	"Store unavailable",
 };
+
+static char *_rerr_cert[3] = {
+	"",
+	"Duplicate message",
+	"Wrong message sequence",
+};
 #endif
 
 void lq_err_init() {
@@ -35,5 +41,6 @@ void lq_err_init() {
 	rerr_register(RERR_PFX_LQ, "lq", _rerr);
 	rerr_register(RERR_PFX_CRYPTO, "crypto", _rerr_crypto);
 	rerr_register(RERR_PFX_STORE, "store", _rerr_store);
+	rerr_register(RERR_PFX_CERT, "cert", _rerr_cert);
 #endif
 }

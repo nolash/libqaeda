@@ -1,11 +1,15 @@
 #include <stddef.h>
+
 #include <libtasn1.h>
+#include <llog.h>
 
 #include "lq/cert.h"
 #include "lq/mem.h"
 #include "lq/wire.h"
 #include "lq/err.h"
 #include "lq/store.h"
+#include "debug.h"
+
 
 static char zeros[65];
 static LQPubKey nokey = {
@@ -24,18 +28,44 @@ static LQSig nosig = {
 	.impl = zeros,
 };
 
-LQCert* lq_certificate_new(LQCert *parent, LQMsg *req, LQMsg *rsp) {
+LQCert* lq_certificate_new(LQCert *parent) { //, LQMsg *req, LQMsg *rsp) {
 	LQCert *cert;
 
 	cert = lq_alloc(sizeof(LQCert));
+	lq_zero(cert, sizeof(LQCert));
 	cert->parent = parent;
-	cert->request = req;
-	cert->request_sig = NULL;
-	cert->response = rsp;
-	cert->response_sig = NULL;
-	lq_set(cert->domain, 0, LQ_CERT_DOMAIN_LEN);
 
 	return cert;
+}
+
+int lq_certificate_request(LQCert *cert, LQMsg *req, LQPrivKey *pk) {
+	int r;
+
+	r = ERR_OK;
+	if (cert->request != NULL) {
+		return ERR_DUP;
+	}
+	cert->request = req;
+	if (pk != NULL) {
+		r = lq_certificate_sign(cert, pk);
+	}
+	return r;
+}
+
+int lq_certificate_respond(LQCert *cert, LQMsg *res, LQPrivKey *pk) {
+	int r;
+
+	if (cert->request_sig == NULL) {
+		return ERR_SEQ;
+	}
+	if (cert->response != NULL) {
+		return ERR_DUP;
+	}
+	cert->response = res;
+	if (pk != NULL) {
+		r = lq_certificate_sign(cert, pk);
+	}
+	return r;
 }
 
 void lq_certificate_set_domain(LQCert *cert, const char *domain) {
@@ -108,6 +138,8 @@ int lq_certificate_sign(LQCert *cert, LQPrivKey *pk) {
 		if (cert->response_sig == NULL) {
 			return ERR_ENCODING;
 		}
+		
+		debug(LLOG_INFO, "cert", "signed response");
 		return ERR_OK;
 	}
 	if (cert->request == NULL) {
@@ -120,7 +152,12 @@ int lq_certificate_sign(LQCert *cert, LQPrivKey *pk) {
 	if (cert->request_sig == NULL) {
 		return ERR_ENCODING;
 	}
+	debug(LLOG_INFO, "cert", "signed request");
 	return ERR_OK;
+}
+
+int lq_certificate_verify(LQCert *cert, LQPubKey *req_key, LQPubKey *res_key) {
+	return ERR_SUPPORT;
 }
 
 int lq_certificate_serialize(LQCert *cert, char *out, size_t *out_len, LQResolve *resolve) {
@@ -280,7 +317,7 @@ int lq_certificate_deserialize(LQCert **cert, char *in, size_t in_len, LQResolve
 		return ERR_READ;
 	}
 
-	p = lq_certificate_new(NULL, NULL, NULL);
+	p = lq_certificate_new(NULL);
 	lq_certificate_set_domain(p, tmp);
 
 	c = 4096;
@@ -312,7 +349,6 @@ int lq_certificate_deserialize(LQCert **cert, char *in, size_t in_len, LQResolve
 		return r;
 	}
 
-
 	c = 4096;
 	r = asn1_read_value(item, "response_sig", tmp, &c);
 	if (r != ASN1_SUCCESS) {
@@ -341,5 +377,17 @@ int lq_certificate_deserialize(LQCert **cert, char *in, size_t in_len, LQResolve
 }
 
 void lq_certificate_free(LQCert *cert) {
+	if (cert->request != NULL) {
+		lq_msg_free(cert->request);
+	}
+	if (cert->request_sig != NULL) {
+		lq_signature_free(cert->request_sig);
+	}
+	if (cert->response != NULL) {
+		lq_msg_free(cert->response);
+	}
+	if (cert->response_sig != NULL) {
+		lq_signature_free(cert->response_sig);
+	}
 	lq_free(cert);
 }

@@ -821,15 +821,22 @@ LQSig* lq_privatekey_sign(LQPrivKey *pk, const char *data, size_t data_len, cons
 	sig = lq_alloc(sizeof(LQSig));
 	sig->pubkey = lq_publickey_from_privatekey(pk);
 	if (sig->pubkey == NULL) {
-		lq_free(sig);
+		lq_signature_free(sig);
 		return NULL;
 	}
-	sig->impl= gpg->last_signature;
+	sig->impl = lq_alloc(LQ_SIGN_LEN);
+	lq_cpy(sig->impl, gpg->last_signature, LQ_SIGN_LEN);
 	return sig;
 }
 
 LQSig* lq_signature_from_bytes(const char *sig_data, size_t sig_len, LQPubKey *pubkey) {
-	return NULL;
+	LQSig *sig;
+
+	sig = lq_alloc(sizeof(LQSig));
+	lq_zero(sig, sizeof(LQSig));
+	sig->impl = lq_alloc(sizeof(LQ_SIGN_LEN));
+	lq_cpy(sig->impl, sig_data, sig_len);
+	return sig;
 }
 
 size_t lq_signature_bytes(LQSig *sig, char **out) {
@@ -922,7 +929,9 @@ void lq_publickey_free(LQPubKey *pubk) {
 }
 
 void lq_signature_free(LQSig *sig) {
-	lq_free(sig->pubkey);
+	if (sig->pubkey != NULL) {
+		lq_publickey_free(sig->pubkey);
+	}
 	lq_free(sig);
 }
 
