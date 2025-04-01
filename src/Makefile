@@ -1,7 +1,9 @@
 INCLUDES := -I. -I./aux/include
 CFLAGS +=  $(INCLUDES) -Wall -DRERR
-LIBOBJFILES = ./asn1/*.o ./*.o ./lq/*.o ./store/file.o ./mem/std.o ./io/std.o ./crypto/gcrypt.o
-LIBOBJEMBED = ./aux/lib/liblash.a #./aux/lib/libcwalk.a
+#LIBOBJFILES = ./asn1/*.o ./*.o ./lq/*.o ./store/file.o ./mem/std.o ./io/std.o ./crypto/gcrypt.o
+LIBOBJFILES = ./asn1/*.o ./*.o ./lq/*.o ./store/file.o ./mem/std.o ./io/std.o ./crypto/gcrypt.o ./aux/hashmap.c/hashmap.o ./aux/liblash/src/rerr/*.o ./aux/liblash/src/llog/*.o ./aux/liblash/src/endian/*.o ./aux/liblash/src/hex/*.o  ./aux/liblash/src/case/*.o ./aux/cwalk/build/CMakeFiles/cwalk.dir/src/cwalk.c.o
+
+#LIBOBJEMBED = ./aux/lib/liblash.a #./aux/lib/libcwalk.a
 LIBS := `pkg-config --libs libtasn1 libgcrypt` -L./aux/lib -llash -lcwalk
 
 all: all-gpg
@@ -10,11 +12,10 @@ all-gpg: asn1 aux core gpg
 
 dev-lib: all
 	#ar rcs liblq.a lq/config.o crypto/gcrypt.o store/file.o mem/std.o io/std.o debug.o aux/lib/libhashmap.a 
-	ar rcs liblq.a $(LIBOBJFILES)
-	libtool --mode=link --tag=CC $(CC) -static -o libqaeda.a liblq.a ./aux/lib/liblash.a ./aux/lib/libcwalk.a
+	ar rcs libqaeda.a $(LIBOBJFILES)
+	#libtool --mode=link --tag=CC $(CC) -static -o libqaeda.a liblq.a ./aux/lib/liblash.a ./aux/lib/libcwalk.a
 
 test-lib:
-	ar rcs libqaedatest.a $(LIBOBJFILES) aux/lib/libhashmap.a 
 
 core: dummy
 	$(CC) $(CFLAGS) -c debug.c
