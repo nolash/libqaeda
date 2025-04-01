@@ -346,9 +346,11 @@ static int key_create(struct gpg_store *gpg) {
 	// Generate a new key with the given parameters.
 	e = gcry_pk_genkey(&gpg->k, in);
 	if (e) {
+		gcry_sexp_release(in);
 		p = gcry_strerror(e);
 		return debug_logerr(LLOG_ERROR, ERR_KEYFAIL, (char*)p);
 	}
+	gcry_sexp_release(in);
 
 	// Apply the public part of the key to the underlying key structure.
 	r = key_apply_public(gpg);
@@ -755,6 +757,7 @@ static int sign(struct gpg_store *gpg, const char *data, size_t data_len, const 
 	gcry_sexp_t sig;
 	gcry_error_t e;
 
+	lq_zero(&e, sizeof(gcry_error_t));
 	r = calculate_digest_algo(data, data_len, gpg->last_data, GCRY_MD_SHA512);
 	if (r) {
 		return 1;
@@ -768,6 +771,7 @@ static int sign(struct gpg_store *gpg, const char *data, size_t data_len, const 
 
 	e = gcry_pk_sign(&sig, msg, gpg->k);
 	if (e != GPG_ERR_NO_ERROR) {
+		gcry_sexp_release(msg);
 		return 1;
 	}
 
@@ -775,29 +779,43 @@ static int sign(struct gpg_store *gpg, const char *data, size_t data_len, const 
 	pnt = NULL;
 	pnt = gcry_sexp_find_token(sig, "r", 1);
 	if (pnt == NULL) {
-		return 1;
+		gcry_sexp_release(sig);
+		gcry_sexp_release(msg);
+		return ERR_FAIL;
 	}
 	c = LQ_POINT_LEN;
 	p = (char*)gcry_sexp_nth_data(pnt, 1, &c);
 	if (p == NULL) {
-		return 1;
+		gcry_sexp_release(pnt);
+		gcry_sexp_release(sig);
+		gcry_sexp_release(msg);
+		return ERR_SIGVALID;
 	}
 	lq_cpy(gpg->last_signature, p, c);
 
 	// retrieve s and write it
+	gcry_sexp_release(pnt);
 	pnt = NULL;
 	pnt = gcry_sexp_find_token(sig, "s", 1);
 	if (pnt == NULL) {
-		return 1;
+		gcry_sexp_release(sig);
+		gcry_sexp_release(msg);
+		return ERR_FAIL;
 	}
 	c = LQ_POINT_LEN;
 	p = (char*)gcry_sexp_nth_data(pnt, 1, &c);
 	if (p == NULL) {
-		return 1;
+		gcry_sexp_release(pnt);
+		gcry_sexp_release(sig);
+		gcry_sexp_release(msg);
+		return ERR_SIGVALID;
 	}
 	lq_cpy(gpg->last_signature + LQ_POINT_LEN, p, c);
+	gcry_sexp_release(pnt);
+	gcry_sexp_release(sig);
+	gcry_sexp_release(msg);
 
-	return 0;
+	return ERR_OK;
 }
 
 LQSig* lq_privatekey_sign(LQPrivKey *pk, const char *data, size_t data_len, const char *salt) {
@@ -870,42 +888,66 @@ int lq_signature_verify(LQSig *sig, const char *data, size_t data_len) {
 	c = 0;
 	err = gcry_mpi_scan(&sig_r, GCRYMPI_FMT_STD, sig->impl, LQ_POINT_LEN, &c);
 	if (err != GPG_ERR_NO_ERROR) {
+		gcry_sexp_release(pubkey);
 		return ERR_KEYFAIL;
 	}
 	if (c != 32) {
+		gcry_mpi_release(sig_r);
+		gcry_sexp_release(pubkey);
 		return ERR_KEYFAIL;
 	}
 
 	c = 0;
 	err = gcry_mpi_scan(&sig_s, GCRYMPI_FMT_STD, sig->impl + LQ_POINT_LEN, LQ_POINT_LEN, &c);
 	if (err != GPG_ERR_NO_ERROR) {
+		gcry_mpi_release(sig_r);
+		gcry_sexp_release(pubkey);
 		return ERR_KEYFAIL;
 	}
 	if (c != 32) {
+		gcry_mpi_release(sig_s);
+		gcry_mpi_release(sig_r);
+		gcry_sexp_release(pubkey);
 		return ERR_KEYFAIL;
 	}
 
 	c = 0;
 	err = gcry_sexp_build(&sigx, &c, "(sig-val(eddsa(r %m)(s %m)))", sig_r, sig_s);
 	if (err != GPG_ERR_NO_ERROR) {
+		gcry_mpi_release(sig_s);
+		gcry_mpi_release(sig_r);
+		gcry_sexp_release(pubkey);
 		return ERR_SIGFAIL;
 	}
+	gcry_mpi_release(sig_s);
+	gcry_mpi_release(sig_r);
 
 	r = calculate_digest_algo(data, data_len, digest, GCRY_MD_SHA512);
 	if (r) {
+		gcry_sexp_release(sigx);
+		gcry_sexp_release(pubkey);
 		return ERR_DIGEST;
 	}
 
 	c = 0;
 	err = gcry_sexp_build(&msgx, &c, "(data(flags eddsa)(hash-algo sha512)(value %b))", LQ_DIGEST_LEN, digest);
 	if (err != GPG_ERR_NO_ERROR) {
+		gcry_sexp_release(sigx);
+		gcry_sexp_release(pubkey);
 		return ERR_DIGEST;
 	}
 
 	err = gcry_pk_verify(sigx, msgx, pubkey);
 	if (err != GPG_ERR_NO_ERROR) {
+		gcry_sexp_release(msgx);
+		gcry_sexp_release(sigx);
+		gcry_sexp_release(pubkey);
 		return ERR_SIGVALID;
 	}
+
+	gcry_sexp_release(msgx);
+	gcry_sexp_release(sigx);
+	gcry_sexp_release(pubkey);
 
 	return ERR_OK;
 }

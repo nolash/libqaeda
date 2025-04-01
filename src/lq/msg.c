@@ -12,7 +12,7 @@
 
 static char zeros[LQ_PUBKEY_LEN];
 static LQPubKey nokey = {
-	.pk = 0,
+	.pk = NULL,
 	.impl = zeros,
 };
 
@@ -39,7 +39,6 @@ LQSig* lq_msg_sign_extra(LQMsg *msg, LQPrivKey *pk, const char *salt, const char
 	int r;
 	char *data;
 	char digest[LQ_DIGEST_LEN];
-	LQSig *sig;
 
 	if (extra == NULL) {
 		extra_len = 0;
@@ -60,7 +59,7 @@ LQSig* lq_msg_sign_extra(LQMsg *msg, LQPrivKey *pk, const char *salt, const char
 }
 
 void lq_msg_free(LQMsg *msg) {
-	if (msg->pubkey != 0) {
+	if (msg->pubkey->pk = NULL) {
 		lq_free(msg->pubkey);
 	}
 	lq_free(msg->data);

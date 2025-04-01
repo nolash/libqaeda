@@ -2,7 +2,7 @@ INCLUDES := `pkg-config --cflags libtasn1`
 LIBS := `pkg-config --libs libtasn1`
 LDFLAGS += $(LIBS)
 
-all: compile
+all: compile dynamic
 
 src:
 	$(CC) $(CFLAGS) generate.c -o generate_asn1 $(LDFLAGS)
@@ -19,5 +19,8 @@ clean:
 	rm -vf *.o
 	rm -vf *_tab.c
 	rm -vf generate_asn1
+
+dynamic:
+
 
 .PHONY: clean

@@ -1,4 +1,4 @@
-all:
+all: lib
 	make -C src all
 
 lib:
@@ -9,5 +9,8 @@ test: all
 
 clean:
 	make -C src clean
+
+#shared: lib
+#	make -C src shared-gpg
 
 .PHONY: clean

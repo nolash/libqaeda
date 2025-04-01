@@ -138,5 +138,7 @@ int main(int argc, char **argv) {
 
 	r = lq_certificate_verify(cert, pubk_alice, NULL);
 
+	lq_certificate_free(cert);
+
 	lq_ui_free();
 }

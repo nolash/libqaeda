@@ -22,7 +22,10 @@ test: all
 	make -C rerr test
 	make -C case test
 
-shared: all
+lib: all
+	$(AR) rcs liblash.a ./endian/*.o ./hex/*.o ./llog/*.o ./rerr/*.o ./case/*.o
+
+shared:
 	make -C endian shared
 	make -C hex shared
 	make -C llog shared
@@ -30,7 +33,7 @@ shared: all
 	make -C case shared
 	$(CC) $(CFLAGS) -shared -o liblash.so endian/strip.so.o endian/endian.so.o hex/hex.so.o llog/llog.so.o rerr/rerr.so.o case/case.so.o
 
-install: shared
+install: lib shared
 	cat -v endian/*.h > $(DESTDIR)/include/lash.h
 	install -m0644 -v endian/*.h -t $(DESTDIR)/include
 	cat -v hex/*.h >> $(DESTDIR)/include/lash.h
@@ -44,6 +47,7 @@ install: shared
 	#cp -v liblash.so $(DESTDIR)/lib/
 	install -m0644 -v liblash.so -t $(DESTDIR)/lib
 	cd $(DESTDIR)/lib && ln -svf liblash.so liblash.so.$(VERSION)
+	install -m0644 -v liblash.a -t $(DESTDIR)/lib
 
 
 .PHONY: clean
