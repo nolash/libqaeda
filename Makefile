@@ -2,7 +2,7 @@ all: lib
 	make -C src all
 
 lib:
-	make -C src lib
+	make -C src dev-lib
 
 test: all
 	make -C src test

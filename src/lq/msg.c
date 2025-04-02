@@ -59,7 +59,8 @@ LQSig* lq_msg_sign_extra(LQMsg *msg, LQPrivKey *pk, const char *salt, const char
 }
 
 void lq_msg_free(LQMsg *msg) {
-	if (msg->pubkey->pk = NULL) {
+	//if (msg->pubkey->pk = NULL) {
+	if (msg->pubkey != NULL) {
 		lq_free(msg->pubkey);
 	}
 	lq_free(msg->data);

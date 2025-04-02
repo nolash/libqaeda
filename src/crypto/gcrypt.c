@@ -18,6 +18,8 @@
 
 #define CHACHA20_KEY_LENGTH_BYTES 32
 #define CHACHA20_NONCE_LENGTH_BYTES 12
+#define POLY1305_MAC_LEN 16
+#define POLY1305_MAC_KEYLEN 32
 
 /// Lookup mode for key in store.
 enum gpg_find_mode_e {
@@ -47,10 +49,7 @@ static char *gpg_version = NULL;
 static int gpg_cfg_idx_dir;
 
 /// default digest id.
-static int gpg_passphrase_digest = GCRY_MD_SHA256;
-
-/// digest length of hashed password.
-static int gpg_passphrase_digest_len;
+static int gpg_passphrase_digest = GCRY_MD_SHA512;
 
 /// zero fp value
 const static char gpg_fingerprint_zero[LQ_FP_LEN];
@@ -84,8 +83,6 @@ int lq_crypto_init(const char *base) {
 	}
 	debug_x(LLOG_DEBUG, "gpg", "using gpg", 1, MORGEL_TYP_STR, 0, "version", gpg_version);
 
-	//gpg_passphrase_digest_len = gcry_md_get_algo_dlen(GCRY_MD_SHA256);
-	gpg_passphrase_digest_len = gcry_md_get_algo_dlen(GCRY_MD_SHA512);
 	gpg_cfg_idx_dir = lq_config_register(LQ_TYP_STR, "CRYPTODIR");
 
 	p = path;
@@ -159,6 +156,103 @@ static void free_handle(gcry_cipher_hd_t *h) {
 	gcry_cipher_close(*h);
 }
 
+// Puts mac in mac and newly generated mac key in mac_key
+// in is a buffer of in_len which must be cipher blocksize.
+// no data validation checking is done.
+static int create_mac(char *mac, char *mac_key, const char *in, size_t in_len) {
+	int r;
+	char *p;
+	size_t maclen;
+	gcry_mac_hd_t h;
+	gcry_error_t e;
+
+	r = gcry_mac_open(&h, GCRY_MAC_POLY1305, 0, NULL);
+	if (r) {
+		return r;
+	}
+
+	e = gcry_mac_setkey(h, mac_key, POLY1305_MAC_KEYLEN);
+	if (e) {
+		gcry_mac_close(h);
+		p = (char*)gcry_strerror(e);
+		return debug_logerr(LLOG_ERROR, ERR_CIPHER, p);
+	}
+
+	e = gcry_mac_write(h, in, in_len);
+	if (e) {
+		gcry_mac_close(h);
+		p = (char*)gcry_strerror(e);
+		return debug_logerr(LLOG_ERROR, ERR_CIPHER, p);
+	}
+
+	maclen = POLY1305_MAC_LEN;
+	e = gcry_mac_read(h, mac, &maclen);
+	if (e) {
+		gcry_mac_close(h);
+		p = (char*)gcry_strerror(e);
+		return debug_logerr(LLOG_ERROR, ERR_CIPHER, p);
+	}
+
+	gcry_mac_close(h);
+
+	if (maclen != POLY1305_MAC_LEN) {
+		p = (char*)gcry_strerror(e);
+		return debug_logerr(LLOG_ERROR, ERR_CIPHER, p);
+	}
+
+	return ERR_OK;
+}
+
+static int verify_mac(char *mac, char *mac_key, const char *in, size_t in_len) {
+	int r;
+	char *p;
+	size_t maclen;
+	gcry_mac_hd_t h;
+	gcry_error_t e;
+
+	r = gcry_mac_open(&h, GCRY_MAC_POLY1305, 0, NULL);
+	if (r) {
+		return r;
+	}
+
+	e = gcry_mac_setkey(h, mac_key, POLY1305_MAC_KEYLEN);
+	if (e) {
+		gcry_mac_close(h);
+		p = (char*)gcry_strerror(e);
+		return debug_logerr(LLOG_ERROR, ERR_CIPHER, p);
+	}
+
+	e = gcry_mac_write(h, in, in_len);
+	if (e) {
+		gcry_mac_close(h);
+		p = (char*)gcry_strerror(e);
+		return debug_logerr(LLOG_ERROR, ERR_CIPHER, p);
+	}
+
+	maclen = POLY1305_MAC_LEN;
+	e = gcry_mac_read(h, mac, &maclen);
+	if (e) {
+		gcry_mac_close(h);
+		p = (char*)gcry_strerror(e);
+		return debug_logerr(LLOG_ERROR, ERR_CIPHER, p);
+	}
+
+	e = gcry_mac_verify(h, mac, maclen);
+	if (e) {
+		gcry_mac_close(h);
+		p = (char*)gcry_strerror(e);
+		return debug_logerr(LLOG_ERROR, ERR_CIPHER, p);
+	}
+
+	gcry_mac_close(h);
+
+	if (maclen != POLY1305_MAC_LEN) {
+		p = (char*)gcry_strerror(e);
+		return debug_logerr(LLOG_ERROR, ERR_CIPHER, p);
+	}
+
+	return ERR_OK;
+}
 int encryptb (char *ciphertext, size_t ciphertext_len, const char *indata, size_t indata_len, const char *key, const char *nonce) {
 	const char *p;
 	int r;
@@ -180,6 +274,7 @@ int encryptb (char *ciphertext, size_t ciphertext_len, const char *indata, size_
 	}
 
 	free_handle(&h);
+
 
 	return ERR_OK;
 }
@@ -379,7 +474,7 @@ LQStore *key_store_get() {
 /**
  * \todo consistent endianness for key length in persistent storage (fwrite)
  * \todo doc must have enough in path for path + fingerprint hex
- *
+ * \todo check capacity in buffer for both ciphertext, nonce and mac.
  */
 static int key_create_store(struct gpg_store *gpg, const char *passphrase, size_t passphrase_len) {
 	char *p;
@@ -396,6 +491,7 @@ static int key_create_store(struct gpg_store *gpg, const char *passphrase, size_
 	char buf_val[LQ_STORE_VAL_MAX];
 	char ciphertext[LQ_CRYPTO_BUFLEN];
 	char passphrase_hash[LQ_DIGEST_LEN];
+	char mac[POLY1305_MAC_LEN];
 
 	// Create the private key and corresponding public key.
 	r = key_create(gpg);
@@ -430,6 +526,14 @@ static int key_create_store(struct gpg_store *gpg, const char *passphrase, size_
 		return debug_logerr(LLOG_ERROR, ERR_KEY_LOCK, "encrypt private key");
 	}
 
+	c += CHACHA20_NONCE_LENGTH_BYTES;
+	r = create_mac(mac, passphrase_hash + CHACHA20_KEY_LENGTH_BYTES, v, m+sizeof(int));
+	if (r) {
+		return debug_logerr(LLOG_ERROR, ERR_CIPHER, "mac generation fail");
+		return r;
+	}
+	lq_cpy(ciphertext + c, mac, POLY1305_MAC_LEN);
+
 	// Export the key (fingerprint) and value (ciphertext) to put in the store.
 	// (We don't need the inner private key pointer anymore, so we re-use it.)
 	pubk = lq_publickey_new(gpg->public_key);
@@ -440,6 +544,7 @@ static int key_create_store(struct gpg_store *gpg, const char *passphrase, size_
 	lq_cpy(buf_key, gpg->fingerprint, LQ_FP_LEN);
 	lq_cpy(buf_val, nonce, CHACHA20_NONCE_LENGTH_BYTES);
 	lq_cpy(buf_val + CHACHA20_NONCE_LENGTH_BYTES, ciphertext, c);
+	lq_cpy(buf_val + CHACHA20_NONCE_LENGTH_BYTES + c, mac, POLY1305_MAC_LEN);
 	lq_publickey_free(pubk);
 
 	// Retrieve the store.
@@ -449,7 +554,7 @@ static int key_create_store(struct gpg_store *gpg, const char *passphrase, size_
 	}
 
 	// Write the ciphertext to the store.	
-	l = c + CHACHA20_NONCE_LENGTH_BYTES;
+	l = c + CHACHA20_NONCE_LENGTH_BYTES + POLY1305_MAC_LEN;
 	c = LQ_FP_LEN;
 	r = store->put(LQ_CONTENT_KEY, store, buf_key, &c, buf_val, l);
 	if (r) {
@@ -589,7 +694,12 @@ static int key_from_store(struct gpg_store *gpg, const char *passphrase, size_t 
 	nonce = in;
 	p = (char*)in + CHACHA20_NONCE_LENGTH_BYTES;
 	in_len -= CHACHA20_NONCE_LENGTH_BYTES;
-	r = decryptb(out, p, in_len, passphrase_hash, nonce);
+	r = decryptb(out, p, in_len - POLY1305_MAC_LEN, passphrase_hash, nonce);
+	if (r) {
+		return ERR_KEY_UNLOCK;
+	}
+
+	r = verify_mac(p + in_len - POLY1305_MAC_LEN, passphrase_hash + CHACHA20_KEY_LENGTH_BYTES, out, in_len - POLY1305_MAC_LEN);
 	if (r) {
 		return ERR_KEY_UNLOCK;
 	}
