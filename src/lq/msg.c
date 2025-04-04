@@ -1,6 +1,8 @@
 #include <stddef.h>
 #include <time.h>
 #include <libtasn1.h>
+#include <endian.h>
+#include <llog.h>
 
 #include "lq/msg.h"
 #include "lq/mem.h"
@@ -8,7 +10,7 @@
 #include "lq/crypto.h"
 #include "lq/wire.h"
 #include "lq/store.h"
-#include "endian.h"
+#include "debug.h"
 
 static char zeros[LQ_PUBKEY_LEN];
 static LQPubKey nokey = {
@@ -34,29 +36,57 @@ LQSig* lq_msg_sign(LQMsg *msg, LQPrivKey *pk, const char *salt) {
 	return lq_msg_sign_extra(msg, pk, salt, NULL, 0);
 }
 
-LQSig* lq_msg_sign_extra(LQMsg *msg, LQPrivKey *pk, const char *salt, const char *extra, size_t extra_len) {
+static int msg_to_sign(LQMsg *msg, char *out, const char *extra, size_t extra_len) {
 	int l;
 	int r;
-	char *data;
+	char data[LQ_BLOCKSIZE];
+
+	l = msg->len + extra_len;
+	if (extra_len > 0) {
+		lq_cpy(data, extra, extra_len);
+	}
+	lq_cpy(data + extra_len, msg->data, msg->len);
+
+	return lq_digest(data, l, out);
+}	
+
+LQSig* lq_msg_sign_extra(LQMsg *msg, LQPrivKey *pk, const char *salt, const char *extra, size_t extra_len) {
+	int r;
 	char digest[LQ_DIGEST_LEN];
 
 	if (extra == NULL) {
 		extra_len = 0;
 	}
-	l = msg->len + extra_len;
-	data = lq_alloc(l);
-	if (extra_len > 0) {
-		lq_cpy(data, extra, extra_len);
+	if (msg->pubkey == NULL) {
+		msg->pubkey = lq_publickey_from_privatekey(pk);
+		if (msg->pubkey == NULL) {
+			debug_logerr(LLOG_INFO, ERR_NOKEY, "public key");
+			return NULL;
+		}
 	}
-	lq_cpy(data + extra_len, msg->data, msg->len);
-	msg->pubkey = lq_publickey_from_privatekey(pk);
-
-	r = lq_digest(data, l, (char*)digest);
-	if (r != ERR_OK) {
+	r = msg_to_sign(msg, digest, extra, extra_len);
+	if (r) {
+		debug_logerr(LLOG_INFO, r, "sign message");
 		return NULL;
 	}
-	lq_free(data);
 	return lq_privatekey_sign(pk, digest, LQ_DIGEST_LEN, salt);
+}
+
+int lq_msg_verify_extra(LQMsg *msg, LQSig *sig, const char *salt, const char *extra, size_t extra_len) {
+	int r;
+	char digest[LQ_DIGEST_LEN];
+
+	if (msg->pubkey == NULL) {
+		return debug_logerr(LLOG_INFO, ERR_NONSENSE, "missing pubkey");
+	}
+	if (extra == NULL) {
+		extra_len = 0;
+	}
+	r = msg_to_sign(msg, digest, extra, extra_len);
+	if (r) {
+		return debug_logerr(LLOG_INFO, r, "verify message");
+	}
+	return lq_signature_verify(sig, digest, LQ_DIGEST_LEN);
 }
 
 void lq_msg_free(LQMsg *msg) {

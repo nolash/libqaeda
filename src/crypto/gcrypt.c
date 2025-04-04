@@ -936,6 +936,7 @@ LQSig* lq_privatekey_sign(LQPrivKey *pk, const char *data, size_t data_len, cons
 	LQSig *sig;
 
 	if ((pk->key_state & LQ_KEY_LOCK) > 0) {
+		debug_logerr(LLOG_INFO, ERR_KEY_LOCK, "key locked");
 		return NULL;
 	}
 

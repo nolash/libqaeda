@@ -152,6 +152,8 @@ LQPubKey* lq_publickey_new(const char *full);
 /**
  * \brief Create a new public key object from a private key. 
  *
+ * Will set the private key property with the given private key. The private key must be freed independently.
+ *
  * \param[in] Private key to generate public key from.
  * \return Pointer to new public key. Freeing the object is the caller's responsibility.
  * \see lq_publickey_free
@@ -236,6 +238,9 @@ int lq_signature_verify(LQSig *sig, const char *msg, size_t msg_len);
 
 /**
  * \brief Free an allocated public key.
+ *
+ * Does not free the associated private key.
+ *
  * \param[in] Public key to free.
  */
 void lq_publickey_free(LQPubKey *pubk);

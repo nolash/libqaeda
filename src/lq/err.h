@@ -7,8 +7,9 @@
 /// Error values used across all error contexts.
 enum err_e {
 	RERR_PFX_LQ = 0x100,
-	ERR_REQUEST = 0x101, ///< Error related to certificate request messages
-	ERR_RESPONSE = 0x102, ///< Error related to certificate response messages
+	ERR_NONSENSE = 0x101, ///< Available data does not make sense in context
+	ERR_REQUEST = 0x102, ///< Error related to certificate request messages
+	ERR_RESPONSE = 0x103, ///< Error related to certificate response messages
 
 	RERR_PFX_CRYPTO = 0x200,
 	ERR_NOCRYPTO = 0x201,

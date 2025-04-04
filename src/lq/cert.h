@@ -35,8 +35,6 @@ struct lq_certificate_t {
  *
  * \param[in] Previous certificate to link to.
  * \param[in] Context to control behavior of certificate processing. If NULL, default behavior will be used.
- * \param[in] Request message.
- * \param[in] Response message.
  * \return The allocated certificate object. It is the caller's responsibility to free the object.
  * \todo request and response message does not make sense to set without option to set signature, factor out to separate functions.
  * \see lq_certificate_free
@@ -103,16 +101,35 @@ int lq_certificate_deserialize(LQCert **cert, char *in, size_t in_len, LQResolve
 
 
 /**
- * @brief UNIMPLEMENTED verify the integrity of a certificate. Specifically that signatures in the certificate match given keys and data.
+ * @brief Verify the integrity of a certificate. Specifically that signatures in the certificate match given keys and data.
+ *
+ * The cert must have either
+ * - no message (NOOP)
+ * - request message and request_message signature
+ * - request AND response message, with request AND response signatures
+ *
+ * Messages must have public key set.
+ *
  * @param[in] Certificate to verify
  * @return ERR_OK if verified, or:
- * ....
  */
-int lq_certificate_verify(LQCert *cert, LQPubKey *req_key, LQPubKey *res_key);
+int lq_certificate_verify(LQCert *cert);
 
 
+/***
+ * \brief
+ *
+ * Certificate object takes responsibility to free the message object when it is freed.
+ *
+ */
 int lq_certificate_request(LQCert *cert, LQMsg *req, LQPrivKey *pk);
 
+/***
+ * \brief
+ *
+ * Certificate object takes responsibility to free the message object when it is freed.
+ *
+ */
 int lq_certificate_respond(LQCert *cert, LQMsg *rsp, LQPrivKey *pk);
 
 

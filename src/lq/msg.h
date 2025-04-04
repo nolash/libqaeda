@@ -54,6 +54,20 @@ LQSig* lq_msg_sign(LQMsg *msg, LQPrivKey *pk, const char *salt);
 LQSig* lq_msg_sign_extra(LQMsg *msg, LQPrivKey *pk, const char *salt, const char *extra, size_t extra_len);
 
 /**
+ * @brief Verify the signature over the message with specified salt value. The salt value length must be LQ_SALT_LEN.
+ *
+ * The message will be verified against the public key defined in the message structure.
+ *
+ * @param[in] Message to verify. (Must have the publickey member set).
+ * @param[in] Salt data to secure signature with. Set to NULL if salt is not to be used.
+ * @param[in] Extra data to prefix message data with when calculating digest. If set to NULL, only message data will be used in digest.
+ * @param[in] Length of extra data. Ignored if extra data is NULL.
+ * @return ERR_OK on valid signature, ERR_NONSENSE if publickey missing. Any other value indicates failure.
+ * @see lq_signature_free
+ */
+int lq_msg_verify_extra(LQMsg *msg, LQSig *sig, const char *salt, const char *extra, size_t extra_len);
+
+/**
  * @brief Serialize message data payload for inclusion in certificate.
  * @param[in] Message to serialize.
  * @param[out] Output buffer.

@@ -156,8 +156,27 @@ int lq_certificate_sign(LQCert *cert, LQPrivKey *pk) {
 	return ERR_OK;
 }
 
-int lq_certificate_verify(LQCert *cert, LQPubKey *req_key, LQPubKey *res_key) {
-	return ERR_SUPPORT;
+int lq_certificate_verify(LQCert *cert) {
+	LQCert cert_valid;
+	char out[LQ_BLOCKSIZE];
+
+	int r;
+
+	lq_cpy(&cert_valid, cert, sizeof(LQCert));
+	cert_valid.response = NULL;
+	cert_valid.response_sig = NULL;
+
+	r = state_digest(cert, out, 0);
+	if (r != ERR_OK) {
+		return r;
+	}
+
+	r = lq_msg_verify_extra(cert->request, cert->request_sig, NULL, out, LQ_DIGEST_LEN);
+	if (r != ERR_OK) {
+		return r;
+	}
+
+	return ERR_OK;
 }
 
 int lq_certificate_serialize(LQCert *cert, char *out, size_t *out_len, LQResolve *resolve) {
