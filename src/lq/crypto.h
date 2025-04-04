@@ -3,6 +3,8 @@
 
 #include <stddef.h>
 
+#include "base.h"
+
 #ifndef LQ_DIGEST_LEN
 #define LQ_DIGEST_LEN 64
 #endif
@@ -36,7 +38,7 @@
 #endif
 
 #ifndef LQ_CRYPTO_BLOCKSIZE
-#define LQ_CRYPTO_BLOCKSIZE 4096
+#define LQ_CRYPTO_BLOCKSIZE LQ_BLOCKSIZE
 #endif
 
 #ifndef LQ_POINT_LEN

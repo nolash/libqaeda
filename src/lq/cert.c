@@ -80,7 +80,7 @@ void lq_certificate_set_domain(LQCert *cert, const char *domain) {
 static int state_digest(LQCert *cert, char *out, int final) {
 	int r;
 	int c;
-	char data[1024];
+	char data[LQ_BLOCKSIZE];
 	char *p;
 	char *sigdata;
 	size_t siglen;

@@ -30,6 +30,42 @@ static const char passphrase[32] = {
 };
 
 
+START_TEST(check_cert_sig_req) {
+	int r;
+	size_t c;
+	LQCert *cert;
+	LQMsg *req;
+	LQPrivKey *pk;
+	LQPubKey *pubk;
+
+	pk = lq_privatekey_new(passphrase, LQ_PRIVKEY_LEN);
+	ck_assert_ptr_nonnull(pk);
+
+	pubk = lq_publickey_from_privatekey(pk);
+	ck_assert_ptr_nonnull(pubk);
+
+	req = lq_msg_new("foo", 4);
+	ck_assert_ptr_nonnull(req);
+
+	cert = lq_certificate_new(NULL);
+	ck_assert_ptr_nonnull(cert);
+	r = lq_certificate_request(cert, req, pk);
+	ck_assert_int_eq(r, 0);
+
+	//res = lq_msg_new("barbaz", 7);
+	//ck_assert_ptr_nonnull(res);
+	//r = lq_certificate_respond(cert, res, pk_bob);
+	//ck_assert_int_eq(r, 0);
+
+	r = lq_certificate_verify(cert, pubk, NULL);
+	ck_assert_int_eq(r, 0);
+
+	lq_certificate_free(cert);
+	lq_publickey_free(pubk);
+	lq_privatekey_free(pk);
+}
+END_TEST
+
 START_TEST(check_cert_symmetric_nomsg) {
 	int r;
 	size_t c;
@@ -78,6 +114,7 @@ START_TEST(check_cert_symmetric_req_sig) {
 	char buf[4096];
 
 	pk = lq_privatekey_new(passphrase, 32);
+
 	req = lq_msg_new(data, strlen(data) + 1);
 	cert = lq_certificate_new(NULL);
 	lq_privatekey_unlock(pk, passphrase, 32);
@@ -169,12 +206,17 @@ Suite * common_suite(void) {
 	TCase *tc;
 
 	s = suite_create("cert");
+	tc = tcase_create("sign");
+
+	tcase_add_test(tc, check_cert_sig_req);
+//	tcase_add_test(tc, check_cert_sig_res);
+
 	tc = tcase_create("serialize");
-//	tcase_add_test(tc, check_cert_symmetric_nomsg);
-//	tcase_add_test(tc, check_cert_symmetric_req_nosig);
-	tcase_add_test(tc, check_cert_symmetric_req_sig);
-//	tcase_add_test(tc, check_cert_symmetric_rsp_onesig);
-//	tcase_add_test(tc, check_cert_symmetric_rsp_bothsig);
+//	tcase_add_test(tc, check_cert_symmetric_ser_nomsg);
+//	tcase_add_test(tc, check_cert_symmetric_ser_req_nosig);
+//	tcase_add_test(tc, check_cert_symmetric_ser_req_sig);
+//	tcase_add_test(tc, check_cert_symmetric_ser_rsp_onesig);
+//	tcase_add_test(tc, check_cert_symmetric_ser_rsp_bothsig);
 	suite_add_tcase(s, tc);
 
 	return s;
