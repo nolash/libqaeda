@@ -55,13 +55,14 @@ LQSig* lq_msg_sign_extra(LQMsg *msg, LQPrivKey *pk, const char *salt, const char
 	if (r != ERR_OK) {
 		return NULL;
 	}
+	lq_free(data);
 	return lq_privatekey_sign(pk, digest, LQ_DIGEST_LEN, salt);
 }
 
 void lq_msg_free(LQMsg *msg) {
 	//if (msg->pubkey->pk = NULL) {
 	if (msg->pubkey != NULL) {
-		lq_free(msg->pubkey);
+		lq_publickey_free(msg->pubkey);
 	}
 	lq_free(msg->data);
 	lq_free(msg);

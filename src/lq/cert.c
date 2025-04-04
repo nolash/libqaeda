@@ -294,8 +294,8 @@ int lq_certificate_deserialize(LQCert **cert, char *in, size_t in_len, LQResolve
 	asn1_node item;
 	LQCert *p;
 
-	lq_set(&node, 0, sizeof(node));
-	lq_set(&item, 0, sizeof(item));
+	lq_zero(&node, sizeof(node));
+	lq_zero(&item, sizeof(item));
 	r = asn1_array2tree(defs_asn1_tab, &node, err);
 	if (r != ASN1_SUCCESS) {
 		return ERR_INIT;
@@ -325,6 +325,7 @@ int lq_certificate_deserialize(LQCert **cert, char *in, size_t in_len, LQResolve
 	if (r != ASN1_SUCCESS) {
 		return ERR_READ;
 	}
+
 	r = lq_msg_deserialize(&p->request, tmp, c, resolve);
 	if (r != ERR_OK) {
 		return r;

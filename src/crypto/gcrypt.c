@@ -1093,6 +1093,9 @@ void lq_signature_free(LQSig *sig) {
 	if (sig->pubkey != NULL) {
 		lq_publickey_free(sig->pubkey);
 	}
+	if (sig->impl != NULL) {
+		lq_free(sig->impl);
+	}
 	lq_free(sig);
 }
 

@@ -119,11 +119,11 @@ int main(int argc, char **argv) {
 		return 1;
 	}
 	cert = lq_certificate_new(NULL);
-//	r = lq_certificate_request(cert, req, pk_alice);
-//	if (r != ERR_OK) {
-//		lq_ui_free();
-//		return 1;
-//	}
+	r = lq_certificate_request(cert, req, pk_alice);
+	if (r != ERR_OK) {
+		lq_ui_free();
+		return 1;
+	}
 //
 //	res = lq_msg_new("foo", 4);
 //	if (res == NULL) {
@@ -136,9 +136,8 @@ int main(int argc, char **argv) {
 //		return 1;
 //	}
 
-	r = lq_certificate_verify(cert, pubk_alice, NULL);
+//	r = lq_certificate_verify(cert, pubk_alice, NULL);
 
-	lq_msg_free(req);
 	lq_certificate_free(cert);
 
 	lq_ui_free();
