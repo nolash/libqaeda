@@ -10,15 +10,17 @@ static char *_rerr[3] = {
 	"Invalid response",
 };
 
-static char *_rerr_crypto[10] = {
+static char *_rerr_crypto[12] = {
 	"",
 	"Crypto backend",
 	"Key fail",
 	"Key storage fail",
+	"Key unlock",
+	"Key lock",
 	"Sign reject",
-	"Resource fail",
 	"No key found",
 	"Encryption",
+	"Digest",
 	"Signature",
 	"Invalid signature",
 };

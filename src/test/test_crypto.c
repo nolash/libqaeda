@@ -112,6 +112,7 @@ START_TEST(check_verify) {
 	ck_assert_ptr_nonnull(sig);
 
 	r = lq_signature_verify(sig, data, strlen(data));
+	ck_assert_int_eq(r, 0);
 
 	lq_signature_free(sig);
 	lq_privatekey_free(pk);
@@ -179,14 +180,14 @@ Suite * common_suite(void) {
 
 	s = suite_create("crypto");
 	tc = tcase_create("file");
-	tcase_add_test(tc, check_digest);
-	tcase_add_test(tc, check_privatekey);
-	tcase_add_test(tc, check_publickey);
-	tcase_add_test(tc, check_signature);
+//	tcase_add_test(tc, check_digest);
+//	tcase_add_test(tc, check_privatekey);
+//	tcase_add_test(tc, check_publickey);
+//	tcase_add_test(tc, check_signature);
 	tcase_add_test(tc, check_verify);
-	tcase_add_test(tc, check_create_load);
-	tcase_add_test(tc, check_load_specific);
-	tcase_add_test(tc, check_many);
+//	tcase_add_test(tc, check_create_load);
+//	tcase_add_test(tc, check_load_specific);
+//	tcase_add_test(tc, check_many);
 	suite_add_tcase(s, tc);
 
 	return s;

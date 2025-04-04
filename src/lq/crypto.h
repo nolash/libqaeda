@@ -32,7 +32,7 @@
 #endif
 
 #ifndef LQ_CRYPTO_BUFLEN
-#define LQ_CRYPTO_BUFLEN 524288
+#define LQ_CRYPTO_BUFLEN 65536
 #endif
 
 #ifndef LQ_CRYPTO_BLOCKSIZE

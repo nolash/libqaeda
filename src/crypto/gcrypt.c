@@ -456,18 +456,7 @@ static int key_create(struct gpg_store *gpg) {
 	return ERR_OK;
 }
 
-// Create a new store instance using the crypto partition path
-// set in the configuration.
-// Caller must free it.
-LQStore *key_store_get() {
-//	int r;
-//	char *p;
-
-//	r = lq_config_get(gpg_cfg_idx_dir, (void**)&p);
-//	if (r) {
-//		return NULL;
-//	}
-//	return lq_store_new(p);
+static LQStore *key_store_get() {
 	return gpg_key_store;
 }
 
@@ -492,6 +481,10 @@ static int key_create_store(struct gpg_store *gpg, const char *passphrase, size_
 	char ciphertext[LQ_CRYPTO_BUFLEN];
 	char passphrase_hash[LQ_DIGEST_LEN];
 	char mac[POLY1305_MAC_LEN];
+
+	// Initialize to assist debugging.
+	lq_zero(buf_key, LQ_STORE_KEY_MAX);
+	lq_zero(buf_val, LQ_STORE_VAL_MAX);
 
 	// Create the private key and corresponding public key.
 	r = key_create(gpg);
@@ -649,6 +642,10 @@ static int key_from_data(gcry_sexp_t *key, const char *indata, size_t indata_len
 	return ERR_OK;
 }
 
+static int check_ciphertext(const char *buf, size_t buf_len) {
+	return buf_len % (LQ_CRYPTO_BLOCKSIZE + CHACHA20_NONCE_LENGTH_BYTES + POLY1305_MAC_LEN);
+}
+
 /// Load a private key from the store's crypto partition.
 static int key_from_store(struct gpg_store *gpg, const char *passphrase, size_t passphrase_len) {
 	char *nonce;
@@ -681,6 +678,11 @@ static int key_from_store(struct gpg_store *gpg, const char *passphrase, size_t 
 	r = store->get(LQ_CONTENT_KEY, store, inkey, inkey_len, in, &in_len);
 	if (r) {
 		return ERR_NOENT;
+	}
+
+	r = check_ciphertext(in, in_len);
+	if (r) {
+		return debug_logerr(LLOG_ERROR, ERR_CIPHER, "incorrect ciphertext");
 	}
 
 	// Hash the encryption key to the expected length.
@@ -973,11 +975,12 @@ size_t lq_signature_bytes(LQSig *sig, char **out) {
 }
 
 int lq_signature_verify(LQSig *sig, const char *data, size_t data_len) {
+	char *p;
 	int r;
 	size_t c;
 	gcry_mpi_t sig_r;
 	gcry_mpi_t sig_s;
-	gcry_error_t err;
+	gcry_error_t e;
 	gcry_sexp_t sigx;
 	gcry_sexp_t msgx;
 	gcry_sexp_t pubkey;
@@ -990,14 +993,14 @@ int lq_signature_verify(LQSig *sig, const char *data, size_t data_len) {
 
 	gpg = (struct gpg_store*)sig->pubkey->impl;
 	c = 0;
-	err = gcry_sexp_build(&pubkey, &c, "(key-data(public-key(ecc(curve Ed25519)(q %b))))", LQ_PUBKEY_LEN, gpg->public_key);
-	if (err != GPG_ERR_NO_ERROR) {
+	e = gcry_sexp_build(&pubkey, &c, "(key-data(public-key(ecc(curve Ed25519)(q %b))))", LQ_PUBKEY_LEN, gpg->public_key);
+	if (e != GPG_ERR_NO_ERROR) {
 		return ERR_KEYFAIL;
 	}
 
 	c = 0;
-	err = gcry_mpi_scan(&sig_r, GCRYMPI_FMT_STD, sig->impl, LQ_POINT_LEN, &c);
-	if (err != GPG_ERR_NO_ERROR) {
+	e = gcry_mpi_scan(&sig_r, GCRYMPI_FMT_STD, sig->impl, LQ_POINT_LEN, &c);
+	if (e != GPG_ERR_NO_ERROR) {
 		gcry_sexp_release(pubkey);
 		return ERR_KEYFAIL;
 	}
@@ -1008,8 +1011,8 @@ int lq_signature_verify(LQSig *sig, const char *data, size_t data_len) {
 	}
 
 	c = 0;
-	err = gcry_mpi_scan(&sig_s, GCRYMPI_FMT_STD, sig->impl + LQ_POINT_LEN, LQ_POINT_LEN, &c);
-	if (err != GPG_ERR_NO_ERROR) {
+	e = gcry_mpi_scan(&sig_s, GCRYMPI_FMT_STD, sig->impl + LQ_POINT_LEN, LQ_POINT_LEN, &c);
+	if (e != GPG_ERR_NO_ERROR) {
 		gcry_mpi_release(sig_r);
 		gcry_sexp_release(pubkey);
 		return ERR_KEYFAIL;
@@ -1022,8 +1025,8 @@ int lq_signature_verify(LQSig *sig, const char *data, size_t data_len) {
 	}
 
 	c = 0;
-	err = gcry_sexp_build(&sigx, &c, "(sig-val(eddsa(r %m)(s %m)))", sig_r, sig_s);
-	if (err != GPG_ERR_NO_ERROR) {
+	e = gcry_sexp_build(&sigx, &c, "(sig-val(eddsa(r %m)(s %m)))", sig_r, sig_s);
+	if (e != GPG_ERR_NO_ERROR) {
 		gcry_mpi_release(sig_s);
 		gcry_mpi_release(sig_r);
 		gcry_sexp_release(pubkey);
@@ -1040,19 +1043,20 @@ int lq_signature_verify(LQSig *sig, const char *data, size_t data_len) {
 	}
 
 	c = 0;
-	err = gcry_sexp_build(&msgx, &c, "(data(flags eddsa)(hash-algo sha512)(value %b))", LQ_DIGEST_LEN, digest);
-	if (err != GPG_ERR_NO_ERROR) {
+	e = gcry_sexp_build(&msgx, &c, "(data(flags eddsa)(hash-algo sha512)(value %b))", LQ_DIGEST_LEN, digest);
+	if (e != GPG_ERR_NO_ERROR) {
 		gcry_sexp_release(sigx);
 		gcry_sexp_release(pubkey);
 		return ERR_DIGEST;
 	}
 
-	err = gcry_pk_verify(sigx, msgx, pubkey);
-	if (err != GPG_ERR_NO_ERROR) {
+	e = gcry_pk_verify(sigx, msgx, pubkey);
+	if (e != GPG_ERR_NO_ERROR) {
+		p = gcry_strerror(e);
 		gcry_sexp_release(msgx);
 		gcry_sexp_release(sigx);
 		gcry_sexp_release(pubkey);
-		return ERR_SIGVALID;
+		return debug_logerr(LLOG_INFO, ERR_SIGVALID, p);
 	}
 
 	gcry_sexp_release(msgx);
