@@ -628,7 +628,7 @@ LQPrivKey* lq_privatekey_new(const char *passphrase, size_t passphrase_len) {
 	if (r) {
 		return NULL;
 	}
-	return o;	
+	return o;
 }
 
 /// Parse data from buffer as S-expression text representing a key.

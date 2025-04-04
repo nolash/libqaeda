@@ -41,8 +41,9 @@ static int msg_to_sign(LQMsg *msg, char *out, const char *extra, size_t extra_le
 	int r;
 	char data[LQ_BLOCKSIZE];
 
-	l = msg->len + extra_len;
+	l = msg->len;
 	if (extra_len > 0) {
+		l += extra_len;
 		lq_cpy(data, extra, extra_len);
 	}
 	lq_cpy(data + extra_len, msg->data, msg->len);
@@ -53,6 +54,7 @@ static int msg_to_sign(LQMsg *msg, char *out, const char *extra, size_t extra_le
 LQSig* lq_msg_sign_extra(LQMsg *msg, LQPrivKey *pk, const char *salt, const char *extra, size_t extra_len) {
 	int r;
 	char digest[LQ_DIGEST_LEN];
+	LQSig *sig;
 
 	if (extra == NULL) {
 		extra_len = 0;
@@ -60,33 +62,43 @@ LQSig* lq_msg_sign_extra(LQMsg *msg, LQPrivKey *pk, const char *salt, const char
 	if (msg->pubkey == NULL) {
 		msg->pubkey = lq_publickey_from_privatekey(pk);
 		if (msg->pubkey == NULL) {
-			debug_logerr(LLOG_INFO, ERR_NOKEY, "public key");
+			debug_logerr(LLOG_DEBUG, ERR_NOKEY, "public key");
 			return NULL;
 		}
 	}
 	r = msg_to_sign(msg, digest, extra, extra_len);
 	if (r) {
-		debug_logerr(LLOG_INFO, r, "sign message");
+		debug_logerr(LLOG_DEBUG, r, "prepare message for sign");
 		return NULL;
 	}
-	return lq_privatekey_sign(pk, digest, LQ_DIGEST_LEN, salt);
+	sig = lq_privatekey_sign(pk, digest, LQ_DIGEST_LEN, salt);
+	if (sig == NULL) {
+		debug_logerr(LLOG_DEBUG, r, "sign message");
+		return NULL;
+	}
+	return sig;
 }
 
 int lq_msg_verify_extra(LQMsg *msg, LQSig *sig, const char *salt, const char *extra, size_t extra_len) {
 	int r;
 	char digest[LQ_DIGEST_LEN];
+	LQMsg msg_valid;
 
 	if (msg->pubkey == NULL) {
-		return debug_logerr(LLOG_INFO, ERR_NONSENSE, "missing pubkey");
+		return debug_logerr(LLOG_DEBUG, ERR_NONSENSE, "missing pubkey");
 	}
 	if (extra == NULL) {
 		extra_len = 0;
 	}
 	r = msg_to_sign(msg, digest, extra, extra_len);
 	if (r) {
-		return debug_logerr(LLOG_INFO, r, "verify message");
+		return debug_logerr(LLOG_DEBUG, r, "prepare message for verify");
 	}
-	return lq_signature_verify(sig, digest, LQ_DIGEST_LEN);
+	r = lq_signature_verify(sig, digest, LQ_DIGEST_LEN);
+	if (r) {
+		return debug_logerr(LLOG_DEBUG, r, "verify message");
+	}
+	return ERR_OK;
 }
 
 void lq_msg_free(LQMsg *msg) {

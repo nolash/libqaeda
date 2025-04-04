@@ -157,16 +157,20 @@ int lq_certificate_sign(LQCert *cert, LQPrivKey *pk) {
 }
 
 int lq_certificate_verify(LQCert *cert) {
-	LQCert cert_valid;
-	char out[LQ_BLOCKSIZE];
-
 	int r;
+	char out[LQ_BLOCKSIZE];
+	LQCert cert_valid;
+
+	if (cert->request_sig == NULL) {
+		return debug_logerr(LLOG_DEBUG, ERR_NONSENSE, "no request signature");
+	}
 
 	lq_cpy(&cert_valid, cert, sizeof(LQCert));
+	cert_valid.request_sig = NULL;
 	cert_valid.response = NULL;
 	cert_valid.response_sig = NULL;
 
-	r = state_digest(cert, out, 0);
+	r = state_digest(&cert_valid, out, 0);
 	if (r != ERR_OK) {
 		return r;
 	}
