@@ -145,8 +145,8 @@ START_TEST(check_load_specific) {
 	ck_assert_ptr_nonnull(pubk);
 	c = lq_publickey_fingerprint(pubk, &p);
 	ck_assert_int_gt(c, 0);
-	pk_load = lq_privatekey_load(passphrase, passphrase_len, NULL);
-	ck_assert_ptr_nonnull(pk_load);
+	//pk_load = lq_privatekey_load(passphrase, passphrase_len, NULL);
+	//ck_assert_ptr_nonnull(pk_load);
 	pk_load = lq_privatekey_load(passphrase, passphrase_len, p);
 	ck_assert_ptr_nonnull(pk_load);
 

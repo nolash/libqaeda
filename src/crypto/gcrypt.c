@@ -547,7 +547,7 @@ static int key_create_store(struct gpg_store *gpg, const char *passphrase, size_
 	}
 
 	// Write the ciphertext to the store.	
-	l = c + CHACHA20_NONCE_LENGTH_BYTES + POLY1305_MAC_LEN;
+	l = c + POLY1305_MAC_LEN;
 	c = LQ_FP_LEN;
 	r = store->put(LQ_CONTENT_KEY, store, buf_key, &c, buf_val, l);
 	if (r) {
