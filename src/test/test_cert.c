@@ -49,11 +49,6 @@ START_TEST(check_cert_sig_req) {
 	r = lq_certificate_request(cert, req, pk);
 	ck_assert_int_eq(r, 0);
 
-	//res = lq_msg_new("barbaz", 7);
-	//ck_assert_ptr_nonnull(res);
-	//r = lq_certificate_respond(cert, res, pk_bob);
-	//ck_assert_int_eq(r, 0);
-
 	r = lq_certificate_verify(cert);
 	ck_assert_int_eq(r, 0);
 
@@ -79,6 +74,7 @@ START_TEST(check_cert_sig_res) {
 	ck_assert_ptr_nonnull(pk_bob);
 	r = lq_privatekey_unlock(pk_bob, passphrase, strlen(passphrase));
 	ck_assert_int_eq(r, 0);
+
 	cert = lq_certificate_new(NULL);
 	ck_assert_ptr_nonnull(cert);
 
@@ -243,7 +239,7 @@ Suite * common_suite(void) {
 	s = suite_create("cert");
 	tc = tcase_create("sign");
 	tcase_add_test(tc, check_cert_sig_req);
-//	tcase_add_test(tc, check_cert_sig_res);
+	tcase_add_test(tc, check_cert_sig_res);
 	suite_add_tcase(s, tc);
 
 	tc = tcase_create("serialize");

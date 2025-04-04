@@ -162,22 +162,39 @@ int lq_certificate_verify(LQCert *cert) {
 	LQCert cert_valid;
 
 	if (cert->request_sig == NULL) {
-		return debug_logerr(LLOG_DEBUG, ERR_NONSENSE, "no request signature");
+		return debug_logerr(LLOG_DEBUG, ERR_NONSENSE, "no signatures");
 	}
 
 	lq_cpy(&cert_valid, cert, sizeof(LQCert));
 	cert_valid.request_sig = NULL;
 	cert_valid.response = NULL;
 	cert_valid.response_sig = NULL;
-
 	r = state_digest(&cert_valid, out, 0);
 	if (r != ERR_OK) {
-		return r;
+		return debug_logerr(LLOG_DEBUG, r, "cert state request");
 	}
 
 	r = lq_msg_verify_extra(cert->request, cert->request_sig, NULL, out, LQ_DIGEST_LEN);
 	if (r != ERR_OK) {
-		return r;
+		return debug_logerr(LLOG_DEBUG, r, "cert verify request");
+	}
+
+	if (cert->response_sig == NULL) {
+		debug(LLOG_DEBUG, "cert", "skip empty response signature");
+		return ERR_OK;
+	}
+
+	cert_valid.request_sig = cert->request_sig;
+	cert_valid.response = cert->response;
+	r = state_digest(&cert_valid, out, 0);
+	if (r != ERR_OK) {
+		return debug_logerr(LLOG_DEBUG, r, "cert state response");
+	}
+	cert_valid.response_sig = cert->response_sig;
+
+	r = lq_msg_verify_extra(cert_valid.response, cert_valid.response_sig, NULL, out, LQ_DIGEST_LEN);
+	if (r != ERR_OK) {
+		return debug_logerr(LLOG_DEBUG, r, "cert verify response");
 	}
 
 	return ERR_OK;
