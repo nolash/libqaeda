@@ -3,11 +3,12 @@
 
 
 int lq_init() {
+	char err[1024];
 	int r;
 
+
 	lq_err_init();
-	r = lq_config_init();
-	return r;
+	return lq_config_init();
 }
 
 void lq_finish() {

@@ -973,7 +973,7 @@ size_t lq_signature_bytes(LQSig *sig, char **out) {
 }
 
 int lq_signature_verify(LQSig *sig, const char *data, size_t data_len) {
-	char *p;
+	const char *p;
 	int r;
 	size_t c;
 	gcry_mpi_t sig_r;
@@ -999,53 +999,60 @@ int lq_signature_verify(LQSig *sig, const char *data, size_t data_len) {
 	c = 0;
 	e = gcry_mpi_scan(&sig_r, GCRYMPI_FMT_STD, sig->impl, LQ_POINT_LEN, &c);
 	if (e != GPG_ERR_NO_ERROR) {
+		p = gcry_strerror(e);
 		gcry_sexp_release(pubkey);
-		return ERR_KEYFAIL;
+		return debug_logerr(LLOG_INFO, ERR_KEYFAIL, (char*)p);
 	}
 	if (c != 32) {
+		p = gcry_strerror(e);
 		gcry_mpi_release(sig_r);
 		gcry_sexp_release(pubkey);
-		return ERR_KEYFAIL;
+		return debug_logerr(LLOG_INFO, ERR_KEYFAIL, (char*)p);
 	}
 
 	c = 0;
 	e = gcry_mpi_scan(&sig_s, GCRYMPI_FMT_STD, sig->impl + LQ_POINT_LEN, LQ_POINT_LEN, &c);
 	if (e != GPG_ERR_NO_ERROR) {
+		p = gcry_strerror(e);
 		gcry_mpi_release(sig_r);
 		gcry_sexp_release(pubkey);
-		return ERR_KEYFAIL;
+		return debug_logerr(LLOG_INFO, ERR_KEYFAIL, (char*)p);
 	}
 	if (c != 32) {
+		p = gcry_strerror(e);
 		gcry_mpi_release(sig_s);
 		gcry_mpi_release(sig_r);
 		gcry_sexp_release(pubkey);
-		return ERR_KEYFAIL;
+		return debug_logerr(LLOG_INFO, ERR_KEYFAIL, (char*)p);
 	}
 
 	c = 0;
 	e = gcry_sexp_build(&sigx, &c, "(sig-val(eddsa(r %m)(s %m)))", sig_r, sig_s);
 	if (e != GPG_ERR_NO_ERROR) {
+		p = gcry_strerror(e);
 		gcry_mpi_release(sig_s);
 		gcry_mpi_release(sig_r);
 		gcry_sexp_release(pubkey);
-		return ERR_SIGFAIL;
+		return debug_logerr(LLOG_INFO, ERR_SIGFAIL, (char*)p);
 	}
 	gcry_mpi_release(sig_s);
 	gcry_mpi_release(sig_r);
 
 	r = calculate_digest_algo(data, data_len, digest, GCRY_MD_SHA512);
 	if (r) {
+		p = gcry_strerror(e);
 		gcry_sexp_release(sigx);
 		gcry_sexp_release(pubkey);
-		return ERR_DIGEST;
+		return debug_logerr(LLOG_INFO, ERR_DIGEST, (char*)p);
 	}
 
 	c = 0;
 	e = gcry_sexp_build(&msgx, &c, "(data(flags eddsa)(hash-algo sha512)(value %b))", LQ_DIGEST_LEN, digest);
 	if (e != GPG_ERR_NO_ERROR) {
+		p = gcry_strerror(e);
 		gcry_sexp_release(sigx);
 		gcry_sexp_release(pubkey);
-		return ERR_DIGEST;
+		return debug_logerr(LLOG_INFO, ERR_DIGEST, (char*)p);
 	}
 
 	e = gcry_pk_verify(sigx, msgx, pubkey);
@@ -1054,7 +1061,7 @@ int lq_signature_verify(LQSig *sig, const char *data, size_t data_len) {
 		gcry_sexp_release(msgx);
 		gcry_sexp_release(sigx);
 		gcry_sexp_release(pubkey);
-		return debug_logerr(LLOG_INFO, ERR_SIGVALID, p);
+		return debug_logerr(LLOG_INFO, ERR_SIGVALID, (char*)p);
 	}
 
 	gcry_sexp_release(msgx);
