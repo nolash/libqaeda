@@ -934,16 +934,14 @@ LQSig* lq_privatekey_sign(LQPrivKey *pk, const char *data, size_t data_len, cons
 	int r;
 	struct gpg_store *gpg;
 	LQSig *sig;
-	char digest[LQ_DIGEST_LEN];
 
 	if ((pk->key_state & LQ_KEY_LOCK) > 0) {
 		return NULL;
 	}
 
-	lq_digest(data, strlen(data), (char*)digest);
 	gpg = (struct gpg_store*)pk->impl;
 
-	r = sign(gpg, digest, LQ_DIGEST_LEN, salt);
+	r = sign(gpg, data, data_len, salt);
 	if (r != ERR_OK) {
 		return NULL;
 	}
