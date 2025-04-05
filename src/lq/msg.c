@@ -13,6 +13,8 @@
 #include "debug.h"
 
 
+extern asn1_node asn;
+
 extern char zeros[65];
 static LQPubKey nokey = {
 	.pk = NULL,
@@ -131,33 +133,34 @@ int lq_msg_serialize(LQMsg *msg, char *out, size_t *out_len, LQResolve *resolve)
 	char err[1024];
 	LQPubKey *pubkey;
 	LQResolve *resolve_active;
-	asn1_node node;
+	asn1_node item;
 	char *keydata;
 
 	resolved = LQ_MSG_DIGESTONLY;
 	mx = *out_len;
 	*out_len = 0;
-	lq_set(&node, 0, sizeof(node));
-	r = asn1_array2tree(defs_asn1_tab, &node, err);
+	lq_set(&item, 0, sizeof(item));
+
+	r = asn1_create_element(asn, "Qaeda.Msg", &item);
 	if (r != ASN1_SUCCESS) {
-		return ERR_INIT;
+		return ERR_READ;
 	}
 
 	c = LQ_DIGEST_LEN;
 	*out_len += c;
 	if (*out_len > mx) {
-		return asn_except(&node, ERR_OVERFLOW);
+		return asn_except(&item, ERR_OVERFLOW);
 	}
 	r = lq_digest(msg->data, msg->len, tmp);
 	if (r != ERR_OK) {
-		return asn_except(&node, r);
+		return asn_except(&item, r);
 	}
 
 	resolve_active = resolve;
 	while (resolve_active != NULL) {
 		r = resolve_active->store->put(LQ_CONTENT_MSG, resolve_active->store, tmp, &c, msg->data, msg->len);
 		if (r != ERR_OK) {
-			return asn_except(&node, r);
+			return asn_except(&item, r);
 		}
 		resolve_active = resolve_active->next;
 		resolved = LQ_MSG_RESOLVED;
@@ -167,30 +170,30 @@ int lq_msg_serialize(LQMsg *msg, char *out, size_t *out_len, LQResolve *resolve)
 		debug(LLOG_DEBUG, "msg", "no resolver");	
 	}
 
-	r = asn1_write_value(node, "Qaeda.Msg.data", tmp, c);
+	r = asn1_write_value(item, "data", tmp, c);
 	if (r != ASN1_SUCCESS) {
-		return asn_except(&node, ERR_WRITE);
+		return asn_except(&item, ERR_WRITE);
 	}
 
 	lq_cpy(timedata, &msg->time.tv_sec, 4);
 	lq_cpy(((char*)timedata)+4, &msg->time.tv_nsec, 4);
 	r = to_endian(TO_ENDIAN_BIG, 4, timedata);
 	if (r) {
-		return asn_except(&node, ERR_BYTEORDER);
+		return asn_except(&item, ERR_BYTEORDER);
 	}
 	r = to_endian(TO_ENDIAN_BIG, 4, ((char*)timedata)+4);
 	if (r) {
-		return asn_except(&node, ERR_BYTEORDER);
+		return asn_except(&item, ERR_BYTEORDER);
 	}
 
 	c = sizeof(int);
 	*out_len += c;
 	if (*out_len > mx) {
-		return asn_except(&node, ERR_OVERFLOW);
+		return asn_except(&item, ERR_OVERFLOW);
 	}
-	r = asn1_write_value(node, "Qaeda.Msg.timestamp", &timedata, c);
+	r = asn1_write_value(item, "timestamp", &timedata, c);
 	if (r != ASN1_SUCCESS) {
-		return asn_except(&node, ERR_WRITE);
+		return asn_except(&item, ERR_WRITE);
 	}
 
 	pubkey = msg->pubkey;
@@ -200,20 +203,20 @@ int lq_msg_serialize(LQMsg *msg, char *out, size_t *out_len, LQResolve *resolve)
 	c = lq_publickey_bytes(pubkey, &keydata);
 	*out_len += c;
 	if (*out_len > mx) {
-		return asn_except(&node, ERR_OVERFLOW);
+		return asn_except(&item, ERR_OVERFLOW);
 	}
-	r = asn1_write_value(node, "Qaeda.Msg.pubkey", keydata, c);
+	r = asn1_write_value(item, "pubkey", keydata, c);
 	if (r != ASN1_SUCCESS) {
-		return asn_except(&node, ERR_WRITE);
+		return asn_except(&item, ERR_WRITE);
 	}
 
 	*out_len = mx;
-	r = asn1_der_coding(node, "Qaeda.Msg", out, (int*)out_len, err);
+	r = asn1_der_coding(item, "Qaeda.Msg", out, (int*)out_len, err);
 	if (r != ASN1_SUCCESS) {
-		return asn_except(&node, ERR_ENCODING);
+		return asn_except(&item, ERR_ENCODING);
 	}
 
-	r = asn1_delete_structure(&node);
+	r = asn1_delete_structure(&item);
 	if (r != ASN1_SUCCESS) {
 		return r;
 	}
@@ -228,44 +231,33 @@ int lq_msg_deserialize(LQMsg **msg, const char *in, size_t in_len, LQResolve *re
 	char err[LQ_ERRSIZE];
 	char z[LQ_DIGEST_LEN];
 	char tmp[LQ_BLOCKSIZE];
-	asn1_node node;
 	asn1_node item;
 	LQResolve *resolve_active;
 
 	resolved = LQ_MSG_DIGESTONLY;
-	lq_zero(&node, sizeof(node));
 	lq_zero(&item, sizeof(item));
-	r = asn1_array2tree(defs_asn1_tab, &node, err);
-	if (r != ASN1_SUCCESS) {
-		return ERR_INIT;
-	}
 
-	r = asn1_create_element(node, "Qaeda.Msg", &item);
+	r = asn1_create_element(asn, "Qaeda.Msg", &item);
 	if (r != ASN1_SUCCESS) {
-		return asn_except(&node, ERR_READ);
+		return ERR_READ;
 	}
 
 	r = asn1_der_decoding(&item, in, in_len, err);
 	if (r != ASN1_SUCCESS) {
-		asn_except(&item, r);
-		return asn_except(&node, r);
+		return asn_except(&item, ERR_ENCODING);
 	}
 
 	c = LQ_DIGEST_LEN;
 	r = asn1_read_value(item, "data", z, (int*)&c);
 	if (r != ASN1_SUCCESS) {
-		r = ERR_READ;
-		asn_except(&item, r);
-		asn_except(&node, r);
-		return r;
+		return asn_except(&item, ERR_READ);
 	}
 	c = LQ_BLOCKSIZE;
 	resolve_active = resolve;
 	while (resolve_active != NULL) {
 		r = resolve_active->store->get(LQ_CONTENT_MSG, resolve_active->store, z, LQ_DIGEST_LEN, tmp, &c);
 		if (r != ERR_OK) {
-			asn_except(&item, r);
-			return asn_except(&node, r);
+			return asn_except(&item, r);
 		}
 		resolved = LQ_MSG_RESOLVED;
 		resolve_active = resolve_active->next;
@@ -276,20 +268,14 @@ int lq_msg_deserialize(LQMsg **msg, const char *in, size_t in_len, LQResolve *re
 		c = LQ_DIGEST_LEN;
 	} else {
 		if (!(resolved & LQ_MSG_RESOLVED)) {
-			r = ERR_RESOLVE;
-			asn_except(&item, r);
-			asn_except(&node, r);
-			return r;
+			return asn_except(&item, ERR_RESOLVE);
 		}
 	}
 	*msg = lq_msg_new((const char*)tmp, c);
 	(*msg)->state = resolved;
 	(*msg)->data = lq_alloc(c);
 	if ((*msg)->data == NULL) {
-		r = ERR_MEM;
-		asn_except(&item, r);
-		asn_except(&node, r);
-		return r;
+		return asn_except(&item, ERR_MEM);
 	}
 	(*msg)->len = c;
 	lq_cpy((*msg)->data, tmp, c);
@@ -298,10 +284,7 @@ int lq_msg_deserialize(LQMsg **msg, const char *in, size_t in_len, LQResolve *re
 	c = 8;
 	r = asn1_read_value(item, "timestamp", tmp, (int*)&c);
 	if (r != ASN1_SUCCESS) {
-		r = ERR_READ;
-		asn_except(&item, r);
-		asn_except(&node, r);
-		return r;
+		return asn_except(&item, ERR_READ);
 	}
 	if (is_le()) {
 		flip_endian(4, (char*)tmp);
@@ -313,10 +296,7 @@ int lq_msg_deserialize(LQMsg **msg, const char *in, size_t in_len, LQResolve *re
 	c = LQ_PUBKEY_LEN;
 	r = asn1_read_value(item, "pubkey", tmp, (int*)&c);
 	if (r != ASN1_SUCCESS) {
-		r = ERR_READ;
-		asn_except(&item, r);
-		asn_except(&node, r);
-		return r;
+		return asn_except(&item, ERR_READ);
 	}
 	(*msg)->pubkey = lq_publickey_new(tmp);
 
@@ -324,9 +304,9 @@ int lq_msg_deserialize(LQMsg **msg, const char *in, size_t in_len, LQResolve *re
 	if (r != ASN1_SUCCESS) {
 		debug(LLOG_WARNING, "cert", "delete msg asn item");
 	}
-	r = asn1_delete_structure(&node);
+	r = asn1_delete_structure(&item);
 	if (r != ASN1_SUCCESS) {
-		return asn_except(&node, ERR_FAIL);
+		return ERR_FAIL;
 	};
 
 	return ERR_OK;

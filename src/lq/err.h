@@ -13,7 +13,8 @@ enum err_e {
 	ERR_REQUEST = 0x102, ///< Error related to certificate request messages
 	ERR_RESPONSE = 0x103, ///< Error related to certificate response messages
 	ERR_RESOLVE = 0x104, ///< Error related to resolving message hashes
-
+	ERR_UNCLEAN = 0x105, ///< Indicates that not everything could be cleaned up on exit
+			     
 	RERR_PFX_CRYPTO = 0x200,
 	ERR_NOCRYPTO = 0x201,
 	ERR_KEYFAIL = 0x202,
