@@ -151,9 +151,11 @@ int lq_msg_serialize(LQMsg *msg, char *out, size_t *out_len, LQResolve *resolve)
 	if (*out_len > mx) {
 		return asn_except(&item, ERR_OVERFLOW);
 	}
-	r = lq_digest(msg->data, msg->len, tmp);
-	if (r != ERR_OK) {
-		return asn_except(&item, r);
+	if (msg->len > 0) {
+		r = lq_digest(msg->data, msg->len, tmp);
+		if (r != ERR_OK) {
+			return asn_except(&item, r);
+		}
 	}
 
 	resolve_active = resolve;
@@ -168,8 +170,6 @@ int lq_msg_serialize(LQMsg *msg, char *out, size_t *out_len, LQResolve *resolve)
 
 	if (resolved & LQ_MSG_DIGESTONLY) {
 		debug(LLOG_DEBUG, "msg", "no resolver");	
-		c = msg->len;
-		lq_cpy(tmp, msg->data, c);
 	}
 
 	r = asn1_write_value(item, "Msg.data", tmp, c);
@@ -253,6 +253,7 @@ int lq_msg_deserialize(LQMsg **msg, const char *in, size_t in_len, LQResolve *re
 	c = LQ_DIGEST_LEN;
 	r = asn1_read_value(item, "data", z, (int*)&c);
 	if (r != ASN1_SUCCESS) {
+		debug_logerr(LLOG_WARNING, ERR_READ, asn1_strerror(r));
 		return asn_except(&item, ERR_READ);
 	}
 	c = LQ_BLOCKSIZE;

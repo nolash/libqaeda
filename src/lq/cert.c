@@ -253,7 +253,7 @@ int lq_certificate_serialize(LQCert *cert, char *out, size_t *out_len, LQResolve
 	r = lq_msg_serialize(msg, buf, &c, resolve);
 	if (r != ERR_OK) {
 		return asn_except(&item, r);
-	}
+	}	
 	*out_len += c;
 	if (*out_len > mx) {
 		return asn_except(&item, ERR_OVERFLOW);
@@ -384,15 +384,19 @@ int lq_certificate_deserialize(LQCert **cert, char *in, size_t in_len, LQResolve
 	if (r != ERR_OK) {
 		return asn_except(&item, r);
 	}
-
-	c = LQ_BLOCKSIZE;
-	r = asn1_read_value(item, "request_sig", tmp, &c);
-	if (r != ASN1_SUCCESS) {
+	if (!lq_cmp(p->request, &nomsg, sizeof(LQMsg))) {
 		lq_msg_free(p->request);
-		return asn_except(&item, ERR_READ);
-	}
-	if (c > 0) {
-		p->request_sig = lq_signature_from_bytes(tmp, c, NULL);
+		p->request = NULL;
+	} else {
+		c = LQ_BLOCKSIZE;
+		r = asn1_read_value(item, "request_sig", tmp, &c);
+		if (r != ASN1_SUCCESS) {
+			lq_msg_free(p->request);
+			return asn_except(&item, ERR_READ);
+		}
+		if (c > 0) {
+			p->request_sig = lq_signature_from_bytes(tmp, c, NULL);
+		}
 	}
 
 	c = LQ_BLOCKSIZE;
@@ -408,17 +412,21 @@ int lq_certificate_deserialize(LQCert **cert, char *in, size_t in_len, LQResolve
 		lq_msg_free(p->request);
 		return asn_except(&item, r);
 	}
-
-	c = 4096;
-	r = asn1_read_value(item, "response_sig", tmp, &c);
-	if (r != ASN1_SUCCESS) {
+	if (!lq_cmp(p->response, &nomsg, sizeof(LQMsg))) {
 		lq_msg_free(p->response);
-		lq_signature_free(p->request_sig);
-		lq_msg_free(p->request);
-		return asn_except(&item, ERR_READ);
-	}
-	if (c > 0) {
-		p->response_sig = lq_signature_from_bytes(tmp, c, NULL);
+		p->response = NULL;
+	} else {
+		c = LQ_BLOCKSIZE;
+		r = asn1_read_value(item, "response_sig", tmp, &c);
+		if (r != ASN1_SUCCESS) {
+			lq_msg_free(p->response);
+			lq_signature_free(p->request_sig);
+			lq_msg_free(p->request);
+			return asn_except(&item, ERR_READ);
+		}
+		if (c > 0) {
+			p->response_sig = lq_signature_from_bytes(tmp, c, NULL);
+		}
 	}
 
 	c = 4096;
@@ -432,7 +440,7 @@ int lq_certificate_deserialize(LQCert **cert, char *in, size_t in_len, LQResolve
 	}
 	p->parent = NULL;
 	if (c == 1) {
-		lq_set(p->parent_hash, 0, LQ_DIGEST_LEN);
+		lq_zero(p->parent_hash, LQ_DIGEST_LEN);
 	} else {
 		lq_cpy(p->parent_hash, tmp, LQ_DIGEST_LEN);
 	}

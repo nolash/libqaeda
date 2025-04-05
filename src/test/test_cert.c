@@ -190,23 +190,27 @@ START_TEST(check_cert_symmetric_ser_rsp_onesig) {
 	char buf[4096];
 
 	pk = lq_privatekey_new(passphrase, 32);
+	ck_assert_ptr_nonnull(pk);
 	req = lq_msg_new(data, strlen(data) + 1);
+	ck_assert_ptr_nonnull(req);
 	res = lq_msg_new(data_two, strlen(data_two) + 1);
+	ck_assert_ptr_nonnull(res);
+
 	cert = lq_certificate_new(NULL);
-	lq_privatekey_unlock(pk, passphrase, 32);
+	lq_privatekey_unlock(pk, passphrase, strlen(passphrase));
 	r = lq_certificate_request(cert, req, pk);
 	ck_assert_int_eq(r, 0);
 
-	c = 4096;
+	c = LQ_BLOCKSIZE;
 	r = lq_certificate_serialize(cert, buf, &c, NULL);
 	ck_assert_int_eq(r, 0);
 	lq_certificate_free(cert);
 
-	cert = lq_certificate_new(NULL);
 	r = lq_certificate_deserialize(&cert, buf, c, NULL);
 	ck_assert_int_eq(r, 0);
 	r = lq_certificate_respond(cert, res, pk);
 	ck_assert_int_eq(r, 0);
+
 	lq_certificate_free(cert);
 	lq_privatekey_free(pk);
 }
@@ -238,12 +242,11 @@ START_TEST(check_cert_symmetric_ser_rsp_bothsig) {
 	r = lq_certificate_respond(cert, res, NULL);
 	ck_assert_int_eq(r, 0);
 
-	c = 4096;
+	c = LQ_BLOCKSIZE; 
 	r = lq_certificate_serialize(cert, buf, &c, NULL);
 	ck_assert_int_eq(r, 0);
 	lq_certificate_free(cert);
 
-	cert = lq_certificate_new(NULL);
 	r = lq_certificate_deserialize(&cert, buf, c, NULL);
 	ck_assert_int_eq(r, 0);
 	lq_certificate_free(cert);
@@ -263,8 +266,8 @@ Suite * common_suite(void) {
 	tc = tcase_create("serialize");
 //	tcase_add_test(tc, check_cert_symmetric_ser_nomsg);
 //	tcase_add_test(tc, check_cert_symmetric_ser_req_nosig);
-	tcase_add_test(tc, check_cert_symmetric_ser_req_sig);
-//	tcase_add_test(tc, check_cert_symmetric_ser_rsp_onesig);
+//	tcase_add_test(tc, check_cert_symmetric_ser_req_sig);
+	tcase_add_test(tc, check_cert_symmetric_ser_rsp_onesig);
 //	tcase_add_test(tc, check_cert_symmetric_ser_rsp_bothsig);
 	suite_add_tcase(s, tc);
 
