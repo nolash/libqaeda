@@ -200,12 +200,24 @@ int lq_certificate_verify(LQCert *cert) {
 	return ERR_OK;
 }
 
+// TODO: DRY
+static int asn_except(asn1_node *node, int err) {
+	int r;
+
+	r = asn1_delete_structure(node);
+	if (r != ASN1_SUCCESS) {
+		debug_logerr(LLOG_ERROR, ERR_FAIL, "free asn");
+	}
+
+	return err;
+}
+
 int lq_certificate_serialize(LQCert *cert, char *out, size_t *out_len, LQResolve *resolve) {
 	size_t c;
 	int r;
 	size_t mx;
-	char err[1024];
-	char buf[4096];
+	char err[LQ_ERRLEN];
+	char buf[LQ_BLOCKLEN];
 	LQMsg *msg;
 	LQSig *sig;
 	asn1_node node;
@@ -222,11 +234,11 @@ int lq_certificate_serialize(LQCert *cert, char *out, size_t *out_len, LQResolve
 	c = LQ_CERT_DOMAIN_LEN;
 	*out_len += c;
 	if (*out_len > mx) {
-		return ERR_OVERFLOW;
+		return asn_except(&node, ERR_OVERFLOW);
 	}
 	r = asn1_write_value(node, "Qaeda.Cert.domain", cert->domain, c);
 	if (r != ASN1_SUCCESS) {
-		return ERR_WRITE;
+		return asn_except(&node, ERR_WRITE);
 	}
 
 	// Set request message if exists
@@ -237,15 +249,15 @@ int lq_certificate_serialize(LQCert *cert, char *out, size_t *out_len, LQResolve
 	c = mx - LQ_CERT_DOMAIN_LEN; 
 	r = lq_msg_serialize(msg, buf, &c, resolve);
 	if (r != ERR_OK) {
-		return r;
+		return asn_except(&node, r);
 	}
 	*out_len += c;
 	if (*out_len > mx) {
-		return ERR_OVERFLOW;
+		return asn_except(&node, ERR_OVERFLOW);
 	}
 	r = asn1_write_value(node, "Qaeda.Cert.request", buf, c);
 	if (r != ASN1_SUCCESS) {
-		return ERR_WRITE;
+		return asn_except(&node, ERR_WRITE);
 	}
 
 	// Set request signature if exists
@@ -257,11 +269,11 @@ int lq_certificate_serialize(LQCert *cert, char *out, size_t *out_len, LQResolve
 	c = lq_signature_bytes(sig, &sigdata);
 	*out_len += c;
 	if (*out_len > mx) {
-		return ERR_OVERFLOW;
+		return asn_except(&node, ERR_OVERFLOW);
 	}
 	r = asn1_write_value(node, "Qaeda.Cert.request_sig", sigdata, c);
 	if (r != ASN1_SUCCESS) {
-		return ERR_WRITE;
+		return asn_except(&node, ERR_WRITE);
 	}
 	
 	msg = cert->response;
@@ -271,15 +283,15 @@ int lq_certificate_serialize(LQCert *cert, char *out, size_t *out_len, LQResolve
 	c = mx - LQ_CERT_DOMAIN_LEN; 
 	r = lq_msg_serialize(msg, buf, &c, resolve);
 	if (r != ERR_OK) {
-		return r;
+		return asn_except(&node, r);
 	}
 	*out_len += c;
 	if (*out_len > mx) {
-		return ERR_OVERFLOW;
+		return asn_except(&node, ERR_OVERFLOW);
 	}
 	r = asn1_write_value(node, "Qaeda.Cert.response", buf, c);
 	if (r != ASN1_SUCCESS) {
-		return ERR_WRITE;
+		return asn_except(&node, ERR_WRITE);
 	}
 
 	// Set response signature if exists
@@ -291,40 +303,40 @@ int lq_certificate_serialize(LQCert *cert, char *out, size_t *out_len, LQResolve
 	c = lq_signature_bytes(sig, &sigdata);
 	*out_len += c;
 	if (*out_len > mx) {
-		return ERR_OVERFLOW;
+		return asn_except(&node, ERR_OVERFLOW);
 	}
 	r = asn1_write_value(node, "Qaeda.Cert.response_sig", sigdata, c);
 	if (r != ASN1_SUCCESS) {
-		return ERR_WRITE;
+		return asn_except(&node, ERR_WRITE);
 	}
 
 	if (cert->parent == NULL) {
 		c = 0;
 		r = asn1_write_value(node, "Qaeda.Cert.parent", &c, 1);
 		if (r != ASN1_SUCCESS) {
-			return ERR_WRITE;
+			return asn_except(&node, ERR_WRITE);
 		}
 	} else {
 		r = state_digest(cert, cert->parent_hash, 1);
 		if (r != ERR_OK) {
-			return r;
+			return asn_except(&node, r);
 		}
 		c = LQ_DIGEST_LEN;
 		r = asn1_write_value(node, "Qaeda.Cert.parent", cert->parent_hash, c);
 		if (r != ASN1_SUCCESS) {
-			return ERR_WRITE;
+			return asn_except(&node, ERR_WRITE);
 		}
 	}
 
 	*out_len = mx;
 	r = asn1_der_coding(node, "Qaeda.Cert", out, (int*)out_len, err);
 	if (r != ASN1_SUCCESS) {
-		return ERR_ENCODING;
+		return asn_except(&node, ERR_ENCODING);
 	}
 
 	r = asn1_delete_structure(&node);
 	if (r != ASN1_SUCCESS) {
-		return ERR_FAIL;
+		return asn_except(&node, ERR_FAIL);
 	}
 
 	return ERR_OK;
@@ -348,18 +360,18 @@ int lq_certificate_deserialize(LQCert **cert, char *in, size_t in_len, LQResolve
 
 	r = asn1_create_element(node, "Qaeda.Cert", &item);
 	if (r != ASN1_SUCCESS) {
-		return ERR_READ;
+		return asn_except(&node, ERR_READ);
 	}
 
 	r = asn1_der_decoding(&item, in, in_len, err);
 	if (r != ASN1_SUCCESS) {
-		return ERR_ENCODING;
+		return asn_except(&node, ERR_ENCODING);
 	}
 
 	c = LQ_CERT_DOMAIN_LEN;
 	r = asn1_read_value(item, "domain", tmp, &c);
 	if (r != ASN1_SUCCESS) {
-		return ERR_READ;
+		return asn_except(&node, ERR_READ);
 	}
 
 	p = lq_certificate_new(NULL);
@@ -368,17 +380,17 @@ int lq_certificate_deserialize(LQCert **cert, char *in, size_t in_len, LQResolve
 	c = LQ_BLOCKSIZE;
 	r = asn1_read_value(item, "request", tmp, &c);
 	if (r != ASN1_SUCCESS) {
-		return ERR_READ;
+		return asn_except(&node, ERR_READ);
 	}
 	r = lq_msg_deserialize(&p->request, tmp, c, resolve);
 	if (r != ERR_OK) {
-		return r;
+		return asn_except(&node, r);
 	}
 
 	c = LQ_BLOCKSIZE;
 	r = asn1_read_value(item, "request_sig", tmp, &c);
 	if (r != ASN1_SUCCESS) {
-		return ERR_READ;
+		return asn_except(&node, ERR_READ);
 	}
 	if (c > 0) {
 		p->request_sig = lq_signature_from_bytes(tmp, c, NULL);
@@ -387,17 +399,17 @@ int lq_certificate_deserialize(LQCert **cert, char *in, size_t in_len, LQResolve
 	c = LQ_BLOCKSIZE;
 	r = asn1_read_value(item, "response", tmp, &c);
 	if (r != ASN1_SUCCESS) {
-		return ERR_READ;
+		return asn_except(&node, ERR_READ);
 	}
 	r = lq_msg_deserialize(&p->response, tmp, c, resolve);
 	if (r != ERR_OK) {
-		return r;
+		return asn_except(&node, r);
 	}
 
 	c = 4096;
 	r = asn1_read_value(item, "response_sig", tmp, &c);
 	if (r != ASN1_SUCCESS) {
-		return ERR_READ;
+		return asn_except(&node, ERR_READ);
 	}
 	if (c > 0) {
 		p->response_sig = lq_signature_from_bytes(tmp, c, NULL);
@@ -406,7 +418,7 @@ int lq_certificate_deserialize(LQCert **cert, char *in, size_t in_len, LQResolve
 	c = 4096;
 	r = asn1_read_value(item, "parent", tmp, &c);
 	if (r != ASN1_SUCCESS) {
-		return ERR_READ;
+		return asn_except(&node, ERR_READ);
 	}
 	p->parent = NULL;
 	if (c == 1) {

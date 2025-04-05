@@ -150,8 +150,13 @@ int main(int argc, char **argv) {
 		lq_ui_free();
 		return 1;
 	}
-
 	lq_certificate_free(cert);
+
+	r = lq_certificate_deserialize(&cert, out, &out_len, NULL);
+	if (r != ERR_OK) {
+		lq_ui_free();
+		return 1;
+	}
 
 	lq_ui_free();
 }
