@@ -6,6 +6,7 @@
 #include "lq/crypto.h"
 #include "lq/io.h"
 #include "lq/mem.h"
+#include "lq/base.h"
 
 extern LQStore LQDummyContent;
 extern LQStore LQFileContent;
@@ -37,7 +38,7 @@ START_TEST(check_msg_symmetric) {
 	msg = lq_msg_new(data, strlen(data) + 1);
 	msg->pubkey = lq_publickey_new(data);
 
-	c = 4096;
+	c = LQ_BLOCKSIZE;
 	r = lq_msg_serialize(msg, buf, &c, &resolve);
 	ck_assert_int_eq(r, 0);
 	lq_msg_free(msg);
@@ -68,6 +69,8 @@ int main(void) {
 
 	Suite *s;
 	SRunner *sr;
+
+	lq_init();
 
 	s = common_suite();	
 	sr = srunner_create(s);

@@ -7,8 +7,8 @@ LIBS := ../asn1/defs_asn1_tab.o `pkg-config --libs libtasn1 libgcrypt` -L.. -L..
 LDFLAGS := -lcheck $(LIBS)
 COMMONOBJS = ../mem/std.o ../lq/config.o ../lq/err.o ../lq/base.o ../debug.o
 
-#all: build all-tests
-all: build one-test
+all: build all-tests
+#all: build one-test
 
 all-tests:
 	cK_FORK=no LD_LIBRARY_PATH=`realpath ../aux/lib` ./test_test_bin
@@ -21,7 +21,7 @@ all-tests:
 	CK_FORK=no LD_LIBRARY_PATH=`realpath ../aux/lib` ./test_store_bin
 
 one-test: build
-	CK_FORK=no LD_LIBRARY_PATH=`realpath ../aux/lib` ./test_cert_bin
+	CK_FORK=no LD_LIBRARY_PATH=`realpath ../aux/lib` ./test_msg_bin
 
 test: all
 

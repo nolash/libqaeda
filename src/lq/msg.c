@@ -31,6 +31,7 @@ LQMsg* lq_msg_new(const char *msg_data, size_t msg_len) {
 	msg->data = lq_alloc(msg_len);
 	lq_cpy(msg->data, msg_data, msg_len);
 	msg->len = msg_len;
+	msg->state = LQ_MSG_INIT;
 
 	return msg;
 }
@@ -123,7 +124,9 @@ static int asn_except(asn1_node *node, int err) {
 	return err;
 }
 
+/// TODO check upper bound of data contents
 int lq_msg_serialize(LQMsg *msg, char *out, size_t *out_len, LQResolve *resolve) {
+	char *p;
 	char resolved;
 	size_t c;
 	int r;
@@ -136,11 +139,11 @@ int lq_msg_serialize(LQMsg *msg, char *out, size_t *out_len, LQResolve *resolve)
 	asn1_node item;
 	char *keydata;
 
-	resolved = LQ_MSG_DIGESTONLY;
 	mx = *out_len;
 	*out_len = 0;
 	lq_set(&item, 0, sizeof(item));
 
+	msg->state &= ~((char)LQ_MSG_RESOLVED);
 	r = asn1_create_element(asn, "Qaeda", &item);
 	if (r != ASN1_SUCCESS) {
 		return ERR_READ;
@@ -151,24 +154,28 @@ int lq_msg_serialize(LQMsg *msg, char *out, size_t *out_len, LQResolve *resolve)
 	if (*out_len > mx) {
 		return asn_except(&item, ERR_OVERFLOW);
 	}
-	if (msg->len > 0) {
+
+	if (msg->state & LQ_MSG_INIT) {
 		r = lq_digest(msg->data, msg->len, tmp);
 		if (r != ERR_OK) {
 			return asn_except(&item, r);
 		}
-	}
 
-	resolve_active = resolve;
-	while (resolve_active != NULL) {
-		r = resolve_active->store->put(LQ_CONTENT_MSG, resolve_active->store, tmp, &c, msg->data, msg->len);
-		if (r != ERR_OK) {
-			return asn_except(&item, r);
+		resolve_active = resolve;
+		while (resolve_active != NULL) {
+			r = resolve_active->store->put(LQ_CONTENT_MSG, resolve_active->store, tmp, &c, msg->data, msg->len);
+			if (r != ERR_OK) {
+				return asn_except(&item, r);
+			}
+			resolve_active = resolve_active->next;
+			msg->state |= LQ_MSG_RESOLVED;
 		}
-		resolve_active = resolve_active->next;
-		resolved = LQ_MSG_RESOLVED;
+	} else {
+		tmp[0] = 0;
+		c = 1;
 	}
 
-	if (resolved & LQ_MSG_DIGESTONLY) {
+	if (!(msg->state & LQ_MSG_RESOLVED)) {
 		debug(LLOG_DEBUG, "msg", "no resolver");	
 	}
 
@@ -230,6 +237,7 @@ int lq_msg_serialize(LQMsg *msg, char *out, size_t *out_len, LQResolve *resolve)
 int lq_msg_deserialize(LQMsg **msg, const char *in, size_t in_len, LQResolve *resolve) {
 	int r;
 	size_t c;
+	size_t l;
 	char resolved;
 	char err[LQ_ERRSIZE];
 	char z[LQ_DIGEST_LEN];
@@ -237,7 +245,8 @@ int lq_msg_deserialize(LQMsg **msg, const char *in, size_t in_len, LQResolve *re
 	asn1_node item;
 	LQResolve *resolve_active;
 
-	resolved = LQ_MSG_DIGESTONLY;
+	resolved = 0;
+
 	lq_zero(&item, sizeof(item));
 
 	r = asn1_create_element(asn, "Qaeda.Msg", &item);
@@ -256,6 +265,16 @@ int lq_msg_deserialize(LQMsg **msg, const char *in, size_t in_len, LQResolve *re
 		debug_logerr(LLOG_WARNING, ERR_READ, asn1_strerror(r));
 		return asn_except(&item, ERR_READ);
 	}
+
+	if (c == 1) {
+		debug(LLOG_DEBUG, "msg", "empty message");
+		*msg = NULL;
+		return ERR_OK;
+	}
+
+	lq_cpy(tmp, z, c);
+	l = c;
+
 	c = LQ_BLOCKSIZE;
 	resolve_active = resolve;
 	while (resolve_active != NULL) {
@@ -263,26 +282,20 @@ int lq_msg_deserialize(LQMsg **msg, const char *in, size_t in_len, LQResolve *re
 		if (r != ERR_OK) {
 			return asn_except(&item, r);
 		}
-		resolved = LQ_MSG_RESOLVED;
 		resolve_active = resolve_active->next;
+		resolved = LQ_MSG_RESOLVED;
 	}
 
-	if (resolved & LQ_MSG_DIGESTONLY) {
-		lq_cpy(tmp, z, LQ_DIGEST_LEN);
-		c = LQ_DIGEST_LEN;
-	} else {
-		if (!(resolved & LQ_MSG_RESOLVED)) {
-			return asn_except(&item, ERR_RESOLVE);
-		}
+	if (!(resolved & LQ_MSG_RESOLVED)) {
+		debug(LLOG_DEBUG, "msg", "no resolver");
+		c = l;
 	}
+
 	*msg = lq_msg_new((const char*)tmp, c);
-	(*msg)->state = resolved;
-	(*msg)->data = lq_alloc(c);
-	if ((*msg)->data == NULL) {
+	if (*msg == NULL) {
 		return asn_except(&item, ERR_MEM);
 	}
-	(*msg)->len = c;
-	lq_cpy((*msg)->data, tmp, c);
+	(*msg)->state = resolved;
 
 	/// \todo document timestamp size
 	c = 8;

@@ -189,7 +189,7 @@ START_TEST(check_cert_symmetric_ser_rsp_onesig) {
 	LQPrivKey *pk;
 	char buf[4096];
 
-	pk = lq_privatekey_new(passphrase, 32);
+	pk = lq_privatekey_new(passphrase, strlen(passphrase));
 	ck_assert_ptr_nonnull(pk);
 	req = lq_msg_new(data, strlen(data) + 1);
 	ck_assert_ptr_nonnull(req);
@@ -222,24 +222,29 @@ START_TEST(check_cert_symmetric_ser_rsp_bothsig) {
 	LQCert *cert;
 	LQMsg *req;
 	LQMsg *res;
-	LQPrivKey *pk;
-	char buf[4096];
+	LQPrivKey *pk_alice;
+	LQPrivKey *pk_bob;
+	char buf[LQ_BLOCKSIZE];
 
-	pk = lq_privatekey_new(passphrase, 32);
-	ck_assert_ptr_nonnull(pk);
+	pk_alice = lq_privatekey_new(passphrase, strlen(passphrase));
+	ck_assert_ptr_nonnull(pk_alice);
+	pk_bob = lq_privatekey_new(passphrase, strlen(passphrase));
+	ck_assert_ptr_nonnull(pk_bob);
+	r = lq_privatekey_unlock(pk_alice, passphrase, strlen(passphrase));
+	ck_assert_int_eq(r, 0);
+	r = lq_privatekey_unlock(pk_bob, passphrase, strlen(passphrase));
+	ck_assert_int_eq(r, 0);
 	cert = lq_certificate_new(NULL);
 	ck_assert_ptr_nonnull(cert);
 
 	req = lq_msg_new(data, strlen(data) + 1);
 	ck_assert_ptr_nonnull(req);
-
-	lq_privatekey_unlock(pk, passphrase, 32);
-	r = lq_certificate_request(cert, req, NULL);
+	r = lq_certificate_request(cert, req, pk_alice);
 	ck_assert_int_eq(r, 0);
 
 	res = lq_msg_new(data_two, strlen(data_two) + 1);
 	ck_assert_ptr_nonnull(res);
-	r = lq_certificate_respond(cert, res, NULL);
+	r = lq_certificate_respond(cert, res, pk_bob);
 	ck_assert_int_eq(r, 0);
 
 	c = LQ_BLOCKSIZE; 
@@ -259,16 +264,16 @@ Suite * common_suite(void) {
 
 	s = suite_create("cert");
 	tc = tcase_create("sign");
-//	tcase_add_test(tc, check_cert_sig_req);
-//	tcase_add_test(tc, check_cert_sig_res);
+	tcase_add_test(tc, check_cert_sig_req);
+	tcase_add_test(tc, check_cert_sig_res);
 	suite_add_tcase(s, tc);
 
 	tc = tcase_create("serialize");
-//	tcase_add_test(tc, check_cert_symmetric_ser_nomsg);
-//	tcase_add_test(tc, check_cert_symmetric_ser_req_nosig);
-//	tcase_add_test(tc, check_cert_symmetric_ser_req_sig);
+	tcase_add_test(tc, check_cert_symmetric_ser_nomsg);
+	tcase_add_test(tc, check_cert_symmetric_ser_req_nosig);
+	tcase_add_test(tc, check_cert_symmetric_ser_req_sig);
 	tcase_add_test(tc, check_cert_symmetric_ser_rsp_onesig);
-//	tcase_add_test(tc, check_cert_symmetric_ser_rsp_bothsig);
+	tcase_add_test(tc, check_cert_symmetric_ser_rsp_bothsig);
 	suite_add_tcase(s, tc);
 
 	return s;

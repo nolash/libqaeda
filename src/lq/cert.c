@@ -20,6 +20,7 @@ static LQPubKey nokey = {
 };
 
 static LQMsg nomsg = {
+	.state = 0,
 	.data = "",
 	.len = 0,
 	.time.tv_sec = 0,
@@ -384,10 +385,7 @@ int lq_certificate_deserialize(LQCert **cert, char *in, size_t in_len, LQResolve
 	if (r != ERR_OK) {
 		return asn_except(&item, r);
 	}
-	if (!lq_cmp(p->request, &nomsg, sizeof(LQMsg))) {
-		lq_msg_free(p->request);
-		p->request = NULL;
-	} else {
+	if (p->request != NULL) {
 		c = LQ_BLOCKSIZE;
 		r = asn1_read_value(item, "request_sig", tmp, &c);
 		if (r != ASN1_SUCCESS) {
@@ -412,10 +410,7 @@ int lq_certificate_deserialize(LQCert **cert, char *in, size_t in_len, LQResolve
 		lq_msg_free(p->request);
 		return asn_except(&item, r);
 	}
-	if (!lq_cmp(p->response, &nomsg, sizeof(LQMsg))) {
-		lq_msg_free(p->response);
-		p->response = NULL;
-	} else {
+	if (p->response != NULL) {
 		c = LQ_BLOCKSIZE;
 		r = asn1_read_value(item, "response_sig", tmp, &c);
 		if (r != ASN1_SUCCESS) {

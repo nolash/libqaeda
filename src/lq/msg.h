@@ -8,7 +8,7 @@
 #include "lq/store.h"
 
 enum lq_msgstate_e {
-	LQ_MSG_DIGESTONLY = 1,
+	LQ_MSG_INIT = 1,
 	LQ_MSG_RESOLVED = 2,
 };
 
