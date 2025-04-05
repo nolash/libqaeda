@@ -1,6 +1,8 @@
 #ifndef LIBQAEDA_ERR_H_
 #define LIBQAEDA_ERR_H_
 
+#define LQ_ERRSIZE 1024
+
 // provides ERR_OK = 0, ERR_FAIL = 1, ERR_UNIMPLEMENTED = 2
 #include <rerr.h> 
 
@@ -10,6 +12,7 @@ enum err_e {
 	ERR_NONSENSE = 0x101, ///< Available data does not make sense in context
 	ERR_REQUEST = 0x102, ///< Error related to certificate request messages
 	ERR_RESPONSE = 0x103, ///< Error related to certificate response messages
+	ERR_RESOLVE = 0x104, ///< Error related to resolving message hashes
 
 	RERR_PFX_CRYPTO = 0x200,
 	ERR_NOCRYPTO = 0x201,

@@ -11,7 +11,7 @@
 #include "debug.h"
 
 
-static char zeros[65];
+extern char zeros[65];
 static LQPubKey nokey = {
 	.pk = 0,
 	.impl = zeros,
@@ -360,18 +360,17 @@ int lq_certificate_deserialize(LQCert **cert, char *in, size_t in_len, LQResolve
 	p = lq_certificate_new(NULL);
 	lq_certificate_set_domain(p, tmp);
 
-	c = 4096;
+	c = LQ_BLOCKSIZE;
 	r = asn1_read_value(item, "request", tmp, &c);
 	if (r != ASN1_SUCCESS) {
 		return ERR_READ;
 	}
-
 	r = lq_msg_deserialize(&p->request, tmp, c, resolve);
 	if (r != ERR_OK) {
 		return r;
 	}
 
-	c = 4096;
+	c = LQ_BLOCKSIZE;
 	r = asn1_read_value(item, "request_sig", tmp, &c);
 	if (r != ASN1_SUCCESS) {
 		return ERR_READ;
@@ -380,7 +379,7 @@ int lq_certificate_deserialize(LQCert **cert, char *in, size_t in_len, LQResolve
 		p->request_sig = lq_signature_from_bytes(tmp, c, NULL);
 	}
 
-	c = 4096;
+	c = LQ_BLOCKSIZE;
 	r = asn1_read_value(item, "response", tmp, &c);
 	if (r != ASN1_SUCCESS) {
 		return ERR_READ;

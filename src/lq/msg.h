@@ -7,6 +7,11 @@
 #include "lq/crypto.h"
 #include "lq/store.h"
 
+enum lq_msgstate_e {
+	LQ_MSG_DIGESTONLY = 1,
+	LQ_MSG_RESOLVED = 2,
+};
+
 /**
  * \struct LQMsg
  *
@@ -15,6 +20,7 @@
  * \see lq_msg_t 
  */
 struct lq_msg_t {
+	char state; ///< Message resolution state
 	char *data; ///< Arbitrary data constituting the message.
 	size_t len; ///< Length of arbitrary data.
 	struct timespec time; ///< Nanosecond timestamp of when the message was created.

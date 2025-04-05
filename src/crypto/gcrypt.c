@@ -14,6 +14,7 @@
 #include "lq/config.h"
 #include "lq/err.h"
 #include "lq/store.h"
+#include "lq/base.h"
 #include "debug.h"
 
 #define CHACHA20_KEY_LENGTH_BYTES 32
@@ -27,6 +28,8 @@ enum gpg_find_mode_e {
 	GPG_FIND_ORCREATE, ///< Create a new key if not found.
 	GPG_FIND_FINGERPRINT, ///< Load only the key matching the fingerprint.
 };
+
+extern char zeros[65];
 
 /**
  * gcrypt implementation of the crypto interface.
@@ -961,10 +964,14 @@ LQSig* lq_privatekey_sign(LQPrivKey *pk, const char *data, size_t data_len, cons
 LQSig* lq_signature_from_bytes(const char *sig_data, size_t sig_len, LQPubKey *pubkey) {
 	LQSig *sig;
 
+	if (!lq_cmp(sig_data, zeros, LQ_SIGN_LEN)) {
+		return NULL;
+	}
+
 	sig = lq_alloc(sizeof(LQSig));
 	lq_zero(sig, sizeof(LQSig));
 	sig->impl = lq_alloc(sizeof(LQ_SIGN_LEN));
-	lq_cpy(sig->impl, sig_data, sig_len);
+	lq_cpy(sig->impl, sig_data, LQ_SIGN_LEN);
 	return sig;
 }
 

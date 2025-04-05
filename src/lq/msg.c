@@ -12,7 +12,8 @@
 #include "lq/store.h"
 #include "debug.h"
 
-static char zeros[LQ_PUBKEY_LEN];
+
+extern char zeros[65];
 static LQPubKey nokey = {
 	.pk = NULL,
 	.impl = zeros,
@@ -111,6 +112,7 @@ void lq_msg_free(LQMsg *msg) {
 }
 
 int lq_msg_serialize(LQMsg *msg, char *out, size_t *out_len, LQResolve *resolve) {
+	char resolved;
 	size_t c;
 	int r;
 	size_t mx;
@@ -122,6 +124,7 @@ int lq_msg_serialize(LQMsg *msg, char *out, size_t *out_len, LQResolve *resolve)
 	asn1_node node;
 	char *keydata;
 
+	resolved = LQ_MSG_DIGESTONLY;
 	mx = *out_len;
 	*out_len = 0;
 	lq_set(&node, 0, sizeof(node));
@@ -147,6 +150,11 @@ int lq_msg_serialize(LQMsg *msg, char *out, size_t *out_len, LQResolve *resolve)
 			return r;
 		}
 		resolve_active = resolve_active->next;
+		resolved = LQ_MSG_RESOLVED;
+	}
+
+	if (resolved & LQ_MSG_DIGESTONLY) {
+		debug(LLOG_DEBUG, "msg", "no resolver");	
 	}
 
 	r = asn1_write_value(node, "Qaeda.Msg.data", tmp, c);
@@ -201,13 +209,15 @@ int lq_msg_serialize(LQMsg *msg, char *out, size_t *out_len, LQResolve *resolve)
 int lq_msg_deserialize(LQMsg **msg, const char *in, size_t in_len, LQResolve *resolve) {
 	int r;
 	size_t c;
-	char err[1024];
+	char resolved;
+	char err[LQ_ERRSIZE];
 	char z[LQ_DIGEST_LEN];
-	char tmp[1024];
+	char tmp[LQ_BLOCKSIZE];
 	asn1_node node;
 	asn1_node item;
 	LQResolve *resolve_active;
 
+	resolved = LQ_MSG_DIGESTONLY;
 	lq_zero(&node, sizeof(node));
 	lq_zero(&item, sizeof(item));
 	r = asn1_array2tree(defs_asn1_tab, &node, err);
@@ -230,17 +240,33 @@ int lq_msg_deserialize(LQMsg **msg, const char *in, size_t in_len, LQResolve *re
 	if (r != ASN1_SUCCESS) {
 		return ERR_READ;
 	}
-	c = 1024;
+	c = LQ_BLOCKSIZE;
 	resolve_active = resolve;
 	while (resolve_active != NULL) {
 		r = resolve_active->store->get(LQ_CONTENT_MSG, resolve_active->store, z, LQ_DIGEST_LEN, tmp, &c);
 		if (r != ERR_OK) {
 			return r;
 		}
+		resolved = LQ_MSG_RESOLVED;
 		resolve_active = resolve_active->next;
 	}
 
+	if (resolved & LQ_MSG_DIGESTONLY) {
+		lq_cpy(tmp, z, LQ_DIGEST_LEN);
+		c = LQ_DIGEST_LEN;
+	} else {
+		if (!(resolved & LQ_MSG_RESOLVED)) {
+			return ERR_RESOLVE;
+		}
+	}
 	*msg = lq_msg_new((const char*)tmp, c);
+	(*msg)->state = resolved;
+	(*msg)->data = lq_alloc(c);
+	if ((*msg)->data == NULL) {
+		return ERR_MEM;
+	}
+	(*msg)->len = c;
+	lq_cpy((*msg)->data, tmp, c);
 
 	/// \todo document timestamp size
 	c = 8;
@@ -255,11 +281,12 @@ int lq_msg_deserialize(LQMsg **msg, const char *in, size_t in_len, LQResolve *re
 	lq_cpy(&((*msg)->time.tv_sec), tmp, 4);
 	lq_cpy(&((*msg)->time.tv_nsec), ((char*)tmp)+4, 4);
 
-	c = 65;
+	c = LQ_PUBKEY_LEN;
 	r = asn1_read_value(item, "pubkey", tmp, (int*)&c);
 	if (r != ASN1_SUCCESS) {
 		return ERR_READ;
 	}
+	(*msg)->pubkey = lq_publickey_new(tmp);
 
 	return ERR_OK;
 }

@@ -86,6 +86,8 @@ int main(int argc, char **argv) {
 	LQCert *cert;
 	LQMsg *req;
 	LQMsg *res;
+	char out[LQ_BLOCKSIZE];
+	size_t out_len;
 
 	r = lq_ui_init();
 	if (r) {
@@ -136,7 +138,14 @@ int main(int argc, char **argv) {
 		return 1;
 	}
 
-	r = lq_certificate_verify(cert, pubk_alice, NULL);
+	r = lq_certificate_verify(cert);
+	if (r != ERR_OK) {
+		lq_ui_free();
+		return 1;
+	}
+
+	out_len = LQ_BLOCKSIZE;
+	r = lq_certificate_serialize(cert, out, &out_len, NULL);
 	if (r != ERR_OK) {
 		lq_ui_free();
 		return 1;
