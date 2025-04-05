@@ -322,6 +322,11 @@ int lq_certificate_serialize(LQCert *cert, char *out, size_t *out_len, LQResolve
 		return ERR_ENCODING;
 	}
 
+	r = asn1_delete_structure(&node);
+	if (r != ASN1_SUCCESS) {
+		return ERR_FAIL;
+	}
+
 	return ERR_OK;
 }
 

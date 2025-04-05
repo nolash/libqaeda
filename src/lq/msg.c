@@ -203,6 +203,11 @@ int lq_msg_serialize(LQMsg *msg, char *out, size_t *out_len, LQResolve *resolve)
 		return ERR_ENCODING;
 	}
 
+	r = asn1_delete_structure(&node);
+	if (r != ASN1_SUCCESS) {
+		return ERR_FAIL;
+	}
+
 	return ERR_OK;
 }
 
@@ -287,6 +292,11 @@ int lq_msg_deserialize(LQMsg **msg, const char *in, size_t in_len, LQResolve *re
 		return ERR_READ;
 	}
 	(*msg)->pubkey = lq_publickey_new(tmp);
+
+	r = asn1_delete_structure(&node);
+	if (r != ASN1_SUCCESS) {
+		return ERR_FAIL;
+	}
 
 	return ERR_OK;
 }
