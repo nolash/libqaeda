@@ -24,12 +24,12 @@ int lq_init() {
 }
 
 void lq_finish() {
-	int r;
-
-	r = asn1_delete_structure(&asn);
-	if (r != ASN1_SUCCESS) {
-		debug_logerr(LLOG_ERROR, ERR_UNCLEAN, "asn exit");
-	}
-
+//	int r;
+//
+//	r = asn1_delete_structure(&asn);
+//	if (r != ASN1_SUCCESS) {
+//		debug_logerr(LLOG_ERROR, ERR_UNCLEAN, "asn exit");
+//	}
+//
 	lq_config_free();
 }

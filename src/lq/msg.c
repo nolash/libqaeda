@@ -117,7 +117,7 @@ static int asn_except(asn1_node *node, int err) {
 
 	r = asn1_delete_structure(node);
 	if (r != ASN1_SUCCESS) {
-		debug_logerr(LLOG_ERROR, ERR_FAIL, "free asn");
+		debug_logerr(LLOG_ERROR, ERR_FAIL, "free msg asn");
 	}
 
 	return err;
@@ -141,7 +141,7 @@ int lq_msg_serialize(LQMsg *msg, char *out, size_t *out_len, LQResolve *resolve)
 	*out_len = 0;
 	lq_set(&item, 0, sizeof(item));
 
-	r = asn1_create_element(asn, "Qaeda.Msg", &item);
+	r = asn1_create_element(asn, "Qaeda", &item);
 	if (r != ASN1_SUCCESS) {
 		return ERR_READ;
 	}
@@ -168,9 +168,11 @@ int lq_msg_serialize(LQMsg *msg, char *out, size_t *out_len, LQResolve *resolve)
 
 	if (resolved & LQ_MSG_DIGESTONLY) {
 		debug(LLOG_DEBUG, "msg", "no resolver");	
+		c = msg->len;
+		lq_cpy(tmp, msg->data, c);
 	}
 
-	r = asn1_write_value(item, "data", tmp, c);
+	r = asn1_write_value(item, "Msg.data", tmp, c);
 	if (r != ASN1_SUCCESS) {
 		return asn_except(&item, ERR_WRITE);
 	}
@@ -191,7 +193,7 @@ int lq_msg_serialize(LQMsg *msg, char *out, size_t *out_len, LQResolve *resolve)
 	if (*out_len > mx) {
 		return asn_except(&item, ERR_OVERFLOW);
 	}
-	r = asn1_write_value(item, "timestamp", &timedata, c);
+	r = asn1_write_value(item, "Msg.timestamp", &timedata, c);
 	if (r != ASN1_SUCCESS) {
 		return asn_except(&item, ERR_WRITE);
 	}
@@ -205,14 +207,15 @@ int lq_msg_serialize(LQMsg *msg, char *out, size_t *out_len, LQResolve *resolve)
 	if (*out_len > mx) {
 		return asn_except(&item, ERR_OVERFLOW);
 	}
-	r = asn1_write_value(item, "pubkey", keydata, c);
+	r = asn1_write_value(item, "Msg.pubkey", keydata, c);
 	if (r != ASN1_SUCCESS) {
 		return asn_except(&item, ERR_WRITE);
 	}
 
 	*out_len = mx;
-	r = asn1_der_coding(item, "Qaeda.Msg", out, (int*)out_len, err);
+	r = asn1_der_coding(item, "Msg", out, (int*)out_len, err);
 	if (r != ASN1_SUCCESS) {
+		debug_logerr(LLOG_WARNING, ERR_ENCODING, asn1_strerror(r));
 		return asn_except(&item, ERR_ENCODING);
 	}
 
@@ -298,16 +301,17 @@ int lq_msg_deserialize(LQMsg **msg, const char *in, size_t in_len, LQResolve *re
 	if (r != ASN1_SUCCESS) {
 		return asn_except(&item, ERR_READ);
 	}
+
 	(*msg)->pubkey = lq_publickey_new(tmp);
+	if ((*msg)->pubkey == NULL) {
+		return asn_except(&item, ERR_NOKEY);
+	}
 
 	r = asn1_delete_structure(&item);
 	if (r != ASN1_SUCCESS) {
-		debug(LLOG_WARNING, "cert", "delete msg asn item");
-	}
-	r = asn1_delete_structure(&item);
-	if (r != ASN1_SUCCESS) {
+		debug(LLOG_WARNING, "msg", "delete msg asn item");
 		return ERR_FAIL;
-	};
+	}
 
 	return ERR_OK;
 }

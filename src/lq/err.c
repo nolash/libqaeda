@@ -4,11 +4,12 @@
 
 
 #ifdef RERR
-static char *_rerr[4] = {
+static char *_rerr[5] = {
 	"",
 	"Invalid request",
 	"Invalid response",
 	"Not resolved",
+	"Unclean exit",
 };
 
 static char *_rerr_crypto[12] = {

@@ -970,7 +970,7 @@ LQSig* lq_signature_from_bytes(const char *sig_data, size_t sig_len, LQPubKey *p
 
 	sig = lq_alloc(sizeof(LQSig));
 	lq_zero(sig, sizeof(LQSig));
-	sig->impl = lq_alloc(sizeof(LQ_SIGN_LEN));
+	sig->impl = lq_alloc(LQ_SIGN_LEN);
 	lq_cpy(sig->impl, sig_data, LQ_SIGN_LEN);
 	return sig;
 }
@@ -1125,10 +1125,13 @@ LQPubKey* lq_publickey_new(const char *full) {
 	LQPubKey *pubk;
 	struct gpg_store *gpg;
 
-	pubk = lq_alloc(sizeof(LQPubKey));
 	gpg = lq_alloc(sizeof(struct gpg_store));
-
 	lq_zero(gpg, sizeof(struct gpg_store));
+	lq_cpy(gpg->public_key, full, LQ_PUBKEY_LEN);
+
+	pubk = lq_alloc(sizeof(LQPubKey));
+	lq_zero(pubk, sizeof(LQPubKey));
+
 	c = 0;
 	e = gcry_sexp_build(&gpg->k, &c, "(key-data(public-key(ecc(curve Ed25519)(q %b))))", LQ_PUBKEY_LEN, full);
 	if (e != GPG_ERR_NO_ERROR) {
@@ -1136,7 +1139,6 @@ LQPubKey* lq_publickey_new(const char *full) {
 		debug_logerr(LLOG_DEBUG, ERR_KEYFAIL, (char*)p);
 		return NULL;
 	}
-	lq_cpy(gpg->public_key, full, LQ_PUBKEY_LEN);
 
 	r = (char*)gcry_pk_get_keygrip(gpg->k, (unsigned char*)gpg->fingerprint);
 	if (r == NULL) {
