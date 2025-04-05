@@ -216,8 +216,8 @@ int lq_certificate_serialize(LQCert *cert, char *out, size_t *out_len, LQResolve
 	size_t c;
 	int r;
 	size_t mx;
-	char err[LQ_ERRLEN];
-	char buf[LQ_BLOCKLEN];
+	char err[LQ_ERRSIZE];
+	char buf[LQ_BLOCKSIZE];
 	LQMsg *msg;
 	LQSig *sig;
 	asn1_node node;
@@ -225,7 +225,8 @@ int lq_certificate_serialize(LQCert *cert, char *out, size_t *out_len, LQResolve
 
 	mx = *out_len;
 	*out_len = 0;
-	lq_set(&node, 0, sizeof(node));
+	lq_zero(&node, sizeof(node));
+
 	r = asn1_array2tree(defs_asn1_tab, &node, err);
 	if (r != ASN1_SUCCESS) {
 		return ERR_INIT;
@@ -345,8 +346,8 @@ int lq_certificate_serialize(LQCert *cert, char *out, size_t *out_len, LQResolve
 int lq_certificate_deserialize(LQCert **cert, char *in, size_t in_len, LQResolve *resolve) {
 	int r;
 	int c;
-	char err[1024];
-	char tmp[4096];
+	char err[LQ_ERRSIZE];
+	char tmp[LQ_BLOCKSIZE];
 	asn1_node node;
 	asn1_node item;
 	LQCert *p;
@@ -429,6 +430,15 @@ int lq_certificate_deserialize(LQCert **cert, char *in, size_t in_len, LQResolve
 	// \todo render parent if set
 
 	*cert = p;
+
+	r = asn1_delete_structure(&item);
+	if (r != ASN1_SUCCESS) {
+		debug(LLOG_WARNING, "cert", "delete cert asn item");
+	}
+	r = asn1_delete_structure(&node);
+	if (r != ASN1_SUCCESS) {
+		return asn_except(&node, ERR_FAIL);
+	}
 
 	return ERR_OK;
 }
