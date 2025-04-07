@@ -36,9 +36,9 @@ START_TEST(check_cert_sig_req) {
 	LQMsg *req;
 	LQPrivKey *pk;
 
-	pk = lq_privatekey_new(passphrase, strlen(passphrase));
+	pk = lq_privatekey_new(passphrase, sizeof(passphrase));
 	ck_assert_ptr_nonnull(pk);
-	r = lq_privatekey_unlock(pk, passphrase, strlen(passphrase));
+	r = lq_privatekey_unlock(pk, passphrase, sizeof(passphrase));
 	ck_assert_int_eq(r, 0);
 
 	cert = lq_certificate_new(NULL);
@@ -67,12 +67,12 @@ START_TEST(check_cert_sig_res) {
 
 	pk_alice = lq_privatekey_new(passphrase, LQ_PRIVKEY_LEN);
 	ck_assert_ptr_nonnull(pk_alice);
-	r = lq_privatekey_unlock(pk_alice, passphrase, strlen(passphrase));
+	r = lq_privatekey_unlock(pk_alice, passphrase, sizeof(passphrase));
 	ck_assert_int_eq(r, 0);
 
 	pk_bob = lq_privatekey_new(passphrase, LQ_PRIVKEY_LEN);
 	ck_assert_ptr_nonnull(pk_bob);
-	r = lq_privatekey_unlock(pk_bob, passphrase, strlen(passphrase));
+	r = lq_privatekey_unlock(pk_bob, passphrase, sizeof(passphrase));
 	ck_assert_int_eq(r, 0);
 
 	cert = lq_certificate_new(NULL);
@@ -106,13 +106,13 @@ START_TEST(check_cert_symmetric_ser_nomsg) {
 	cert = lq_certificate_new(NULL);
 	ck_assert_ptr_nonnull(cert);
 	c = LQ_BLOCKSIZE;
-	r = lq_certificate_serialize(cert, buf, &c, NULL);
+	r = lq_certificate_serialize(cert, NULL, buf, &c);
 	ck_assert_int_eq(r, 0);
 	lq_certificate_free(cert);
 
 	cert = lq_certificate_new(NULL);
 	ck_assert_ptr_nonnull(cert);
-	r = lq_certificate_deserialize(&cert, buf, c, NULL);
+	r = lq_certificate_deserialize(&cert, NULL, buf, c);
 	ck_assert_int_eq(r, 0);
 	lq_certificate_free(cert);
 }
@@ -133,13 +133,13 @@ START_TEST(check_cert_symmetric_ser_req_nosig) {
 
 	r = lq_certificate_request(cert, req, NULL);
 	c = LQ_BLOCKSIZE;
-	r = lq_certificate_serialize(cert, buf, &c, NULL);
+	r = lq_certificate_serialize(cert, NULL, buf, &c);
 	ck_assert_int_eq(r, 0);
 	lq_certificate_free(cert);
 
 	cert = lq_certificate_new(NULL);
 	ck_assert_ptr_nonnull(cert);
-	r = lq_certificate_deserialize(&cert, buf, c, NULL);
+	r = lq_certificate_deserialize(&cert, NULL, buf, c);
 	ck_assert_int_eq(r, 0);
 	lq_certificate_free(cert);
 }
@@ -168,11 +168,11 @@ START_TEST(check_cert_symmetric_ser_req_sig) {
 	ck_assert_int_eq(r, 0);
 
 	c = LQ_BLOCKSIZE;
-	r = lq_certificate_serialize(cert, buf, &c, NULL);
+	r = lq_certificate_serialize(cert, NULL, buf, &c);
 	ck_assert_int_eq(r, 0);
 	lq_certificate_free(cert);
 
-	r = lq_certificate_deserialize(&cert, buf, c, NULL);
+	r = lq_certificate_deserialize(&cert, NULL , buf, c);
 	ck_assert_int_eq(r, 0);
 
 	lq_certificate_free(cert);
@@ -189,7 +189,7 @@ START_TEST(check_cert_symmetric_ser_rsp_onesig) {
 	LQPrivKey *pk;
 	char buf[4096];
 
-	pk = lq_privatekey_new(passphrase, strlen(passphrase));
+	pk = lq_privatekey_new(passphrase, sizeof(passphrase));
 	ck_assert_ptr_nonnull(pk);
 	req = lq_msg_new(data, strlen(data) + 1);
 	ck_assert_ptr_nonnull(req);
@@ -197,16 +197,16 @@ START_TEST(check_cert_symmetric_ser_rsp_onesig) {
 	ck_assert_ptr_nonnull(res);
 
 	cert = lq_certificate_new(NULL);
-	lq_privatekey_unlock(pk, passphrase, strlen(passphrase));
+	lq_privatekey_unlock(pk, passphrase, sizeof(passphrase));
 	r = lq_certificate_request(cert, req, pk);
 	ck_assert_int_eq(r, 0);
 
 	c = LQ_BLOCKSIZE;
-	r = lq_certificate_serialize(cert, buf, &c, NULL);
+	r = lq_certificate_serialize(cert, NULL, buf, &c);
 	ck_assert_int_eq(r, 0);
 	lq_certificate_free(cert);
 
-	r = lq_certificate_deserialize(&cert, buf, c, NULL);
+	r = lq_certificate_deserialize(&cert, NULL, buf, c);
 	ck_assert_int_eq(r, 0);
 	r = lq_certificate_respond(cert, res, pk);
 	ck_assert_int_eq(r, 0);
@@ -226,13 +226,13 @@ START_TEST(check_cert_symmetric_ser_rsp_bothsig) {
 	LQPrivKey *pk_bob;
 	char buf[LQ_BLOCKSIZE];
 
-	pk_alice = lq_privatekey_new(passphrase, strlen(passphrase));
+	pk_alice = lq_privatekey_new(passphrase, sizeof(passphrase));
 	ck_assert_ptr_nonnull(pk_alice);
-	pk_bob = lq_privatekey_new(passphrase, strlen(passphrase));
+	pk_bob = lq_privatekey_new(passphrase, sizeof(passphrase));
 	ck_assert_ptr_nonnull(pk_bob);
-	r = lq_privatekey_unlock(pk_alice, passphrase, strlen(passphrase));
+	r = lq_privatekey_unlock(pk_alice, passphrase, sizeof(passphrase));
 	ck_assert_int_eq(r, 0);
-	r = lq_privatekey_unlock(pk_bob, passphrase, strlen(passphrase));
+	r = lq_privatekey_unlock(pk_bob, passphrase, sizeof(passphrase));
 	ck_assert_int_eq(r, 0);
 	cert = lq_certificate_new(NULL);
 	ck_assert_ptr_nonnull(cert);
@@ -248,11 +248,11 @@ START_TEST(check_cert_symmetric_ser_rsp_bothsig) {
 	ck_assert_int_eq(r, 0);
 
 	c = LQ_BLOCKSIZE; 
-	r = lq_certificate_serialize(cert, buf, &c, NULL);
+	r = lq_certificate_serialize(cert, NULL, buf, &c);
 	ck_assert_int_eq(r, 0);
 	lq_certificate_free(cert);
 
-	r = lq_certificate_deserialize(&cert, buf, c, NULL);
+	r = lq_certificate_deserialize(&cert, NULL, buf, c);
 	ck_assert_int_eq(r, 0);
 	lq_certificate_free(cert);
 }

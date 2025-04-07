@@ -39,11 +39,11 @@ START_TEST(check_msg_symmetric) {
 	msg->pubkey = lq_publickey_new(data);
 
 	c = LQ_BLOCKSIZE;
-	r = lq_msg_serialize(msg, buf, &c, &resolve);
+	r = lq_msg_serialize(msg, &resolve, buf, &c);
 	ck_assert_int_eq(r, 0);
 	lq_msg_free(msg);
 
-	r = lq_msg_deserialize(&msg, buf, c, &resolve);
+	r = lq_msg_deserialize(&msg, &resolve, buf, c);
 	ck_assert_ptr_nonnull(msg);
 	ck_assert_int_eq(r, 0);
 	lq_msg_free(msg);

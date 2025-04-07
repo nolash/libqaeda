@@ -31,7 +31,7 @@ static LQSig nosig = {
 	.impl = zeros,
 };
 
-LQCert* lq_certificate_new(LQCert *parent) { //, LQMsg *req, LQMsg *rsp) {
+LQCert* lq_certificate_new(LQCert *parent) {
 	LQCert *cert;
 
 	cert = lq_alloc(sizeof(LQCert));
@@ -215,7 +215,7 @@ static int asn_except(asn1_node *node, int err) {
 	return err;
 }
 
-int lq_certificate_serialize(LQCert *cert, char *out, size_t *out_len, LQResolve *resolve) {
+int lq_certificate_serialize(LQCert *cert, LQResolve *resolve, char *out, size_t *out_len) {
 	size_t c;
 	int r;
 	size_t mx;
@@ -251,7 +251,7 @@ int lq_certificate_serialize(LQCert *cert, char *out, size_t *out_len, LQResolve
 		msg = &nomsg;
 	}
 	c = mx - LQ_CERT_DOMAIN_LEN; 
-	r = lq_msg_serialize(msg, buf, &c, resolve);
+	r = lq_msg_serialize(msg, resolve, buf, &c);
 	if (r != ERR_OK) {
 		return asn_except(&item, r);
 	}	
@@ -285,7 +285,7 @@ int lq_certificate_serialize(LQCert *cert, char *out, size_t *out_len, LQResolve
 		msg = &nomsg;
 	}
 	c = mx - LQ_CERT_DOMAIN_LEN; 
-	r = lq_msg_serialize(msg, buf, &c, resolve);
+	r = lq_msg_serialize(msg, resolve, buf, &c);
 	if (r != ERR_OK) {
 		return asn_except(&item, r);
 	}
@@ -346,7 +346,7 @@ int lq_certificate_serialize(LQCert *cert, char *out, size_t *out_len, LQResolve
 	return ERR_OK;
 }
 
-int lq_certificate_deserialize(LQCert **cert, char *in, size_t in_len, LQResolve *resolve) {
+int lq_certificate_deserialize(LQCert **cert, LQResolve *resolve, char *in, size_t in_len) {
 	int r;
 	int c;
 	char err[LQ_ERRSIZE];
@@ -381,7 +381,7 @@ int lq_certificate_deserialize(LQCert **cert, char *in, size_t in_len, LQResolve
 	if (r != ASN1_SUCCESS) {
 		return asn_except(&item, ERR_READ);
 	}
-	r = lq_msg_deserialize(&p->request, tmp, c, resolve);
+	r = lq_msg_deserialize(&p->request, resolve, tmp, c);
 	if (r != ERR_OK) {
 		return asn_except(&item, r);
 	}
@@ -404,7 +404,7 @@ int lq_certificate_deserialize(LQCert **cert, char *in, size_t in_len, LQResolve
 		lq_msg_free(p->request);
 		return asn_except(&item, ERR_READ);
 	}
-	r = lq_msg_deserialize(&p->response, tmp, c, resolve);
+	r = lq_msg_deserialize(&p->response, resolve, tmp, c);
 	if (r != ERR_OK) {
 		lq_signature_free(p->request_sig);
 		lq_msg_free(p->request);

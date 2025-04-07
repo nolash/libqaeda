@@ -42,7 +42,6 @@ LQSig* lq_msg_sign(LQMsg *msg, LQPrivKey *pk, const char *salt) {
 
 static int msg_to_sign(LQMsg *msg, char *out, const char *extra, size_t extra_len) {
 	int l;
-	int r;
 	char data[LQ_BLOCKSIZE];
 
 	l = msg->len;
@@ -86,7 +85,6 @@ LQSig* lq_msg_sign_extra(LQMsg *msg, LQPrivKey *pk, const char *salt, const char
 int lq_msg_verify_extra(LQMsg *msg, LQSig *sig, const char *salt, const char *extra, size_t extra_len) {
 	int r;
 	char digest[LQ_DIGEST_LEN];
-	LQMsg msg_valid;
 
 	if (msg->pubkey == NULL) {
 		return debug_logerr(LLOG_DEBUG, ERR_NONSENSE, "missing pubkey");
@@ -125,9 +123,7 @@ static int asn_except(asn1_node *node, int err) {
 }
 
 /// TODO check upper bound of data contents
-int lq_msg_serialize(LQMsg *msg, char *out, size_t *out_len, LQResolve *resolve) {
-	char *p;
-	char resolved;
+int lq_msg_serialize(LQMsg *msg, LQResolve *resolve, char *out, size_t *out_len) {
 	size_t c;
 	int r;
 	size_t mx;
@@ -222,7 +218,7 @@ int lq_msg_serialize(LQMsg *msg, char *out, size_t *out_len, LQResolve *resolve)
 	*out_len = mx;
 	r = asn1_der_coding(item, "Msg", out, (int*)out_len, err);
 	if (r != ASN1_SUCCESS) {
-		debug_logerr(LLOG_WARNING, ERR_ENCODING, asn1_strerror(r));
+		debug_logerr(LLOG_WARNING, ERR_ENCODING, (char*)asn1_strerror(r));
 		return asn_except(&item, ERR_ENCODING);
 	}
 
@@ -234,7 +230,7 @@ int lq_msg_serialize(LQMsg *msg, char *out, size_t *out_len, LQResolve *resolve)
 	return ERR_OK;
 }
 
-int lq_msg_deserialize(LQMsg **msg, const char *in, size_t in_len, LQResolve *resolve) {
+int lq_msg_deserialize(LQMsg **msg, LQResolve *resolve, const char *in, size_t in_len) {
 	int r;
 	size_t c;
 	size_t l;
@@ -262,7 +258,7 @@ int lq_msg_deserialize(LQMsg **msg, const char *in, size_t in_len, LQResolve *re
 	c = LQ_DIGEST_LEN;
 	r = asn1_read_value(item, "data", z, (int*)&c);
 	if (r != ASN1_SUCCESS) {
-		debug_logerr(LLOG_WARNING, ERR_READ, asn1_strerror(r));
+		debug_logerr(LLOG_WARNING, ERR_READ, (char*)asn1_strerror(r));
 		return asn_except(&item, ERR_READ);
 	}
 
