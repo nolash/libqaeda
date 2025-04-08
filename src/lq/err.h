@@ -36,6 +36,15 @@ enum err_e {
 	ERR_SEQ = 0x402,
 };
 
+/**
+ * \brief Initialize the error code and decriptions setup.
+ *
+ * \warning This method is called by lq_init, and should most likely not be called directly.
+ *
+ * \return ERR_OK on success.
+ *
+ * \see lq_init
+ */
 void lq_err_init();
 
 #endif // LIBQAEDA_ERR_H_

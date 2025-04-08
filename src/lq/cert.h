@@ -34,17 +34,19 @@ struct lq_certificate_t {
  * \brief Create a new certificate.
  *
  * \param[in] Previous certificate to link to.
- * \param[in] Context to control behavior of certificate processing. If NULL, default behavior will be used.
  * \return The allocated certificate object. It is the caller's responsibility to free the object.
- * \todo request and response message does not make sense to set without option to set signature, factor out to separate functions.
+ *
  * \see lq_certificate_free
  */
 LQCert* lq_certificate_new(LQCert *parent);
 
 /**
- * @brief Set the domain of the certificate. If not set, the default domain value will be used, which is LQ_DOMAIN_LEN bytes set to 0.
- * @param[in] Instantiated certificate to set domain on.
- * @param[in] Domain data. Must be LQ_DOMAIN_LEN bytes long.
+ * \brief Set the domain of the certificate.
+ *
+ * If not set, the default domain value will be used, which is LQ_DOMAIN_LEN bytes set to 0.
+ *
+ * \param[in] Instantiated certificate to set domain on.
+ * \param[in] Domain data. Must be LQ_DOMAIN_LEN bytes long.
  */
 void lq_certificate_set_domain(LQCert *cert, const char *domain);
 
@@ -118,7 +120,7 @@ int lq_certificate_deserialize(LQCert **cert, LQResolve *resolve, char *in, size
  * Messages must have public key set.
  *
  * \param[in] Certificate to verify
- * \return ERR_OK if verified.
+ * \return ERR_OK if verified, ERR_NOOP if no message.
  */
 int lq_certificate_verify(LQCert *cert);
 
@@ -159,8 +161,9 @@ int lq_certificate_respond(LQCert *cert, LQMsg *rsp, LQPrivKey *pk);
 
 
 /**
- * @brief Free an instantiated certificate.
- * @param[in] Certificate to free.
+ * \brief Free an instantiated certificate.
+ *
+ * \param[in] Certificate to free.
  */
 void lq_certificate_free(LQCert *cert);
 

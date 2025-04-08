@@ -1,11 +1,6 @@
 #ifndef LIBQAEDA_MEM_H_
 #define LIBQAEDA_MEM_H_
 
-enum lq_typ_e {
-	LQ_TYP_VOID,
-	LQ_TYP_NUM,
-	LQ_TYP_STR,
-};
 
 #include <stddef.h>
 

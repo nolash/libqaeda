@@ -165,7 +165,7 @@ int lq_certificate_verify(LQCert *cert) {
 	LQCert cert_valid;
 
 	if (cert->request_sig == NULL) {
-		return debug_logerr(LLOG_DEBUG, ERR_NONSENSE, "no signatures");
+		return debug_logerr(LLOG_DEBUG, ERR_NOOP, "no signatures");
 	}
 
 	lq_cpy(&cert_valid, cert, sizeof(LQCert));

@@ -12,7 +12,16 @@
 #include "lq/mem.h"
 
 /**
- * Core configuration keys.
+ * \brief Configuration data types
+ */
+enum lq_typ_e {
+	LQ_TYP_VOID,
+	LQ_TYP_NUM,
+	LQ_TYP_STR,
+};
+
+/**
+ * \brief Core configuration keys.
  */
 enum lq_config_core_e {
 	LQ_CFG_DIR_BASE, ///< Base working directory.
@@ -26,7 +35,11 @@ enum lq_config_core_e {
 /**
  * \brief Initialize the instance-wide config singleton.
  *
- * @return ERR_OK on success.
+ * \warning This method is called by lq_init, and should most likely not be called directly.
+ *
+ * \return ERR_OK on success.
+ *
+ * \see lq_init
  */
 int lq_config_init();
 
@@ -54,7 +67,7 @@ int lq_config_set(int k, void *v);
  * \brief Retrieve a value stored under a configuration key.
  *
  * \param[in] Configuration key.
- * \param[out] Pointer to value write location. Must be sufficient to hold the registered value type.
+ * \param[out] Pointer to value write location. Must have sufficient to hold the registered value type.
  * \return ERR_OK on success.
  *
  * \see lq_config_register
