@@ -95,6 +95,7 @@ The aim is to grant greater control to the application author to implement handl
 ### Dependencies
 
 * `libasn1`
+* `libgcrypt` (with gcrypt crypto backend)
 * `libcheck` (tests)
 
 
