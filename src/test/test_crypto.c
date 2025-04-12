@@ -249,6 +249,7 @@ START_TEST(check_open_more) {
 	r = lq_crypto_init(mktempdir(path));
 	ck_assert_int_eq(r, ERR_OK);
 
+	// create alice keypair
 	pk_alice = lq_privatekey_new(passphrase, passphrase_len);
 	ck_assert_ptr_nonnull(pk_alice);
 	pubk_before = lq_publickey_from_privatekey(pk_alice);
@@ -256,18 +257,29 @@ START_TEST(check_open_more) {
 	ck_assert_int_eq(r, LQ_FP_LEN);
 	lq_privatekey_free(pk_alice);
 
+	// create bob keypair
 	pk_bob = lq_privatekey_new(passphrase_two, passphrase_two_len);
 	ck_assert_ptr_nonnull(pk_bob);
 	pubk_before_bob = lq_publickey_from_privatekey(pk_bob);
 	r = lq_publickey_fingerprint(pubk_before_bob, &fp_bob);
 	ck_assert_int_eq(r, LQ_FP_LEN);
 
+	// load alice key as default and check match public key from create
+	pk_alice = lq_privatekey_load(passphrase, passphrase_len, NULL);
+	ck_assert_ptr_nonnull(pk_alice);
+	pubk_after = lq_publickey_from_privatekey(pk_alice);
+	ck_assert_int_eq(lq_publickey_match(pubk_before, pubk_after), ERR_OK);
+	lq_publickey_free(pubk_after);
+	lq_privatekey_free(pk_alice);
+
+	// load alice key explicit and check match public key from create
 	pk_alice = lq_privatekey_load(passphrase, passphrase_len, fp_alice);
 	ck_assert_ptr_nonnull(pk_alice);
 	pubk_after = lq_publickey_from_privatekey(pk_alice);
 	ck_assert_int_eq(lq_publickey_match(pubk_before, pubk_after), ERR_OK);
 	lq_publickey_free(pubk_after);
 
+	// load bob key explicit and check match public key from create
 	pubk_after = lq_publickey_from_privatekey(pk_bob);
 	r = lq_publickey_fingerprint(pubk_after, &fp_bob);
 	ck_assert_int_eq(r, LQ_FP_LEN);
