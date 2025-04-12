@@ -222,6 +222,15 @@ size_t lq_publickey_bytes(LQPubKey *pubk, char **out);
 size_t lq_publickey_fingerprint(LQPubKey *pubk, char **out);
 
 /**
+ * \brief Compare two public keys.
+ *
+ * \param[in] First public key to compare.
+ * \param[in] Second public key to compare.
+ * \return ERR_OK if the public key objects represent the same public key.
+ */
+int lq_publickey_match(LQPubKey *left, LQPubKey *right);
+
+/**
  * \brief Encrypt private key in place.
  * 
  * Must clear sensistive memory.

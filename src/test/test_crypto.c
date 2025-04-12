@@ -6,6 +6,7 @@
 #include "lq/config.h"
 #include "lq/io.h"
 #include "lq/base.h"
+#include "lq/err.h"
 
 
 const char *data = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
@@ -19,10 +20,15 @@ const char *salt = "spamspamspamspamspamspamspamspam";
 //	0xf9, 0x8a, 0x5e, 0x88, 0x62, 0x66, 0xe7, 0xae,
 //};
 
-// "1233"
+// "1234"
 static const size_t passphrase_len = 4;
 static const char passphrase[5] = {
 	0x31, 0x32, 0x33, 0x34, 0x00,
+};
+// "11111"
+static const size_t passphrase_two_len = 4;
+static const char passphrase_two[6] = {
+	0x31, 0x31, 0x31, 0x31, 0x31, 0x00,
 };
 
 
@@ -41,20 +47,34 @@ START_TEST(check_digest) {
 END_TEST
 
 START_TEST(check_privatekey) {
+	int r;
+	char path[LQ_PATH_MAX];
 	LQPrivKey *pk;
+
+	lq_cpy(path, "/tmp/lqcrypto_test_XXXXXX", 26);
+	r = lq_crypto_init(mktempdir(path));
+	ck_assert_int_eq(r, ERR_OK);
 
 	pk = lq_privatekey_new(passphrase, passphrase_len);
 	ck_assert_ptr_nonnull(pk);
 	lq_privatekey_free(pk);
+
+	lq_crypto_free();
 }
 END_TEST
 
 START_TEST(check_publickey) {
+	int r;
+	char path[LQ_PATH_MAX];
 	LQPrivKey *pk;
 	LQPubKey *pubk;
 	LQPubKey *pubk_manual;
 	char *keydata;
 	char *keydata_manual;
+
+	lq_cpy(path, "/tmp/lqcrypto_test_XXXXXX", 26);
+	r = lq_crypto_init(mktempdir(path));
+	ck_assert_int_eq(r, ERR_OK);
 
 	pk = lq_privatekey_new(passphrase, passphrase_len);
 	ck_assert_ptr_nonnull(pk);
@@ -66,15 +86,22 @@ START_TEST(check_publickey) {
 	lq_publickey_free(pubk_manual);
 	lq_publickey_free(pubk);
 	lq_privatekey_free(pk);
+
+	lq_crypto_free();
 }
 END_TEST
 
 START_TEST(check_signature) {
-	char r;
+	int r;
+	char path[LQ_PATH_MAX];
 	char digest[32];
 	LQPrivKey *pk;
 	LQSig *sig;
 	char *sigdata;
+
+	lq_cpy(path, "/tmp/lqcrypto_test_XXXXXX", 26);
+	r = lq_crypto_init(mktempdir(path));
+	ck_assert_int_eq(r, ERR_OK);
 
 	pk = lq_privatekey_new(passphrase, passphrase_len);
 	ck_assert_ptr_nonnull(pk);
@@ -92,13 +119,20 @@ START_TEST(check_signature) {
 
 	lq_signature_free(sig);
 	lq_privatekey_free(pk);
+
+	lq_crypto_free();
 }
 END_TEST
 
 START_TEST(check_verify) {
-	char r;
+	int r;
+	char path[LQ_PATH_MAX];
 	LQPrivKey *pk;
 	LQSig *sig;
+
+	lq_cpy(path, "/tmp/lqcrypto_test_XXXXXX", 26);
+	r = lq_crypto_init(mktempdir(path));
+	ck_assert_int_eq(r, ERR_OK);
 
 	pk = lq_privatekey_new(passphrase, 32);
 	ck_assert_ptr_nonnull(pk);
@@ -116,12 +150,20 @@ START_TEST(check_verify) {
 
 	lq_signature_free(sig);
 	lq_privatekey_free(pk);
+
+	lq_crypto_free();
 }
 END_TEST
 
 START_TEST(check_create_load) {
+	int r;
+	char path[LQ_PATH_MAX];
 	LQPrivKey *pk;
 	LQPrivKey *pk_load;
+
+	lq_cpy(path, "/tmp/lqcrypto_test_XXXXXX", 26);
+	r = lq_crypto_init(mktempdir(path));
+	ck_assert_int_eq(r, ERR_OK);
 
 	pk = lq_privatekey_new(passphrase, passphrase_len);
 	ck_assert_ptr_nonnull(pk);
@@ -129,15 +171,23 @@ START_TEST(check_create_load) {
 	ck_assert_ptr_nonnull(pk_load);
 
 	lq_privatekey_free(pk);
+
+	lq_crypto_free();
 }
 END_TEST
 
 START_TEST(check_load_specific) {
+	int r;
+	char path[LQ_PATH_MAX];
 	LQPrivKey *pk;
 	LQPubKey *pubk;
 	LQPrivKey *pk_load;
 	char *p;
 	size_t c;
+
+	lq_cpy(path, "/tmp/lqcrypto_test_XXXXXX", 26);
+	r = lq_crypto_init(mktempdir(path));
+	ck_assert_int_eq(r, ERR_OK);
 
 	pk = lq_privatekey_new(passphrase, passphrase_len);
 	ck_assert_ptr_nonnull(pk);
@@ -151,15 +201,23 @@ START_TEST(check_load_specific) {
 	ck_assert_ptr_nonnull(pk_load);
 
 	lq_privatekey_free(pk);
+
+	lq_crypto_free();
 }
 END_TEST
 
 START_TEST(check_many) {
+	int r;
+	char path[LQ_PATH_MAX];
 	LQPrivKey *pk;
 	LQPubKey *pubk;
 	LQPubKey *pubk_manual;
 	char *keydata;
 	char *keydata_manual;
+
+	lq_cpy(path, "/tmp/lqcrypto_test_XXXXXX", 26);
+	r = lq_crypto_init(mktempdir(path));
+	ck_assert_int_eq(r, ERR_OK);
 
 	pk = lq_privatekey_new(passphrase, passphrase_len);
 	ck_assert_ptr_nonnull(pk);
@@ -171,6 +229,59 @@ START_TEST(check_many) {
 	lq_publickey_free(pubk_manual);
 	lq_publickey_free(pubk);
 	lq_privatekey_free(pk);
+
+	lq_crypto_free();
+}
+END_TEST
+
+START_TEST(check_open_more) {
+	int r;
+	char path[LQ_PATH_MAX];
+	LQPrivKey *pk_alice;
+	LQPrivKey *pk_bob;
+	LQPubKey *pubk_before;
+	LQPubKey *pubk_before_bob;
+	LQPubKey *pubk_after;
+	char *fp_alice;
+	char *fp_bob;
+
+	lq_cpy(path, "/tmp/lqcrypto_test_XXXXXX", 26);
+	r = lq_crypto_init(mktempdir(path));
+	ck_assert_int_eq(r, ERR_OK);
+
+	pk_alice = lq_privatekey_new(passphrase, passphrase_len);
+	ck_assert_ptr_nonnull(pk_alice);
+	pubk_before = lq_publickey_from_privatekey(pk_alice);
+	r = lq_publickey_fingerprint(pubk_before, &fp_alice);
+	ck_assert_int_eq(r, LQ_FP_LEN);
+	lq_privatekey_free(pk_alice);
+
+	pk_bob = lq_privatekey_new(passphrase_two, passphrase_two_len);
+	ck_assert_ptr_nonnull(pk_bob);
+	pubk_before_bob = lq_publickey_from_privatekey(pk_bob);
+	r = lq_publickey_fingerprint(pubk_before_bob, &fp_bob);
+	ck_assert_int_eq(r, LQ_FP_LEN);
+
+	pk_alice = lq_privatekey_load(passphrase, passphrase_len, fp_alice);
+	ck_assert_ptr_nonnull(pk_alice);
+	pubk_after = lq_publickey_from_privatekey(pk_alice);
+	ck_assert_int_eq(lq_publickey_match(pubk_before, pubk_after), ERR_OK);
+	lq_publickey_free(pubk_after);
+
+	pubk_after = lq_publickey_from_privatekey(pk_bob);
+	r = lq_publickey_fingerprint(pubk_after, &fp_bob);
+	ck_assert_int_eq(r, LQ_FP_LEN);
+	ck_assert_int_ne(lq_publickey_match(pubk_before, pubk_after), ERR_OK);
+	ck_assert_int_eq(lq_publickey_match(pubk_before_bob, pubk_after), ERR_OK);
+
+	lq_publickey_free(pubk_after);
+	lq_publickey_free(pubk_before_bob);
+	lq_publickey_free(pubk_before);
+
+	lq_privatekey_free(pk_bob);
+	lq_privatekey_free(pk_alice);
+
+	lq_crypto_free();
 }
 END_TEST
 
@@ -188,6 +299,7 @@ Suite * common_suite(void) {
 	tcase_add_test(tc, check_create_load);
 	tcase_add_test(tc, check_load_specific);
 	tcase_add_test(tc, check_many);
+	tcase_add_test(tc, check_open_more);
 	suite_add_tcase(s, tc);
 
 	return s;
@@ -196,18 +308,11 @@ Suite * common_suite(void) {
 int main(void) {
 	int r;
 	int n_fail;
-	char path[LQ_PATH_MAX];
 
 	Suite *s;
 	SRunner *sr;
 
 	r = lq_init();
-	if (r) {
-		return 1;
-	}
-
-	lq_cpy(path, "/tmp/lqcrypto_test_XXXXXX", 26);
-	r = lq_crypto_init(mktempdir(path));
 	if (r) {
 		return 1;
 	}
@@ -218,8 +323,6 @@ int main(void) {
 	srunner_run_all(sr, CK_VERBOSE);
 	n_fail = srunner_ntests_failed(sr);
 	srunner_free(sr);
-
-	lq_crypto_free();
 
 	return (n_fail == 0) ? EXIT_SUCCESS : EXIT_FAILURE;
 }

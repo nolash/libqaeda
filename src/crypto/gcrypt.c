@@ -1153,6 +1153,26 @@ LQPubKey* lq_publickey_new(const char *full) {
 	return pubk;
 }
 
+int lq_publickey_match(LQPubKey *left, LQPubKey *right) {
+	struct gpg_store *lstore;
+	struct gpg_store *rstore;
+
+	if (left == NULL) {
+		return ERR_NONSENSE;
+	}
+	if (right == NULL) {
+		return ERR_NONSENSE;
+	}
+	lstore = (struct gpg_store*)left->impl;
+	rstore = (struct gpg_store*)right->impl;
+
+	if (lq_cmp(lstore->fingerprint, rstore->fingerprint, LQ_PUBKEY_LEN)) {
+		return ERR_FAIL;
+	}
+
+	return ERR_OK;
+}
+
 size_t lq_publickey_fingerprint(LQPubKey* pubk, char **out) {
 	struct gpg_store *gpg;
 
