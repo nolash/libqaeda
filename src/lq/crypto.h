@@ -60,7 +60,7 @@ enum lq_keystate_e {
  */
 struct lq_privatekey_t {
 	short key_typ; ///< Key type identifier. Unused for now.
-	char key_state; ///< Key state flags.
+	unsigned char key_state; ///< Key state flags.
 	void *impl; ///< Private key implementation object
 };
 typedef struct lq_privatekey_t LQPrivKey;
