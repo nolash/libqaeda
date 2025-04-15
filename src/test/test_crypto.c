@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <rerr.h>
+
 #include "lq/crypto.h"
 #include "lq/config.h"
 #include "lq/io.h"
@@ -60,6 +62,33 @@ START_TEST(check_privatekey) {
 	lq_privatekey_free(pk);
 
 	lq_crypto_free();
+}
+END_TEST
+
+START_TEST(check_privatekey_lock) {
+	int r;
+	LQPrivKey *pk;
+
+	pk = lq_privatekey_new(passphrase, passphrase_len);
+	ck_assert_ptr_nonnull(pk);
+
+	lq_privatekey_lock(pk, passphrase, passphrase_len);
+	r = lq_privatekey_lock(pk, passphrase, passphrase_len);
+	ck_assert_int_eq(r, ERR_NOOP);
+
+	r = lq_privatekey_unlock(pk, passphrase, passphrase_len);
+	ck_assert_int_eq(r, ERR_OK);
+
+	r = lq_privatekey_unlock(pk, passphrase, passphrase_len);
+	ck_assert_int_eq(r, ERR_NOOP);
+
+	r = lq_privatekey_lock(pk, passphrase, passphrase_len);
+	ck_assert_int_eq(r, ERR_OK);
+
+	r = lq_privatekey_lock(pk, passphrase, passphrase_len);
+	ck_assert_int_eq(r, ERR_NOOP);
+
+	lq_privatekey_free(pk);
 }
 END_TEST
 
@@ -305,6 +334,7 @@ Suite * common_suite(void) {
 	tc = tcase_create("file");
 	tcase_add_test(tc, check_digest);
 	tcase_add_test(tc, check_privatekey);
+	tcase_add_test(tc, check_privatekey_lock);
 	tcase_add_test(tc, check_publickey);
 	tcase_add_test(tc, check_signature);
 	tcase_add_test(tc, check_verify);
