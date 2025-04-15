@@ -67,7 +67,12 @@ END_TEST
 
 START_TEST(check_privatekey_lock) {
 	int r;
+	char path[LQ_PATH_MAX];
 	LQPrivKey *pk;
+	
+	lq_cpy(path, "/tmp/lqcrypto_test_XXXXXX", 26);
+	r = lq_crypto_init(mktempdir(path));
+	ck_assert_int_eq(r, ERR_OK);
 
 	pk = lq_privatekey_new(passphrase, passphrase_len);
 	ck_assert_ptr_nonnull(pk);
@@ -89,6 +94,7 @@ START_TEST(check_privatekey_lock) {
 	ck_assert_int_eq(r, ERR_NOOP);
 
 	lq_privatekey_free(pk);
+	lq_crypto_free();
 }
 END_TEST
 
