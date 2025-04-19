@@ -31,8 +31,8 @@ LQEnvelope *lq_envelope_new(LQCert *cert, int hint);
  * \return ERR_OK on success. 
  */
 int lq_envelope_attach(LQEnvelope *env, const char *data, size_t data_len);
-int lq_envelope_serialize(LQEnvelope *env, const char *data, size_t data_len);
-int lq_envelope_deserialize(LQEnvelope **env, const char *data, size_t *data_len);
+int lq_envelope_serialize(LQEnvelope *env, const char *data, size_t *data_len);
+int lq_envelope_deserialize(LQEnvelope **env, const char *data, size_t data_len);
 void lq_envelope_free(LQEnvelope *env);
 
 #endif // LIBQAEDA_ENVELOPE_H_

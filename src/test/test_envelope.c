@@ -39,6 +39,11 @@ START_TEST(check_envelope) {
 	ck_assert_int_eq(r, 0);
 	r = lq_envelope_attach(env, data_two, strlen(data_two) + 1);
 	ck_assert_int_eq(r, 0);
+
+	c = sizeof(buf);
+	r = lq_envelope_serialize(env, buf, &b)
+	ck_assert_int_eq(r, 0);
+
 	lq_envelope_free(env);
 }
 END_TEST

@@ -1,5 +1,7 @@
 #include <stddef.h>
 
+#include <libtasn1.h>
+#include <llog.h>
 #include <lq/envelope.h>
 #include <lq/cert.h>
 #include <lq/mem.h>
@@ -54,6 +56,34 @@ int lq_envelope_attach(LQEnvelope *env, const char *data, size_t data_len) {
 	env->attach_cur = attach;
 
 	return ERR_OK;
+}
+
+int lq_envelope_serialize(LQEnvelope *env, const char *out, size_t out_len) {
+	int mx;
+	int r;
+	asn1_node item;
+
+	r = asn1_create_element(asn, "Qaeda", &item);
+	if (r != ASN1_SUCCESS) {
+		return ERR_READ;
+	}
+
+	c = sizeof(int);
+	r = asn1_write_value(item, "Envelope.hint", env->hint, c);
+	if (r != ASN1_SUCCESS) {
+		return asn_except(&item, ERR_WRITE);
+	}
+
+	//*out_len = mx;
+	r = asn1_der_coding(item, "Envelope", out, (int*)out_len, err);
+	if (r != ASN1_SUCCESS) {
+		return asn_except(&item, ERR_ENCODING);
+	}
+
+	r = asn1_delete_structure(&item);
+	if (r != ASN1_SUCCESS) {
+		return ERR_FAIL;
+	}
 }
 
 void lq_envelope_free(LQEnvelope *env) {
