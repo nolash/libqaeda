@@ -65,6 +65,8 @@ LQEnvelope *lq_envelope_new(LQCert *cert, int hint) {
 	env->cert = cert;
 	env->attach_start = lq_attach_new();
 	env->attach_cur = env->attach_start;
+
+	return env;
 }
 
 int lq_envelope_attach(LQEnvelope *env, const char *data, size_t data_len) {
@@ -97,7 +99,6 @@ int lq_envelope_serialize(LQEnvelope *env, LQResolve *resolve, char *out, size_t
 	int r;
 	char err[LQ_ERRSIZE];
 	char buf[LQ_BLOCKSIZE];
-	char node_seq_name[64];
 	asn1_node item;
 
 	mx = *out_len;
@@ -155,6 +156,8 @@ int lq_envelope_serialize(LQEnvelope *env, LQResolve *resolve, char *out, size_t
 	if (r != ASN1_SUCCESS) {
 		return ERR_FAIL;
 	}
+
+	return ERR_OK;
 }
 
 int lq_envelope_deserialize(LQEnvelope **env, LQResolve *resolve, const char *in, size_t in_len) {
@@ -163,7 +166,7 @@ int lq_envelope_deserialize(LQEnvelope **env, LQResolve *resolve, const char *in
 	int i;
 	char err[LQ_ERRSIZE];
 	char tmp[LQ_BLOCKSIZE];
-	char node_seq_name[16];
+	char node_seq_name[32];
 	int hint;
 	LQCert *cert;
 	asn1_node item;
@@ -199,7 +202,7 @@ int lq_envelope_deserialize(LQEnvelope **env, LQResolve *resolve, const char *in
 	i = 0;
 	while(++i) {
 		c = LQ_BLOCKSIZE;
-		sprintf(node_seq_name, "attach.?%d", i);
+		sprintf(node_seq_name, "attach.?%i", i);
 		r = asn1_read_value(item, node_seq_name, tmp, &c);
 		if (r != ASN1_SUCCESS) {
 			break;

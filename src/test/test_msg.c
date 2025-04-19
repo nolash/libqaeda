@@ -61,7 +61,6 @@ START_TEST(check_msg_symmetric_literal) {
 	char *p;
 	LQMsg *msg;
 	LQResolve resolve;
-	LQResolve resolve_dummy;
 	LQStore *store;
 
 	lq_cpy(path, "/tmp/lqstore_file_XXXXXX", 25);
@@ -96,7 +95,7 @@ Suite * common_suite(void) {
 
 	s = suite_create("msg");
 	tc = tcase_create("serialize");
-//	tcase_add_test(tc, check_msg_symmetric);
+	tcase_add_test(tc, check_msg_symmetric);
 	tcase_add_test(tc, check_msg_symmetric_literal);
 	suite_add_tcase(s, tc);
 

@@ -96,7 +96,7 @@ int lq_certificate_serialize(LQCert *cert, LQResolve *resolve, char *out, size_t
 /**
  * \brief Deserialize certificate data payload from storage or transport.
  *
- * \param[out] Pointer to instantiated certificate. It is the caller's responsibility to free the certificate object.
+ * \param[out] Pointer to where certificate will be instantiated. It is the caller's responsibility to free the certificate object.
  * \param[in] Store implementations to use for resolving content key from deserialized message and certificate data. If NULL, content will not be resolved.
  * \param[in] Serialized data.
  * \param[in] Length of serialized data.

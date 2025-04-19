@@ -272,7 +272,6 @@ int lq_msg_deserialize(LQMsg **msg, LQResolve *resolve, const char *in, size_t i
 	char err[LQ_ERRSIZE];
 	char tmp[LQ_BLOCKSIZE];
 	char z[LQ_DIGEST_LEN];
-	char *p;
 	char msg_state;
 	asn1_node item;
 	LQResolve *resolve_active;
