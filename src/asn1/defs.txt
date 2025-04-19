@@ -1,5 +1,6 @@
 Qaeda DEFINITIONS EXPLICIT TAGS ::= BEGIN 
 	Msg ::= SEQUENCE {
+		literal BOOLEAN,
 		data OCTET STRING,
 ---		timestamp GeneralizedTime,
 		timestamp OCTET STRING,
@@ -19,5 +20,4 @@ Qaeda DEFINITIONS EXPLICIT TAGS ::= BEGIN
 ---		parent ANY OPTIONAL
 		parent OCTET STRING OPTIONAL
 	}
-
 END

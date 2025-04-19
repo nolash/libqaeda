@@ -257,6 +257,29 @@ START_TEST(check_cert_symmetric_ser_rsp_bothsig) {
 	lq_certificate_free(cert);
 }
 END_TEST
+//
+//START_TEST(check_cert_attach) {
+//	int r;
+//	size_t c;
+//	size_t l;
+//	LQCert *cert;
+//	char buf[LQ_BLOCKSIZE];
+//	char *p;
+//
+//	cert = lq_certificate_new(NULL);
+//	ck_assert_ptr_nonnull(cert);
+//	c = LQ_BLOCKSIZE;
+//	r = lq_certificate_serialize(cert, NULL, buf, &c);
+//	ck_assert_int_eq(r, 0);
+//	lq_certificate_free(cert);
+//
+//	r = lq_certificate_deserialize(&cert, NULL, buf, l);
+//	ck_assert_int_eq(r, 0);
+//	lq_certificate_free(cert);
+//}
+//END_TEST
+
+
 
 Suite * common_suite(void) {
 	Suite *s;
@@ -274,6 +297,7 @@ Suite * common_suite(void) {
 	tcase_add_test(tc, check_cert_symmetric_ser_req_sig);
 	tcase_add_test(tc, check_cert_symmetric_ser_rsp_onesig);
 	tcase_add_test(tc, check_cert_symmetric_ser_rsp_bothsig);
+//	tcase_add_test(tc, check_cert_attach);
 	suite_add_tcase(s, tc);
 
 	return s;

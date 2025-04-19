@@ -32,6 +32,10 @@ int lq_read(int f, void *buf, size_t c) {
 	return read(f, buf, c);
 }
 
+int lq_write(int f, void *buf, size_t c) {
+	return write(f, buf, c);
+}
+
 void lq_close(int fd) {
 	close(fd);
 }

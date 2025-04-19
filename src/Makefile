@@ -50,6 +50,9 @@ clean:
 	make -C crypto clean
 	rm -vf *.o *.a *.so
 
+tools:
+	make -C tools
+
 #shared-gpg: core aux asn1 gpg
 	#make -C aux/liblash/src lib
 	#$(CC) $(CFLAGS) -shared -o libqaeda.so $(LIBOBJFILES) $(LIBOBJEMBED)

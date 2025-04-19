@@ -150,7 +150,7 @@ int main(int argc, char **argv) {
 	}
 
 	out_len = LQ_BLOCKSIZE;
-	r = lq_certificate_serialize(cert, out, &out_len, NULL);
+	r = lq_certificate_serialize(cert, NULL, out, &out_len);
 	if (r != ERR_OK) {
 		lq_certificate_free(cert);
 		lq_ui_free();
@@ -158,7 +158,7 @@ int main(int argc, char **argv) {
 	}
 	lq_certificate_free(cert);
 
-	r = lq_certificate_deserialize(&cert, out, out_len, NULL);
+	r = lq_certificate_deserialize(&cert, NULL, out, out_len);
 	if (r != ERR_OK) {
 		lq_ui_free();
 		return 1;

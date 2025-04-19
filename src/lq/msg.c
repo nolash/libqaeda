@@ -1,4 +1,5 @@
 #include <stddef.h>
+#include <string.h>
 #include <time.h>
 #include <libtasn1.h>
 #include <endian.h>
@@ -31,7 +32,8 @@ LQMsg* lq_msg_new(const char *msg_data, size_t msg_len) {
 	msg->data = lq_alloc(msg_len);
 	lq_cpy(msg->data, msg_data, msg_len);
 	msg->len = msg_len;
-	msg->state = LQ_MSG_INIT;
+	//msg->state = LQ_MSG_INIT;
+	msg->state = LQ_MSG_INIT | LQ_MSG_LITERAL;
 
 	return msg;
 }
@@ -127,13 +129,14 @@ int lq_msg_serialize(LQMsg *msg, LQResolve *resolve, char *out, size_t *out_len)
 	size_t c;
 	int r;
 	size_t mx;
-	char tmp[LQ_DIGEST_LEN];
+	char tmp[LQ_CRYPTO_BUFLEN];
 	char timedata[8];
 	char err[1024];
 	LQPubKey *pubkey;
 	LQResolve *resolve_active;
 	asn1_node item;
 	char *keydata;
+	char v[6];
 
 	mx = *out_len;
 	*out_len = 0;
@@ -145,40 +148,62 @@ int lq_msg_serialize(LQMsg *msg, LQResolve *resolve, char *out, size_t *out_len)
 		return ERR_READ;
 	}
 
-	c = LQ_DIGEST_LEN;
-	*out_len += c;
-	if (*out_len > mx) {
-		return asn_except(&item, ERR_OVERFLOW);
+	lq_cpy(v, "FALSE", 5);
+	v[5] = 0;
+	if (msg->state & LQ_MSG_LITERAL) {
+		lq_cpy(v, "TRUE", 5);
+		v[4] = 0;
+	}
+	r = asn1_write_value(item, "Msg.literal", v, strlen(v) + 1);
+	if (r != ASN1_SUCCESS) {
+		return asn_except(&item, ERR_WRITE);
 	}
 
-	if (msg->state & LQ_MSG_INIT) {
-		r = lq_digest(msg->data, msg->len, tmp);
-		if (r != ERR_OK) {
-			return asn_except(&item, r);
-		}
+	*out_len = 1;
 
-		resolve_active = resolve;
-		while (resolve_active != NULL) {
-			r = resolve_active->store->put(LQ_CONTENT_MSG, resolve_active->store, tmp, &c, msg->data, msg->len);
+	if (msg->state & LQ_MSG_INIT) {
+		if (msg->state & LQ_MSG_LITERAL) {
+			lq_cpy(tmp, msg->data, msg->len);
+			c = msg->len;
+			*out_len += c;
+			if (*out_len > mx) {
+				return asn_except(&item, ERR_OVERFLOW);
+			}
+		} else {
+			c = LQ_DIGEST_LEN;
+			*out_len += c;
+			if (*out_len > mx) {
+				return asn_except(&item, ERR_OVERFLOW);
+			}
+			r = lq_digest(msg->data, msg->len, tmp);
 			if (r != ERR_OK) {
 				return asn_except(&item, r);
 			}
-			resolve_active = resolve_active->next;
-			msg->state |= LQ_MSG_RESOLVED;
+
+			resolve_active = resolve;
+			while (resolve_active != NULL) {
+				r = resolve_active->store->put(LQ_CONTENT_MSG, resolve_active->store, tmp, &c, msg->data, msg->len);
+				if (r != ERR_OK) {
+					return asn_except(&item, r);
+				}
+				resolve_active = resolve_active->next;
+				msg->state |= LQ_MSG_RESOLVED;
+			}
+			if (!(msg->state & LQ_MSG_RESOLVED)) {
+				debug(LLOG_DEBUG, "msg", "no resolver");	
+			}
 		}
 	} else {
 		tmp[0] = 0;
 		c = 1;
 	}
 
-	if (!(msg->state & LQ_MSG_RESOLVED)) {
-		debug(LLOG_DEBUG, "msg", "no resolver");	
-	}
 
 	r = asn1_write_value(item, "Msg.data", tmp, c);
 	if (r != ASN1_SUCCESS) {
 		return asn_except(&item, ERR_WRITE);
 	}
+
 
 	lq_cpy(timedata, &msg->time.tv_sec, 4);
 	lq_cpy(((char*)timedata)+4, &msg->time.tv_nsec, 4);
@@ -230,18 +255,25 @@ int lq_msg_serialize(LQMsg *msg, LQResolve *resolve, char *out, size_t *out_len)
 	return ERR_OK;
 }
 
+/**
+ * \todo allow for 1 byte message
+ */
 int lq_msg_deserialize(LQMsg **msg, LQResolve *resolve, const char *in, size_t in_len) {
 	int r;
 	size_t c;
 	size_t l;
+	char v[6];
 	char resolved;
 	char err[LQ_ERRSIZE];
 	char z[LQ_DIGEST_LEN];
 	char tmp[LQ_BLOCKSIZE];
+	char *p;
+	char msg_state;
 	asn1_node item;
 	LQResolve *resolve_active;
 
 	resolved = 0;
+	msg_state = 0;
 
 	lq_zero(&item, sizeof(item));
 
@@ -255,7 +287,18 @@ int lq_msg_deserialize(LQMsg **msg, LQResolve *resolve, const char *in, size_t i
 		return asn_except(&item, ERR_ENCODING);
 	}
 
-	c = LQ_DIGEST_LEN;
+	c = 6;
+	r = asn1_read_value(item, "literal", v, (int*)&c);
+	if (r != ASN1_SUCCESS) {
+		debug_logerr(LLOG_WARNING, ERR_READ, (char*)asn1_strerror(r));
+		return asn_except(&item, ERR_READ);
+	}
+	if (lq_cmp(v, "F", 1)) {
+		msg_state |= LQ_MSG_LITERAL;
+	}
+
+	//c = LQ_DIGEST_LEN;
+	c = LQ_BLOCKSIZE;
 	r = asn1_read_value(item, "data", z, (int*)&c);
 	if (r != ASN1_SUCCESS) {
 		debug_logerr(LLOG_WARNING, ERR_READ, (char*)asn1_strerror(r));
@@ -268,30 +311,31 @@ int lq_msg_deserialize(LQMsg **msg, LQResolve *resolve, const char *in, size_t i
 		return ERR_OK;
 	}
 
-	lq_cpy(tmp, z, c);
-	l = c;
-
-	c = LQ_BLOCKSIZE;
-	resolve_active = resolve;
-	while (resolve_active != NULL) {
-		r = resolve_active->store->get(LQ_CONTENT_MSG, resolve_active->store, z, LQ_DIGEST_LEN, tmp, &c);
-		if (r != ERR_OK) {
-			return asn_except(&item, r);
+	if (!(msg_state & LQ_MSG_LITERAL)) {
+		resolve_active = resolve;
+		lq_cpy(tmp, z, c);
+		l = c;
+		c = LQ_BLOCKSIZE;
+		while (resolve_active != NULL) {
+			r = resolve_active->store->get(LQ_CONTENT_MSG, resolve_active->store, z, LQ_DIGEST_LEN, tmp, &c);
+			if (r != ERR_OK) {
+				return asn_except(&item, r);
+			}
+			resolve_active = resolve_active->next;
+			resolved = LQ_MSG_RESOLVED;
 		}
-		resolve_active = resolve_active->next;
-		resolved = LQ_MSG_RESOLVED;
-	}
 
-	if (!(resolved & LQ_MSG_RESOLVED)) {
-		debug(LLOG_DEBUG, "msg", "no resolver");
-		c = l;
+		if (!(resolved & LQ_MSG_RESOLVED)) {
+			debug(LLOG_DEBUG, "msg", "no resolver");
+			c = l;
+		}
 	}
 
 	*msg = lq_msg_new((const char*)tmp, c);
 	if (*msg == NULL) {
 		return asn_except(&item, ERR_MEM);
 	}
-	(*msg)->state = resolved;
+	(*msg)->state = msg_state | resolved;
 
 	/// \todo document timestamp size
 	c = 8;

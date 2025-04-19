@@ -10,6 +10,7 @@
 enum lq_msgstate_e {
 	LQ_MSG_INIT = 1,
 	LQ_MSG_RESOLVED = 2,
+	LQ_MSG_LITERAL = 4,
 };
 
 /**
@@ -117,5 +118,19 @@ int lq_msg_deserialize(LQMsg **msg, LQResolve *resolve, const char *in, size_t i
  * \param[in] Message to free.
  */
 void lq_msg_free(LQMsg *msg);
+
+/**
+ * \brief Serialize message content.
+ *
+ * \param[in] Content to serialize.
+ * \param[in] Length of content
+ * \param[out] Output buffer
+ * \param[in/out] Length of output buffer, will be overwritten by length of serialized data.
+ *
+ * \return ERR_OK on success.
+ *
+ * \see lq_msg_serialize
+ */
+int lq_attach_serialize(const char *in, size_t in_len, char *out, size_t *out_len);
 
 #endif // LIBQAEDA_MSG_H_
