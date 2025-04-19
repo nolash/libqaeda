@@ -1,5 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
+#include <fcntl.h>
+#include <errno.h>
 
 #include <basedir.h>
 #include <cwalk.h>
@@ -11,6 +13,7 @@
 #include <lq/err.h>
 #include <lq/cert.h>
 #include <lq/msg.h>
+#include <lq/envelope.h>
 
 #define INIT_LQ 0x01
 #define INIT_CRYPTO 0x02
@@ -82,10 +85,12 @@ void lq_ui_free() {
 
 
 int main(int argc, char **argv) {
+	int f;
 	int r;
 	LQCert *cert;
 	LQMsg *req;
 	LQMsg *res;
+	LQEnvelope *env;
 	char out[LQ_BLOCKSIZE];
 	size_t out_len;
 
@@ -129,12 +134,13 @@ int main(int argc, char **argv) {
 		return 1;
 	}
 
-	res = lq_msg_new("foo", 4);
+	res = lq_msg_new("barbaz", 7);
 	if (res == NULL) {
 		lq_certificate_free(cert);
 		lq_ui_free();
 		return 1;
 	}
+	lq_msg_literal(res);
 	r = lq_certificate_respond(cert, res, pk_bob);
 	if (r != ERR_OK) {
 		lq_certificate_free(cert);
@@ -149,21 +155,35 @@ int main(int argc, char **argv) {
 		return 1;
 	}
 
+	env = lq_envelope_new(cert, 42);
 	out_len = LQ_BLOCKSIZE;
-	r = lq_certificate_serialize(cert, NULL, out, &out_len);
+	r = lq_envelope_serialize(env, NULL, out, &out_len);
 	if (r != ERR_OK) {
-		lq_certificate_free(cert);
+		lq_envelope_free(env);
 		lq_ui_free();
 		return 1;
 	}
-	lq_certificate_free(cert);
+	lq_envelope_free(env);
 
-	r = lq_certificate_deserialize(&cert, NULL, out, out_len);
+	f = lq_open("./out.dat", O_WRONLY | O_CREAT, S_IRWXU);
+	if (f < 0) {
+		lq_ui_free();
+		return errno;
+	}
+
+	r = lq_write(f, out, out_len);
+	if (r != out_len) {
+		lq_close(f);
+		lq_ui_free();
+		return 1;
+	}
+	lq_close(f);
+
+	r = lq_envelope_deserialize(&env, NULL, out, out_len);
 	if (r != ERR_OK) {
 		lq_ui_free();
 		return 1;
 	}
-	lq_certificate_free(cert);
-
+	lq_envelope_free(env);
 	lq_ui_free();
 }
