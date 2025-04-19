@@ -23,7 +23,7 @@ Qaeda DEFINITIONS EXPLICIT TAGS ::= BEGIN
 
 	Envelope ::= SEQUENCE {
 		hint INTEGER,
-		cert Cert,
+		cert ANY,
 		attach SEQUENCE OF OCTET STRING OPTIONAL
 	}
 

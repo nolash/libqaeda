@@ -41,7 +41,7 @@ START_TEST(check_envelope) {
 	ck_assert_int_eq(r, 0);
 
 	c = sizeof(buf);
-	r = lq_envelope_serialize(env, buf, &b)
+	r = lq_envelope_serialize(env, NULL, buf, &c);
 	ck_assert_int_eq(r, 0);
 
 	lq_envelope_free(env);
