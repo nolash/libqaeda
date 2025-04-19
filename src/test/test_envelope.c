@@ -33,7 +33,7 @@ START_TEST(check_envelope) {
 	r = lq_certificate_serialize(cert, NULL, buf, &c);
 	ck_assert_int_eq(r, 0);
 
-	env = lq_envelope_new(cert, 0);
+	env = lq_envelope_new(cert, 42);
 	ck_assert_ptr_nonnull(env);
 	r = lq_envelope_attach(env, data, strlen(data) + 1);
 	ck_assert_int_eq(r, 0);
@@ -43,7 +43,11 @@ START_TEST(check_envelope) {
 	c = sizeof(buf);
 	r = lq_envelope_serialize(env, NULL, buf, &c);
 	ck_assert_int_eq(r, 0);
+	lq_envelope_free(env);
 
+	r = lq_envelope_deserialize(&env, NULL, buf, c);
+	ck_assert_int_eq(r, 0);
+	ck_assert_int_eq(env->hint, 42);
 	lq_envelope_free(env);
 }
 END_TEST
