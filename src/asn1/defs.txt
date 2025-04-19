@@ -20,4 +20,11 @@ Qaeda DEFINITIONS EXPLICIT TAGS ::= BEGIN
 ---		parent ANY OPTIONAL
 		parent OCTET STRING OPTIONAL
 	}
+
+	Envelope ::= SEQUENCE {
+		hint INTEGER,
+		cert Cert,
+		attach SEQUENCE OF OCTET STRING OPTIONAL
+	}
+
 END
