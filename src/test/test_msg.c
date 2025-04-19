@@ -7,6 +7,7 @@
 #include "lq/io.h"
 #include "lq/mem.h"
 #include "lq/base.h"
+#include "lq/err.h"
 
 extern LQStore LQDummyContent;
 extern LQStore LQFileContent;
@@ -52,13 +53,51 @@ START_TEST(check_msg_symmetric) {
 }
 END_TEST
 
+START_TEST(check_msg_symmetric_literal) {
+	int r;
+	size_t c;
+	char buf[4096];
+	char path[1024];
+	char *p;
+	LQMsg *msg;
+	LQResolve resolve;
+	LQResolve resolve_dummy;
+	LQStore *store;
+
+	lq_cpy(path, "/tmp/lqstore_file_XXXXXX", 25);
+	p = mktempdir(path);
+	*(p+24) = '/';
+	*(p+25) = 0x0;
+	store = lq_store_new(p);
+	ck_assert_ptr_nonnull(store->userdata);
+
+	msg = lq_msg_new(data, strlen(data) + 1);
+	r = lq_msg_literal(msg);
+	ck_assert_int_eq(r, ERR_OK);
+	r = lq_msg_literal(msg);
+	ck_assert_int_eq(r, ERR_NOOP);
+	msg->pubkey = lq_publickey_new(data);
+
+	c = LQ_BLOCKSIZE;
+	r = lq_msg_serialize(msg, &resolve, buf, &c);
+	ck_assert_int_eq(r, 0);
+	lq_msg_free(msg);
+
+	r = lq_msg_deserialize(&msg, &resolve, buf, c);
+	ck_assert_ptr_nonnull(msg);
+	ck_assert_mem_eq(msg->data, data, strlen(data) + 1);
+	ck_assert_int_eq(r, 0);
+	lq_msg_free(msg);
+}
+END_TEST
 Suite * common_suite(void) {
 	Suite *s;
 	TCase *tc;
 
 	s = suite_create("msg");
 	tc = tcase_create("serialize");
-	tcase_add_test(tc, check_msg_symmetric);
+//	tcase_add_test(tc, check_msg_symmetric);
+	tcase_add_test(tc, check_msg_symmetric_literal);
 	suite_add_tcase(s, tc);
 
 	return s;

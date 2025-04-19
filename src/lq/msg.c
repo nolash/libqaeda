@@ -32,10 +32,17 @@ LQMsg* lq_msg_new(const char *msg_data, size_t msg_len) {
 	msg->data = lq_alloc(msg_len);
 	lq_cpy(msg->data, msg_data, msg_len);
 	msg->len = msg_len;
-	//msg->state = LQ_MSG_INIT;
-	msg->state = LQ_MSG_INIT | LQ_MSG_LITERAL;
+	msg->state = LQ_MSG_INIT;
 
 	return msg;
+}
+
+int lq_msg_literal(LQMsg *msg) {
+	if (msg->state & LQ_MSG_LITERAL) {
+		return ERR_NOOP;
+	}
+	msg->state |= LQ_MSG_LITERAL;
+	return ERR_OK;
 }
 
 LQSig* lq_msg_sign(LQMsg *msg, LQPrivKey *pk, const char *salt) {
@@ -198,7 +205,6 @@ int lq_msg_serialize(LQMsg *msg, LQResolve *resolve, char *out, size_t *out_len)
 		c = 1;
 	}
 
-
 	r = asn1_write_value(item, "Msg.data", tmp, c);
 	if (r != ASN1_SUCCESS) {
 		return asn_except(&item, ERR_WRITE);
@@ -262,11 +268,10 @@ int lq_msg_deserialize(LQMsg **msg, LQResolve *resolve, const char *in, size_t i
 	int r;
 	size_t c;
 	size_t l;
-	char v[6];
 	char resolved;
 	char err[LQ_ERRSIZE];
-	char z[LQ_DIGEST_LEN];
 	char tmp[LQ_BLOCKSIZE];
+	char z[LQ_DIGEST_LEN];
 	char *p;
 	char msg_state;
 	asn1_node item;
@@ -288,18 +293,17 @@ int lq_msg_deserialize(LQMsg **msg, LQResolve *resolve, const char *in, size_t i
 	}
 
 	c = 6;
-	r = asn1_read_value(item, "literal", v, (int*)&c);
+	r = asn1_read_value(item, "literal", tmp, (int*)&c);
 	if (r != ASN1_SUCCESS) {
 		debug_logerr(LLOG_WARNING, ERR_READ, (char*)asn1_strerror(r));
 		return asn_except(&item, ERR_READ);
 	}
-	if (lq_cmp(v, "F", 1)) {
+	if (lq_cmp(tmp, "F", 1)) {
 		msg_state |= LQ_MSG_LITERAL;
 	}
 
-	//c = LQ_DIGEST_LEN;
 	c = LQ_BLOCKSIZE;
-	r = asn1_read_value(item, "data", z, (int*)&c);
+	r = asn1_read_value(item, "data", tmp, (int*)&c);
 	if (r != ASN1_SUCCESS) {
 		debug_logerr(LLOG_WARNING, ERR_READ, (char*)asn1_strerror(r));
 		return asn_except(&item, ERR_READ);
@@ -313,9 +317,9 @@ int lq_msg_deserialize(LQMsg **msg, LQResolve *resolve, const char *in, size_t i
 
 	if (!(msg_state & LQ_MSG_LITERAL)) {
 		resolve_active = resolve;
-		lq_cpy(tmp, z, c);
 		l = c;
 		c = LQ_BLOCKSIZE;
+		lq_cpy(z, tmp, LQ_DIGEST_LEN);
 		while (resolve_active != NULL) {
 			r = resolve_active->store->get(LQ_CONTENT_MSG, resolve_active->store, z, LQ_DIGEST_LEN, tmp, &c);
 			if (r != ERR_OK) {

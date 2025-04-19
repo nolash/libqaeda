@@ -113,6 +113,16 @@ int lq_msg_serialize(LQMsg *msg, LQResolve *resolve, char *out, size_t *out_len)
 int lq_msg_deserialize(LQMsg **msg, LQResolve *resolve, const char *in, size_t in_len);
 
 /**
+ * \brief Mark message content as literal.
+ *
+ * In this case, the data of the message will be stored directly, instead of its hash.
+ *
+ * \param[in] Message to manipulate.
+ * \return ERR_OK if succesfully set, ERR_NOOP if already set.
+ */
+int lq_msg_literal(LQMsg *msg);
+
+/**
  * \brief Free an instantiated message.
  *
  * \param[in] Message to free.
