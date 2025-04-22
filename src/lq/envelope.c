@@ -97,6 +97,7 @@ int lq_envelope_serialize(LQEnvelope *env, LQResolve *resolve, char *out, size_t
 	size_t c;
 	int mx;
 	int r;
+	int hint;
 	char err[LQ_ERRSIZE];
 	char buf[LQ_BLOCKSIZE];
 	asn1_node item;
@@ -110,8 +111,13 @@ int lq_envelope_serialize(LQEnvelope *env, LQResolve *resolve, char *out, size_t
 		return ERR_READ;
 	}
 
+	hint = env->hint;
+	r = to_endian(TO_ENDIAN_BIG, sizeof(int), &hint);
+	if (r) {
+		return asn_except(&item, ERR_BYTEORDER);
+	}
 	c = sizeof(int);
-	r = asn1_write_value(item, "Envelope.hint", &env->hint, c);
+	r = asn1_write_value(item, "Envelope.hint", &hint, c);
 	if (r != ASN1_SUCCESS) {
 		return asn_except(&item, ERR_WRITE);
 	}
@@ -168,6 +174,7 @@ int lq_envelope_deserialize(LQEnvelope **env, LQResolve *resolve, const char *in
 	char tmp[LQ_BLOCKSIZE];
 	char node_seq_name[32];
 	int hint;
+	char *p;
 	LQCert *cert;
 	asn1_node item;
 
@@ -181,10 +188,15 @@ int lq_envelope_deserialize(LQEnvelope **env, LQResolve *resolve, const char *in
 		return asn_except(&item, ERR_ENCODING);
 	}
 
+	hint = 0;
 	c = sizeof(int);
 	r = asn1_read_value(item, "hint", &hint, &c);
 	if (r != ASN1_SUCCESS) {
 		return asn_except(&item, ERR_READ);
+	}
+	hint <<= ((sizeof(int) - c) * 8);
+	if (is_le()) {
+		flip_endian(sizeof(int), (char*)(&hint));
 	}
 
 	c = LQ_BLOCKSIZE;
