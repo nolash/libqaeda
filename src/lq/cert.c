@@ -346,6 +346,89 @@ int lq_certificate_serialize(LQCert *cert, LQResolve *resolve, char *out, size_t
 	return ERR_OK;
 }
 
+LQCert* lq_certificate_to_request(LQCert *cert) {
+	LQCert *cert_req;
+	LQMsg *req;
+	LQSig *sig;
+
+	if (cert->request == NULL || cert->request_sig == NULL) {
+		return NULL;
+	}
+	cert_req = lq_alloc(sizeof(LQCert));
+	req = lq_alloc(sizeof(LQMsg));
+	sig = lq_alloc(sizeof(LQSig));
+
+	lq_cpy(cert_req->domain, cert->domain, LQ_CERT_DOMAIN_LEN);
+	lq_cpy(cert_req->parent_hash, cert->parent_hash, LQ_DIGEST_LEN);
+	lq_cpy(req, cert->request, sizeof(LQMsg));
+	lq_cpy(sig, cert->request_sig, sizeof(LQSig));
+
+	return cert_req;
+}
+
+int lq_certificate_match(LQCert *cert_left, LQCert *cert_right, int match_response) {
+	int r;
+	size_t cl;
+	size_t cr;
+	LQCert *left;
+	LQCert *right;
+	char bl[LQ_BLOCKSIZE];
+	char br[LQ_BLOCKSIZE];
+
+	if (match_response) {
+		left = cert_left;
+		right = cert_right;
+	} else {
+		left = lq_certificate_to_request(cert_left);
+		if (left == NULL) {
+			return ERR_FAIL;
+		}
+		right = lq_certificate_to_request(cert_right);
+		if (right == NULL) {
+			lq_certificate_free(left);
+			return ERR_FAIL;
+		}
+	}
+	cl = LQ_BLOCKSIZE;
+	r = lq_certificate_serialize(cert_left, NULL, bl, &cl);
+	if (r) {
+		if (match_response) {
+			lq_certificate_free(right);
+			lq_certificate_free(left);
+		}
+		return ERR_ENCODING;
+	}
+	cr = LQ_BLOCKSIZE;
+	r = lq_certificate_serialize(cert_right, NULL, bl, &cr);
+	if (r) {
+		if (match_response) {
+			lq_certificate_free(right);
+			lq_certificate_free(left);
+		}
+		return ERR_ENCODING;
+	}
+	if (cr != cl) {
+		if (match_response) {
+			lq_certificate_free(right);
+			lq_certificate_free(left);
+		}
+		return ERR_COMPAT;
+	}
+	r = lq_cmp(bl, br, cl);
+	if (r) {
+		if (match_response) {
+			lq_certificate_free(right);
+			lq_certificate_free(left);
+		}
+		return ERR_COMPAT;
+	}
+	if (match_response) {
+		lq_certificate_free(right);
+		lq_certificate_free(left);
+	}
+	return ERR_OK;
+}
+
 int lq_certificate_deserialize(LQCert **cert, LQResolve *resolve, char *in, size_t in_len) {
 	int r;
 	int c;

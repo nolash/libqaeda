@@ -143,4 +143,8 @@ void lq_msg_free(LQMsg *msg);
  */
 int lq_attach_serialize(const char *in, size_t in_len, char *out, size_t *out_len);
 
+
+char* lq_msg_fingerprint(LQMsg *msg);
+
+
 #endif // LIBQAEDA_MSG_H_

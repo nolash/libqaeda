@@ -26,8 +26,9 @@ struct lq_certificate_t {
 	LQSig *request_sig; ///< Signature over a request message and the linked certificate. If the linked certificate is NULL, the certificate data used in the signature with be a LQ_DIGEST_LEN string with all bytes set to 0.
 	LQMsg *response; ///< A response message encapsulates an arbitrary string of data that confirms a request. This field must be NULL unless a signed requests exists.
 	LQSig *response_sig; ///< Signature over a response message. This field must be NULL unless a response message is set. The signature is calculated over both the response and the signed request.
-	LQCert *parent; ///< Link to previous certificate. Optional. Set to NULL if no link exists.
-	char parent_hash[LQ_DIGEST_LEN];
+	LQCert *parent; ///< Link to previous certificate. Optional. Ignored if parent_hash is 0.
+	char parent_hash[LQ_DIGEST_LEN];  ///< Hash of link to previous certificate. Optional. Set to zeros if no link exists.
+
 };
 
 /**

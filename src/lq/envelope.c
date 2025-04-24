@@ -174,7 +174,6 @@ int lq_envelope_deserialize(LQEnvelope **env, LQResolve *resolve, const char *in
 	char tmp[LQ_BLOCKSIZE];
 	char node_seq_name[32];
 	int hint;
-	char *p;
 	LQCert *cert;
 	asn1_node item;
 
