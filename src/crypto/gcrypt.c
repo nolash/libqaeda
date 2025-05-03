@@ -29,6 +29,13 @@ enum gpg_find_mode_e {
 	GPG_FIND_FINGERPRINT, ///< Load only the key matching the fingerprint.
 };
 
+/// TODO: move create mode to lq/crypto settings
+#ifdef GPG_NOCREATE
+static enum gpg_find_mode_e default_mode = GPG_FIND_MAIN;
+#else
+static enum gpg_find_mode_e default_mode = GPG_FIND_ORCREATE;
+#endif
+
 extern char zeros[65];
 
 /**
@@ -735,6 +742,10 @@ static int gpg_key_load(struct gpg_store *gpg, const char *passphrase, size_t pa
 			if (r == ERR_OK) {
 				break;
 			}
+			if (r != ERR_NOENT) {
+				debug(LLOG_INFO, "gpg", "default decrypt failed");
+				break;
+			}
 			// if no key could be loaded, attempt to create one.
 			if (!lq_cmp(gpg_fingerprint_zero, gpg->fingerprint, LQ_FP_LEN)) {
 				debug(LLOG_DEBUG, "gpg", "default private key not found, attempting create new");
@@ -784,7 +795,7 @@ LQPrivKey* lq_privatekey_load(const char *passphrase, size_t passphrase_len, con
 	}
 	lq_zero(pk->impl, sizeof(struct gpg_store));
 	gpg = (struct gpg_store*)pk->impl;
-	m = GPG_FIND_ORCREATE;
+	m = default_mode;
 	if (fingerprint != NULL) {
 		lq_cpy(gpg->fingerprint, fingerprint, LQ_FP_LEN);
 		m = GPG_FIND_FINGERPRINT;
