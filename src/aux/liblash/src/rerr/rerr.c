@@ -23,6 +23,7 @@ char *rerr_base[3] = {
 	"Wrong byteorder",
 	"Value too large",
 	"Value too small",
+	"End of file",
 #endif
 };
 #endif

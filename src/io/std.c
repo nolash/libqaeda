@@ -51,6 +51,7 @@ static int fltr_files(const struct dirent *d) {
 
 /**
  * \todo scandir calls malloc, so lq_alloc needs malloc alias that maps to it.
+ * \todo strdup doubles the mem needed for the iteration, instead need to keep scandir state and release after treatment
  */
 int lq_files(const char *path, char **files, size_t files_len) {
 	int r;
@@ -66,7 +67,8 @@ int lq_files(const char *path, char **files, size_t files_len) {
 		return -2;	
 	}
 	for (i = 0; i < r; i++) {
-		*(files+i) = (*(ls+i))->d_name;
+		//*(files+i) = (*(ls+i))->d_name;
+		*(files+i) = strdup((*(ls+i))->d_name);
 	}
 	*(files+i+1) = NULL;
 	lq_free(ls);

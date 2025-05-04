@@ -16,6 +16,7 @@ enum err_base_e {
 	ERR_BYTEORDER,
 	ERR_OVERFLOW,
 	ERR_UNDERFLOW,
+	ERR_EOF,
 };
 
 #ifndef RERR_N_PFX 

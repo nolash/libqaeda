@@ -4,26 +4,31 @@
 
 #include "lq/store.h"
 #include "lq/mem.h"
+#include "lq/query.h"
 #include "lq/io.h"
-
+#include "lq/err.h"
 
 extern LQStore LQFileContent;
 
-START_TEST(check_store_count) {
+/**
+ * \todo DRY file store dir creation
+ */
+START_TEST(check_query_full) {
 	int r;
 	LQStore store;
+	char path[LQ_PATH_MAX];
 	char *k;
 	char *v;
 	size_t kl;
 	size_t vl;
-	char path[LQ_PATH_MAX];
+	LQQuery *query;
 
 	lq_cpy(&store, &LQFileContent, sizeof(LQStore));
 	lq_cpy(path, "/tmp/lqstore_file_XXXXXX", 25);
 	store.userdata = mktempdir(path);
 	*((char*)(store.userdata+24)) = '/';
 	*((char*)(store.userdata+25)) = 0x0;
-	
+
 	k = "aaa";
 	v = "foo";
 	kl = 3;
@@ -66,9 +71,15 @@ START_TEST(check_store_count) {
 	vl = 5;
 	store.put(LQ_CONTENT_CERT, &store, k, &kl, v, vl);
 
-	r = store.count(LQ_CONTENT_MSG, &store, "aa", 2);
+	query = lq_query_new(LQ_CONTENT_RAW, &store, "aa", 2);
+	ck_assert_ptr_nonnull(query);
 
-	ck_assert_int_eq(r, 2);
+	r = lq_query_next(query);
+	ck_assert_int_eq(r, ERR_OK);
+	r = lq_query_next(query);
+	ck_assert_int_eq(r, ERR_OK);
+	r = lq_query_next(query);
+	ck_assert_int_eq(r, ERR_EOF);
 }
 END_TEST
 
@@ -76,9 +87,9 @@ Suite * common_suite(void) {
 	Suite *s;
 	TCase *tc;
 
-	s = suite_create("store");
+	s = suite_create("query");
 	tc = tcase_create("files");
-	tcase_add_test(tc, check_store_count);
+	tcase_add_test(tc, check_query_full);
 	suite_add_tcase(s, tc);
 
 	return s;

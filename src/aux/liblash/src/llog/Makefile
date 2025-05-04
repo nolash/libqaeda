@@ -6,11 +6,14 @@ VERSION = 0.0.1
 
 all: $(OBJS)
 
-test: all
-	$(CC) $(CFLAGS) test.c llog.o hex.o -o test.out $(LDFLAGS)
+hex:
+	make -C ../hex all
+
+test: hex all
+	$(CC) $(CFLAGS) test.c llog.o ../hex/hex.o -o test.out $(LDFLAGS)
 
 %.o: %.c
-	$(CC) $(CFLAGS) -c $< -o $@ $(LDFLAGS)
+	$(CC) $(CFLAGS) -I../hex  -c $< -o $@ $(LDFLAGS)
 
 clean:
 	rm -vf *.o
@@ -21,8 +24,6 @@ archive:
 	git archive --format=tar.gz HEAD -o llog-$(VERSION).tar.gz
 
 %.so.o: %.c
-	$(CC) $(CFLAGS) -c $< -o $@ -fpic
+	$(CC) $(CFLAGS) -I../hex -c $< -o $@ -fpic
 
 shared: $(SOBJS)
-
-

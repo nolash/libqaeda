@@ -12,6 +12,7 @@
 #include "lq/store.h"
 #include "lq/err.h"
 #include "lq/mem.h"
+#include "lq/query.h"
 #include "debug.h"
 
 static const int store_typ_file = 3;
@@ -20,7 +21,7 @@ static const int store_typ_file = 3;
 int lq_file_content_count(enum payload_e typ, LQStore *store, const char *key, size_t key_len) {
 	int r;
 	char **out;
-	char buf[LQ_DIGEST_LEN * 2 + 1];
+	char buf[LQ_STORE_KEY_MAX * 2 + 1];
 	char pfx[1024];
 
 	out = lq_alloc(sizeof(char**) * LQ_DIRS_MAX);
@@ -39,7 +40,7 @@ int lq_file_content_get(enum payload_e typ, LQStore *store, const char *key, siz
 	int f;
 	size_t l;
 	size_t c;
-	char buf[LQ_DIGEST_LEN * 2 + 1];
+	char buf[LQ_STORE_KEY_MAX * 2 + 1];
 	char path[1024];
 	char *p;
 
@@ -127,6 +128,102 @@ int lq_file_content_put(enum payload_e typ, LQStore *store, const char *key, siz
 void lq_file_content_free(LQStore *store) {
 	lq_free(store->userdata);
 	lq_free(store);
+}
+
+/**
+ * \todo DRY with lq_files_pfx
+ * \todo prefix mismatches leak?
+ */
+static int query_list(const char *path, char **files, size_t files_len, const char *prefix, char prefix_len) {
+	int r;
+	int i;
+	int c;
+	size_t l;
+
+	c = 0;
+	r = lq_files(path, files, files_len);
+	for (i = 0; i < r; i++) {
+		l = strlen(*(files+i));
+		if (l < prefix_len) {
+			lq_free(*(files+i));
+		}
+		if (!lq_cmp(prefix, *(files+i), prefix_len)) {
+	//		lq_free(*(files+c));// attempt at stopping mismatch leak.
+			*(files+c) = *(files+i);
+			c++;
+		}
+	}
+	return c;
+}
+
+/// \todo  DRY with lq_file_count
+LQQuery* lq_query_new(enum payload_e typ, LQStore *store, const char *key, size_t key_len) {
+	LQQuery *query;
+	//char **out;
+	char buf[LQ_STORE_KEY_MAX * 2 + 1];
+	char pfx[1024];
+
+	query = lq_alloc(sizeof(LQQuery));
+	lq_zero(query, sizeof(LQQuery));
+	query->files = lq_alloc(sizeof(char**) * LQ_DIRS_MAX);
+	pfx[0] = (char)typ + 0x30;
+	b2h((const unsigned char*)key, (int)key_len, (unsigned char*)buf);
+	lq_cpy(pfx+1, buf, strlen(buf) + 1);
+
+	key_len *= 2;
+	query->typ = typ;
+	query->files_len = query_list(store->userdata, query->files, LQ_DIRS_MAX, pfx, key_len + 1);
+	if (query->files_len == 0) {
+		return NULL;
+	}
+	query->value = lq_alloc(LQ_STORE_VAL_MAX);
+	query->store = store;
+	query->state = LQ_QUERY_READY;
+
+	return query;
+}
+
+int lq_query_next(LQQuery *query) {
+	int r;
+	char *p;
+	char b[LQ_STORE_KEY_MAX];
+
+	if (query->state & LQ_QUERY_EOF) {
+		return ERR_EOF;	
+	}
+	p = *(query->files + query->files_cur) + 1;
+	r = h2b(p, (char*)b);
+	if (r == 0) {
+		query->state = LQ_QUERY_GONER;
+		return ERR_ENCODING;
+	}
+	r = query->store->get(query->typ, query->store, b, r, query->value, &query->value_len);
+	if (r != ERR_OK) {
+		query->state = LQ_QUERY_GONER;
+		return ERR_FAIL;
+	}
+	if (query->files_cur++ == query->files_len) {
+		query->state = LQ_QUERY_EOF;
+	}
+	return ERR_OK;
+}
+
+void lq_query_free(LQQuery *query) {
+	char *p;
+	int i;
+
+	i = 0;
+	while(1) {
+		if (*((query->files)+i) != NULL) {
+			break;
+		}
+		lq_free(*((query->files)+i));
+		*((query->files)+i) = NULL;
+		i++;
+	}
+	lq_free(query->files);
+	lq_free(query->value);
+	lq_free(query);
 }
 
 struct lq_store_t LQFileContent = {

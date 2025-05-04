@@ -1,7 +1,5 @@
 #include "llog.h"
-
-extern void b2h(const unsigned char *b, int l, char *hx);
-extern char* c2h(char in, char *out);
+#include "hex.h"
 
 
 char lloglvl_str[][4]  = {

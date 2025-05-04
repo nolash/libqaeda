@@ -7,8 +7,8 @@ LIBS := ../asn1/defs_asn1_tab.o `pkg-config --libs libtasn1 libgcrypt` -L.. -L..
 LDFLAGS := -lcheck $(LIBS)
 COMMONOBJS = ../mem/std.o ../lq/config.o ../lq/err.o ../lq/base.o ../debug.o
 
-all: build all-tests
-#all: build one-test
+#all: build all-tests
+all: build one-test
 
 all-tests:
 	cK_FORK=no LD_LIBRARY_PATH=`realpath ../aux/lib` ./test_test_bin
@@ -20,9 +20,10 @@ all-tests:
 	CK_FORK=no LD_LIBRARY_PATH=`realpath ../aux/lib` ./test_envelope_bin
 	CK_FORK=no LD_LIBRARY_PATH=`realpath ../aux/lib` ./test_trust_bin
 	CK_FORK=no LD_LIBRARY_PATH=`realpath ../aux/lib` ./test_store_bin
+	CK_FORK=no LD_LIBRARY_PATH=`realpath ../aux/lib` ./test_query_bin
 
 one-test: build
-	CK_FORK=no LD_LIBRARY_PATH=`realpath ../aux/lib` ./test_envelope_bin
+	CK_FORK=no LD_LIBRARY_PATH=`realpath ../aux/lib` ./test_query_bin
 
 test: all
 
@@ -39,6 +40,7 @@ build:
 	$(CC) $(CFLAGS) test_envelope.c -o test_envelope_bin $(COMMONOBJS) ../store/dummy.o $(LDFLAGS) -lgcrypt
 	$(CC) $(CFLAGS) test_trust.c -o test_trust_bin $(COMMONOBJS) $(LDFLAGS)
 	$(CC) $(CFLAGS) test_store.c -o test_store_bin $(COMMONOBJS) $(LDFLAGS) -lgcrypt
+	$(CC) $(CFLAGS) test_query.c -o test_query_bin $(COMMONOBJS) $(LDFLAGS) -lgcrypt
 
 clean:
 	rm -vf test_*_bin
