@@ -16,12 +16,18 @@ struct lq_query_t {
 	char **files;
 	size_t files_len;
 	size_t files_cur;
+	char *key;
+	size_t key_len;
 	char *value;
 	size_t value_len;
 };
 
 LQQuery* lq_query_new(enum payload_e typ, LQStore *store, const char *key, size_t key_len);
 int lq_query_next(LQQuery *query);
+char* lq_query_get_key(LQQuery *query);
+int lq_query_get_key_len(LQQuery *query);
+char* lq_query_get_val(LQQuery *query);
+int lq_query_get_val_len(LQQuery *query);
 void lq_query_free(LQQuery *query);
 
 #endif // LIBQAEDA_QUERY_H_

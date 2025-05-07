@@ -177,7 +177,7 @@ LQQuery* lq_query_new(enum payload_e typ, LQStore *store, const char *key, size_
 		return NULL;
 	}
 	query->value = lq_alloc(LQ_STORE_VAL_MAX);
-	query->value = lq_alloc(LQ_STORE_VAL_MAX);
+	query->key = lq_alloc(LQ_STORE_KEY_MAX);
 	query->store = store;
 	query->state = LQ_QUERY_READY;
 
@@ -189,28 +189,56 @@ LQQuery* lq_query_new(enum payload_e typ, LQStore *store, const char *key, size_
 int lq_query_next(LQQuery *query) {
 	int r;
 	char *p;
-	char b[LQ_STORE_KEY_MAX];
+	//char b[LQ_STORE_KEY_MAX];
 
 	if (query->state & LQ_QUERY_EOF) {
 		return ERR_EOF;	
 	}
 	p = *(query->files + query->files_cur) + 1;
-	r = h2b(p, (char*)b);
-	if (r == 0) {
+	query->key_len = h2b(p, (char*)query->key);
+	if (query->key_len == 0) {
 		query->state = LQ_QUERY_GONER;
 		return ERR_ENCODING;
 	}
 	query->value_len = LQ_STORE_VAL_MAX;
-	r = query->store->get(query->typ, query->store, b, r, query->value, &query->value_len);
+	r = query->store->get(query->typ, query->store, query->key, query->key_len, query->value, &query->value_len);
 	if (r != ERR_OK) {
 		query->value_len = 0;
 		query->state = LQ_QUERY_GONER;
 		return ERR_FAIL;
 	}
 	if (++query->files_cur == query->files_len) {
-		query->state = LQ_QUERY_EOF;
+		query->state |= LQ_QUERY_EOF;
 	}
 	return ERR_OK;
+}
+
+int lq_query_get_val_len(LQQuery *query) {
+	if (!(query->state & LQ_QUERY_READY)) {
+		return -1;
+	}
+	return query->value_len;
+}
+
+char* lq_query_get_val(LQQuery *query) {
+	if (!(query->state & LQ_QUERY_READY)) {
+		return NULL;
+	}
+	return query->value;
+}
+
+int lq_query_get_key_len(LQQuery *query) {
+	if (!(query->state & LQ_QUERY_READY)) {
+		return -1;
+	}
+	return query->key_len;
+}
+
+char* lq_query_get_key(LQQuery *query) {
+	if (!(query->state & LQ_QUERY_READY)) {
+		return NULL;
+	}
+	return query->key;
 }
 
 void lq_query_free(LQQuery *query) {
@@ -227,6 +255,7 @@ void lq_query_free(LQQuery *query) {
 		i++;
 	}
 	lq_free(query->files);
+	lq_free(query->key);
 	lq_free(query->value);
 	lq_free(query);
 }

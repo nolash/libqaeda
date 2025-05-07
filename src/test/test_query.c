@@ -79,7 +79,8 @@ START_TEST(check_query_full) {
 	r = lq_query_next(query);
 	ck_assert_int_eq(r, ERR_OK);
 	r = lq_query_next(query);
-	ck_assert_int_eq(r, ERR_EOF);
+	ck_assert_int_eq(r, ERR_OK | ERR_EOF);
+	lq_query_free(query);
 
 	query = lq_query_new(LQ_CONTENT_MSG, &store, "aa", 2);
 	ck_assert_ptr_nonnull(query);
@@ -91,8 +92,19 @@ START_TEST(check_query_full) {
 	r = lq_query_next(query);
 	ck_assert_int_eq(r, ERR_OK);
 	r = lq_query_next(query);
-	ck_assert_int_eq(r, ERR_EOF);
+	ck_assert_int_eq(r, ERR_OK | ERR_EOF);
 
+	k = lq_query_get_key(query);
+	kl = lq_query_get_key_len(query);
+	ck_assert_int_eq(kl, 3);
+	ck_assert_mem_eq(k, "aac", kl);
+
+	v = lq_query_get_val(query);
+	vl = lq_query_get_val_len(query);
+	ck_assert_int_eq(vl, 6);
+	ck_assert_mem_eq(v, "blinky", vl);
+
+	lq_query_free(query);
 }
 END_TEST
 
