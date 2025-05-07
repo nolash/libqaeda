@@ -35,9 +35,9 @@ START_TEST(check_query_full) {
 	vl = 3;
 	store.put(LQ_CONTENT_RAW, &store, k, &kl, v, vl);
 
-	k = "ab";
+	k = "aab";
 	v = "bar";
-	kl = 2;
+	kl = 3;
 	vl = 3;
 	store.put(LQ_CONTENT_RAW, &store, k, &kl, v, vl);
 
@@ -53,9 +53,9 @@ START_TEST(check_query_full) {
 	vl = 5;
 	store.put(LQ_CONTENT_MSG, &store, k, &kl, v, vl);
 
-	k = "b";
+	k = "aac";
 	v = "blinky";
-	kl = 1;
+	kl = 3;
 	vl = 6;
 	store.put(LQ_CONTENT_MSG, &store, k, &kl, v, vl);
 
@@ -80,6 +80,19 @@ START_TEST(check_query_full) {
 	ck_assert_int_eq(r, ERR_OK);
 	r = lq_query_next(query);
 	ck_assert_int_eq(r, ERR_EOF);
+
+	query = lq_query_new(LQ_CONTENT_MSG, &store, "aa", 2);
+	ck_assert_ptr_nonnull(query);
+
+	r = lq_query_next(query);
+	ck_assert_int_eq(r, ERR_OK);
+	r = lq_query_next(query);
+	ck_assert_int_eq(r, ERR_OK);
+	r = lq_query_next(query);
+	ck_assert_int_eq(r, ERR_OK);
+	r = lq_query_next(query);
+	ck_assert_int_eq(r, ERR_EOF);
+
 }
 END_TEST
 

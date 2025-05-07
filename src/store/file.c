@@ -177,8 +177,11 @@ LQQuery* lq_query_new(enum payload_e typ, LQStore *store, const char *key, size_
 		return NULL;
 	}
 	query->value = lq_alloc(LQ_STORE_VAL_MAX);
+	query->value = lq_alloc(LQ_STORE_VAL_MAX);
 	query->store = store;
 	query->state = LQ_QUERY_READY;
+
+	debug_x(LLOG_DEBUG, "store.file", "query", 2, MORGEL_TYP_STR, 0, "pfx", key, MORGEL_TYP_NUM, 0, "typ", (int)typ);
 
 	return query;
 }
@@ -197,12 +200,14 @@ int lq_query_next(LQQuery *query) {
 		query->state = LQ_QUERY_GONER;
 		return ERR_ENCODING;
 	}
+	query->value_len = LQ_STORE_VAL_MAX;
 	r = query->store->get(query->typ, query->store, b, r, query->value, &query->value_len);
 	if (r != ERR_OK) {
+		query->value_len = 0;
 		query->state = LQ_QUERY_GONER;
 		return ERR_FAIL;
 	}
-	if (query->files_cur++ == query->files_len) {
+	if (++query->files_cur == query->files_len) {
 		query->state = LQ_QUERY_EOF;
 	}
 	return ERR_OK;
