@@ -42,8 +42,19 @@ int main(int argc, char **argv) {
 	r = lq_certificate_deserialize(&cert, NULL, b, c);
 	if (r) {
 		debug_logerr(LLOG_ERROR, r, "deserialize err");
+		lq_finish();
+		return 1;
 	}
 
+	r = lq_certificate_verify(cert);
+	if (r) {
+		debug_logerr(LLOG_ERROR, r, "verify err");
+		lq_certificate_free(cert);
+		lq_finish();
+		return 1;
+	}
+
+	lq_certificate_free(cert);
 	lq_finish();
 	return r;
 }

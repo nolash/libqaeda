@@ -346,6 +346,10 @@ int lq_certificate_serialize(LQCert *cert, LQResolve *resolve, char *out, size_t
 	return ERR_OK;
 }
 
+/**
+ * \todo pubkey is copied to signature from message, to prevent a double-free. Wastes up to 2x sig bytes.
+ *
+ */
 int lq_certificate_deserialize(LQCert **cert, LQResolve *resolve, char *in, size_t in_len) {
 	int r;
 	int c;
@@ -393,7 +397,7 @@ int lq_certificate_deserialize(LQCert **cert, LQResolve *resolve, char *in, size
 			return asn_except(&item, ERR_READ);
 		}
 		if (c > 0) {
-			p->request_sig = lq_signature_from_bytes(tmp, c, NULL);
+			p->request_sig = lq_signature_from_bytes(tmp, c, p->request->pubkey);
 		}
 	}
 
@@ -420,7 +424,7 @@ int lq_certificate_deserialize(LQCert **cert, LQResolve *resolve, char *in, size
 			return asn_except(&item, ERR_READ);
 		}
 		if (c > 0) {
-			p->response_sig = lq_signature_from_bytes(tmp, c, NULL);
+			p->response_sig = lq_signature_from_bytes(tmp, c, p->response->pubkey);
 		}
 	}
 
