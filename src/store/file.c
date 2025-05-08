@@ -280,3 +280,8 @@ LQStore* lq_store_new(const char *spec) {
 	lq_cpy(store->userdata, spec, l);
 	return store;
 }
+
+void lq_store_free(LQStore *store) {
+	lq_free(store->userdata);
+	lq_free(store);
+}

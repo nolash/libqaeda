@@ -66,4 +66,11 @@ struct lq_resolve_t {
  */
 LQStore* lq_store_new(const char *spec);
 
+/**
+ * \brief Release resources used by the store.
+ * 
+ * \param[in] The store to operate on.
+ */
+void lq_store_free(LQStore *store);
+
 #endif // LIBQAEDA_STORE_H_
