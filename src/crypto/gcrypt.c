@@ -973,7 +973,9 @@ LQSig* lq_privatekey_sign(LQPrivKey *pk, const char *data, size_t data_len, cons
 }
 
 LQSig* lq_signature_from_bytes(const char *sig_data, size_t sig_len, LQPubKey *pubkey) {
+	size_t r;
 	LQSig *sig;
+	char *pubkey_out;
 
 	if (!lq_cmp(sig_data, zeros, LQ_SIGN_LEN)) {
 		return NULL;
@@ -985,8 +987,11 @@ LQSig* lq_signature_from_bytes(const char *sig_data, size_t sig_len, LQPubKey *p
 	lq_cpy(sig->impl, sig_data, LQ_SIGN_LEN);
 
 	if (pubkey != NULL) {
-		sig->pubkey = lq_alloc(sizeof(LQPubKey));
-		lq_cpy(sig->pubkey, pubkey, sizeof(LQPubKey));
+		r = lq_publickey_bytes(pubkey, &pubkey_out);
+		if (!r) {
+			return NULL;
+		}
+		sig->pubkey = lq_publickey_new(pubkey_out);
 	}
 	return sig;
 }
