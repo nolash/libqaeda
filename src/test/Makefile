@@ -23,7 +23,8 @@ all-tests:
 	CK_FORK=no LD_LIBRARY_PATH=`realpath ../aux/lib` ./test_query_bin
 
 one-test: build
-	CK_FORK=no LD_LIBRARY_PATH=`realpath ../aux/lib` ./test_query_bin
+	CK_FORK=no LD_LIBRARY_PATH=`realpath ../aux/lib` ./test_cert_bin
+	#CK_FORK=no LD_LIBRARY_PATH=`realpath ../aux/lib` ./test_query_bin
 
 test: all
 

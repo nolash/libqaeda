@@ -119,10 +119,14 @@ int lq_certificate_deserialize(LQCert **cert, LQResolve *resolve, char *in, size
  *
  * Messages must have public key set.
  *
+ * The public key pointers in the output parameters are valid until the certificate is freed.
+ *
  * \param[in] Certificate to verify
+ * \param[out] If not NULL, provides location to store pointer to request publickey. If certificate does not contain a valid request, this will be set to NULL.
+ * \param[out] If not NULL, provider location to store pointer to response publickey. If certificate does not contain a valid response, this will be set to NULL.
  * \return ERR_OK if verified, ERR_NOOP if no message.
  */
-int lq_certificate_verify(LQCert *cert);
+int lq_certificate_verify(LQCert *cert, LQPubKey **request_pubkey, LQPubKey **response_pubkey);
 
 
 /***

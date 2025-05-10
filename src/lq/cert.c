@@ -159,7 +159,7 @@ int lq_certificate_sign(LQCert *cert, LQPrivKey *pk) {
 	return ERR_OK;
 }
 
-int lq_certificate_verify(LQCert *cert) {
+int lq_certificate_verify(LQCert *cert, LQPubKey **request_pubkey, LQPubKey **response_pubkey) {
 	int r;
 	char out[LQ_BLOCKSIZE];
 	LQCert cert_valid;
@@ -198,6 +198,16 @@ int lq_certificate_verify(LQCert *cert) {
 	r = lq_msg_verify_extra(cert_valid.response, cert_valid.response_sig, NULL, out, LQ_DIGEST_LEN);
 	if (r != ERR_OK) {
 		return debug_logerr(LLOG_DEBUG, r, "cert verify response");
+	}
+
+	if (request_pubkey != NULL) {
+		*request_pubkey = cert->request_sig->pubkey;
+	}
+
+	if (response_pubkey != NULL) {
+		if (cert_valid.response_sig != NULL) {
+			*response_pubkey = cert->response_sig->pubkey;
+		}
 	}
 
 	return ERR_OK;

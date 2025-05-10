@@ -49,7 +49,7 @@ START_TEST(check_cert_sig_req) {
 	r = lq_certificate_request(cert, req, pk);
 	ck_assert_int_eq(r, 0);
 
-	r = lq_certificate_verify(cert);
+	r = lq_certificate_verify(cert, NULL, NULL);
 	ck_assert_int_eq(r, 0);
 
 	lq_certificate_free(cert);
@@ -88,7 +88,7 @@ START_TEST(check_cert_sig_res) {
 	r = lq_certificate_respond(cert, res, pk_bob);
 	ck_assert_int_eq(r, 0);
 
-	r = lq_certificate_verify(cert);
+	r = lq_certificate_verify(cert, NULL, NULL);
 	ck_assert_int_eq(r, 0);
 
 	lq_certificate_free(cert);
@@ -208,6 +208,7 @@ START_TEST(check_cert_symmetric_ser_rsp_onesig) {
 
 	r = lq_certificate_deserialize(&cert, NULL, buf, c);
 	ck_assert_int_eq(r, 0);
+
 	r = lq_certificate_respond(cert, res, pk);
 	ck_assert_int_eq(r, 0);
 
@@ -257,6 +258,128 @@ START_TEST(check_cert_symmetric_ser_rsp_bothsig) {
 	lq_certificate_free(cert);
 }
 END_TEST
+
+START_TEST(check_cert_verify_deserialize_literal) {
+	int r;
+	size_t c;
+	LQCert *cert;
+	LQMsg *req;
+	LQMsg *res;
+	LQPrivKey *pk_alice;
+	LQPrivKey *pk_bob;
+	char buf[LQ_BLOCKSIZE];
+
+	pk_alice = lq_privatekey_new(passphrase, sizeof(passphrase));
+	ck_assert_ptr_nonnull(pk_alice);
+	pk_bob = lq_privatekey_new(passphrase, sizeof(passphrase));
+	ck_assert_ptr_nonnull(pk_bob);
+	r = lq_privatekey_unlock(pk_alice, passphrase, sizeof(passphrase));
+	ck_assert_int_eq(r, 0);
+	r = lq_privatekey_unlock(pk_bob, passphrase, sizeof(passphrase));
+	ck_assert_int_eq(r, 0);
+	cert = lq_certificate_new(NULL);
+	ck_assert_ptr_nonnull(cert);
+
+	req = lq_msg_new(data, strlen(data) + 1);
+	ck_assert_ptr_nonnull(req);
+	lq_msg_literal(req);
+	r = lq_certificate_request(cert, req, pk_alice);
+	ck_assert_int_eq(r, 0);
+
+	res = lq_msg_new(data_two, strlen(data_two) + 1);
+	ck_assert_ptr_nonnull(res);
+	lq_msg_literal(res);
+	r = lq_certificate_respond(cert, res, pk_bob);
+	ck_assert_int_eq(r, 0);
+
+	c = LQ_BLOCKSIZE; 
+	r = lq_certificate_serialize(cert, NULL, buf, &c);
+	ck_assert_int_eq(r, 0);
+	lq_certificate_free(cert);
+
+	r = lq_certificate_deserialize(&cert, NULL, buf, c);
+	ck_assert_int_eq(r, 0);
+
+	r = lq_certificate_verify(cert, NULL, NULL);
+	ck_assert_int_eq(r, 0);
+
+	lq_certificate_free(cert);
+}
+END_TEST
+
+START_TEST(check_cert_verify_deserialize_literal_with_publickeys) {
+	int r;
+	size_t c;
+	LQCert *cert;
+	LQMsg *req;
+	LQMsg *res;
+	LQPrivKey *pk_alice;
+	LQPrivKey *pk_bob;
+	LQPubKey *pubk_alice;
+	LQPubKey *pubk_bob;
+	LQPubKey *pubk_request;
+	LQPubKey *pubk_response;
+	char buf[LQ_BLOCKSIZE];
+
+	pk_alice = lq_privatekey_new(passphrase, sizeof(passphrase));
+	ck_assert_ptr_nonnull(pk_alice);
+	pk_bob = lq_privatekey_new(passphrase, sizeof(passphrase));
+	ck_assert_ptr_nonnull(pk_bob);
+	r = lq_privatekey_unlock(pk_alice, passphrase, sizeof(passphrase));
+	ck_assert_int_eq(r, 0);
+	r = lq_privatekey_unlock(pk_bob, passphrase, sizeof(passphrase));
+	ck_assert_int_eq(r, 0);
+	cert = lq_certificate_new(NULL);
+	ck_assert_ptr_nonnull(cert);
+
+	req = lq_msg_new(data, strlen(data) + 1);
+	ck_assert_ptr_nonnull(req);
+	lq_msg_literal(req);
+	r = lq_certificate_request(cert, req, pk_alice);
+	ck_assert_int_eq(r, 0);
+
+	res = lq_msg_new(data_two, strlen(data_two) + 1);
+	ck_assert_ptr_nonnull(res);
+	lq_msg_literal(res);
+	r = lq_certificate_respond(cert, res, pk_bob);
+	ck_assert_int_eq(r, 0);
+
+	c = LQ_BLOCKSIZE; 
+	r = lq_certificate_serialize(cert, NULL, buf, &c);
+	ck_assert_int_eq(r, 0);
+	lq_certificate_free(cert);
+
+	r = lq_certificate_deserialize(&cert, NULL, buf, c);
+	ck_assert_int_eq(r, 0);
+
+	pubk_alice = lq_publickey_from_privatekey(pk_alice);
+	ck_assert_ptr_nonnull(pubk_alice);
+	pubk_bob = lq_publickey_from_privatekey(pk_bob);
+	ck_assert_ptr_nonnull(pubk_bob);
+
+	r = lq_certificate_verify(cert, &pubk_request, NULL);
+	ck_assert_int_eq(r, 0);
+	r = lq_publickey_match(pubk_alice, pubk_request);
+	ck_assert_int_eq(r, 0);
+
+	r = lq_certificate_verify(cert, NULL, &pubk_response);
+	ck_assert_int_eq(r, 0);
+	r = lq_publickey_match(pubk_bob, pubk_response);
+	ck_assert_int_eq(r, 0);
+
+	r = lq_certificate_verify(cert, &pubk_request, &pubk_response);
+	ck_assert_int_eq(r, 0);
+	r = lq_publickey_match(pubk_alice, pubk_request);
+	ck_assert_int_eq(r, 0);
+	r = lq_publickey_match(pubk_bob, pubk_response);
+	ck_assert_int_eq(r, 0);
+
+	lq_publickey_free(pubk_bob);
+	lq_publickey_free(pubk_alice);
+	lq_certificate_free(cert);
+
+}
+END_TEST
 //
 //START_TEST(check_cert_attach) {
 //	int r;
@@ -297,6 +420,8 @@ Suite * common_suite(void) {
 	tcase_add_test(tc, check_cert_symmetric_ser_req_sig);
 	tcase_add_test(tc, check_cert_symmetric_ser_rsp_onesig);
 	tcase_add_test(tc, check_cert_symmetric_ser_rsp_bothsig);
+	tcase_add_test(tc, check_cert_verify_deserialize_literal);
+	tcase_add_test(tc, check_cert_verify_deserialize_literal_with_publickeys);
 //	tcase_add_test(tc, check_cert_attach);
 	suite_add_tcase(s, tc);
 

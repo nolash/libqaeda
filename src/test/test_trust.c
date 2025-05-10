@@ -63,7 +63,7 @@ START_TEST(check_trust_none) {
 	pubkey_bob = lq_publickey_new(pubkey_data_bob);
 
 	lolen = lq_publickey_bytes(pubkey_alice, &lodata);
-	store->put(LQ_CONTENT_KEY, store, lodata, &lolen, (char*)trust_alice, 2);
+	store->put(LQ_CONTENT_KEY_PUBLIC, store, lodata, &lolen, (char*)trust_alice, 2);
 
 	lq_set(flag_test, 0, 2); 
 	r = lq_trust_check(pubkey_alice, store, TRUST_MATCH_NONE, flag_test);
@@ -73,7 +73,7 @@ START_TEST(check_trust_none) {
 	ck_assert_int_eq(r, -1);
 
 	lolen = lq_publickey_bytes(pubkey_bob, &lodata);
-	store->put(LQ_CONTENT_KEY, store, lodata, &lolen, (char*)trust_bob, 2);
+	store->put(LQ_CONTENT_KEY_PUBLIC, store, lodata, &lolen, (char*)trust_bob, 2);
 	r = lq_trust_check(pubkey_bob, store, TRUST_MATCH_NONE, flag_test);
 	ck_assert_int_eq(r, 1000000);
 
@@ -101,7 +101,7 @@ START_TEST(check_trust_one) {
 	pubkey_alice = lq_publickey_new(pubkey_data_alice);
 
 	lolen = lq_publickey_bytes(pubkey_alice, &lodata);
-	store->put(LQ_CONTENT_KEY, store, lodata, &lolen, (char*)trust_alice, 2);
+	store->put(LQ_CONTENT_KEY_PUBLIC, store, lodata, &lolen, (char*)trust_alice, 2);
 
 	flag_test[0] = 0;
 	flag_test[1] = 0x40;
@@ -132,7 +132,7 @@ START_TEST(check_trust_best) {
 	pubkey_alice = lq_publickey_new(pubkey_data_alice);
 
 	lolen = lq_publickey_bytes(pubkey_alice, &lodata);
-	store->put(LQ_CONTENT_KEY, store, lodata, &lolen, (char*)trust_alice, 2);
+	store->put(LQ_CONTENT_KEY_PUBLIC, store, lodata, &lolen, (char*)trust_alice, 2);
 
 	flag_test[0] = 0x13;
 	flag_test[1] = 0x60;
@@ -163,7 +163,7 @@ START_TEST(check_trust_all) {
 	pubkey_alice = lq_publickey_new(pubkey_data_alice);
 
 	lolen = lq_publickey_bytes(pubkey_alice, &lodata);
-	store->put(LQ_CONTENT_KEY, store, lodata, &lolen, (char*)trust_alice, 2);
+	store->put(LQ_CONTENT_KEY_PUBLIC, store, lodata, &lolen, (char*)trust_alice, 2);
 
 	flag_test[0] = 0x13;
 	flag_test[1] = 0x60;
