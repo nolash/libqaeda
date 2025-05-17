@@ -1202,6 +1202,10 @@ size_t lq_publickey_fingerprint(LQPubKey* pubk, char **out) {
 	return LQ_FP_LEN;
 }
 
+LQStore* lq_crypto_store() {
+	return gpg_key_store;
+}
+
 void lq_crypto_free() {
 	//lq_store_free((void*)gpg_key_store);
 	gpg_key_store->free(gpg_key_store);

@@ -4,6 +4,7 @@
 #include <stddef.h>
 
 #include "base.h"
+#include "store.h"
 
 #ifndef LQ_DIGEST_LEN
 /**
@@ -321,6 +322,16 @@ void lq_privatekey_free(LQPrivKey *pk);
  * \param[in] Private key to free.
  */
 void lq_signature_free(LQSig *sig);
+
+/**
+ * \brief Retrieve the store object used for the crypto component.
+ *
+ * Cannot be called before lq_crypto_init()
+ *
+ * \returns The LQStore object.
+ * \see lq_crypto_init
+ */
+LQStore* lq_crypto_store();
 
 /**
  * \brief Calculate digest over arbitrary data using the default algorithm.
