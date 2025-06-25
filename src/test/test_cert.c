@@ -388,7 +388,6 @@ START_TEST(check_cert_msg_material_request) {
 	LQMsg *req;
 	LQPrivKey *pk;
 	LQPubKey *pubk;
-	LQSig *sig;
 	char out[LQ_DIGEST_LEN];
 
 	pk = lq_privatekey_new(passphrase, sizeof(passphrase));
@@ -404,6 +403,7 @@ START_TEST(check_cert_msg_material_request) {
 
 	r = lq_certificate_request(cert, req, NULL);
 	ck_assert_int_eq(r, 0);
+	ck_assert_ptr_null(cert->request_sig);
 
 	pubk = lq_publickey_from_privatekey(pk);
 	ck_assert_ptr_nonnull(pubk);
@@ -411,8 +411,12 @@ START_TEST(check_cert_msg_material_request) {
 	r = lq_certificate_mat(cert, pubk, out);
 	ck_assert_int_eq(r, 0);
 
-	sig = lq_privatekey_sign(pk, out, LQ_DIGEST_LEN, NULL);
-	ck_assert_ptr_nonnull(sig);
+	cert->request_sig = lq_privatekey_sign(pk, out, LQ_DIGEST_LEN, NULL);
+	ck_assert_ptr_nonnull(cert->request_sig);
+
+	r = lq_certificate_verify(cert, NULL, NULL);
+	ck_assert_int_eq(r, 0);
+
 }
 END_TEST
 //
