@@ -53,7 +53,7 @@ void lq_certificate_set_domain(LQCert *cert, const char *domain);
 /**
  * \brief Receive the message signature material for the current state of the certificate.
  */
-int lq_certificate_mat(LQCert *cert, LQPubKey *pubk, char *out);
+char* lq_certificate_mat(const LQCert *cert, const LQPubKey *pubk, char *out);
 
 /**
  * \brief Sign the next pending message in the certificate.

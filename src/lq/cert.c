@@ -126,47 +126,52 @@ static int state_digest(LQCert *cert, char *out, int final) {
 /**
  * \todo DRY with lq_certificate_sign
  */
-int lq_certificate_mat(LQCert *cert, LQPubKey *pubk, char *out) {
+char* lq_certificate_mat(const LQCert *cert, const LQPubKey *pubk, char *out) {
 	int r;
 	char state[LQ_DIGEST_LEN];
 
 	r = state_digest(cert, state, 0);
 	if (r != ERR_OK) {
-		return r;
+		return NULL;
 	}
 
 	if (cert->response != NULL) {
 		if (cert->response_sig != NULL) {
-			return ERR_RESPONSE;
+			debug_logerr(LLOG_DEBUG, ERR_RESPONSE, "mat response sig");
+			return NULL;
 		}
 		if (cert->request == NULL) {
-			return ERR_INIT;	
+			debug_logerr(LLOG_DEBUG, ERR_INIT, "mat response init");
+			return NULL;
 		}
 		if (cert->response->pubkey == NULL) {
 			cert->response->pubkey = pubk;
 		}
 		r = lq_msg_mat(cert->response, NULL, state, LQ_DIGEST_LEN, out);
 		if (r) {
-			return r;
+			debug_logerr(LLOG_DEBUG, ERR_ENCODING, "mat msg");
+			return NULL;
 		}
 		
 		debug(LLOG_INFO, "cert", "mat response");
-		return ERR_OK;
+		return out;
 	}
 	if (cert->request == NULL) {
-		return ERR_INIT;
+		debug_logerr(LLOG_DEBUG, ERR_INIT, "mat req");
+		return NULL;
 	}
 	if (cert->request_sig != NULL) {
-		return ERR_REQUEST;
+		debug_logerr(LLOG_DEBUG, ERR_REQUEST, "mat req");
+		return NULL;
 	}
 	if (cert->request->pubkey == NULL) {
 		cert->request->pubkey = pubk;
 	}
 	r = lq_msg_mat(cert->request, NULL, state, LQ_DIGEST_LEN, out);
 	if (r) {
-		return r;
+		return NULL;
 	}
-	return ERR_OK;
+	return out;
 }
 
 int lq_certificate_sign(LQCert *cert, LQPrivKey *pk) {
