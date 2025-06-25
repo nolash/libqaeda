@@ -14,6 +14,8 @@ int main(int argc, char **argv) {
 	int c;
 	int l;
 	char b[LQ_CRYPTO_BUFLEN];
+	LQPubKey *pubk_req;
+	LQPubKey *pubk_res;
 	LQCert *cert;
 
 	lq_init();
@@ -46,7 +48,7 @@ int main(int argc, char **argv) {
 		return 1;
 	}
 
-	r = lq_certificate_verify(cert);
+	r = lq_certificate_verify(cert, &pubk_req, &pubk_res);
 	if (r) {
 		debug_logerr(LLOG_ERROR, r, "verify err");
 		lq_certificate_free(cert);
@@ -54,6 +56,8 @@ int main(int argc, char **argv) {
 		return 1;
 	}
 
+	lq_publickey_free(pubk_res);
+	lq_publickey_free(pubk_req);
 	lq_certificate_free(cert);
 	lq_finish();
 	return r;

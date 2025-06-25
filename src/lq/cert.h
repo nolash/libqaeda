@@ -51,6 +51,11 @@ LQCert* lq_certificate_new(LQCert *parent);
 void lq_certificate_set_domain(LQCert *cert, const char *domain);
 
 /**
+ * \brief Receive the message signature material for the current state of the certificate.
+ */
+int lq_certificate_mat(LQCert *cert, LQPubKey *pubk, char *out);
+
+/**
  * \brief Sign the next pending message in the certificate.
  *
  * If the request message is set but not signed, the request message will be signed. If the response message is set but not signed, the response message will be signed. The limitations described in the struct declaration apply.
@@ -170,5 +175,6 @@ int lq_certificate_respond(LQCert *cert, LQMsg *rsp, LQPrivKey *pk);
  * \param[in] Certificate to free.
  */
 void lq_certificate_free(LQCert *cert);
+
 
 #endif // LIBQAEDA_CERT_H_

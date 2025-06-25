@@ -123,6 +123,12 @@ int lq_msg_deserialize(LQMsg **msg, LQResolve *resolve, const char *in, size_t i
 int lq_msg_literal(LQMsg *msg);
 
 /**
+ *
+ */
+int lq_msg_mat(LQMsg *msg, const char *salt, const char *extra, size_t extra_len, char *out);
+
+
+/**
  * \brief Free an instantiated message.
  *
  * \param[in] Message to free.

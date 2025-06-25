@@ -122,6 +122,52 @@ static int state_digest(LQCert *cert, char *out, int final) {
 	return lq_digest(data, c, out);
 }
 
+/**
+ * \todo DRY with lq_certificate_sign
+ */
+int lq_certificate_mat(LQCert *cert, LQPubKey *pubk, char *out) {
+	int r;
+	char state[LQ_DIGEST_LEN];
+
+	r = state_digest(cert, state, 0);
+	if (r != ERR_OK) {
+		return r;
+	}
+
+	if (cert->response != NULL) {
+		if (cert->response_sig != NULL) {
+			return ERR_RESPONSE;
+		}
+		if (cert->request == NULL) {
+			return ERR_INIT;	
+		}
+		if (cert->response->pubkey == NULL) {
+			cert->response->pubkey = pubk;
+		}
+		r = lq_msg_mat(cert->response, NULL, state, LQ_DIGEST_LEN, out);
+		if (r) {
+			return r;
+		}
+		
+		debug(LLOG_INFO, "cert", "mat response");
+		return ERR_OK;
+	}
+	if (cert->request == NULL) {
+		return ERR_INIT;
+	}
+	if (cert->request_sig != NULL) {
+		return ERR_REQUEST;
+	}
+	if (cert->request->pubkey == NULL) {
+		cert->request->pubkey = pubk;
+	}
+	r = lq_msg_mat(cert->request, NULL, state, LQ_DIGEST_LEN, out);
+	if (r) {
+		return r;
+	}
+	return ERR_OK;
+}
+
 int lq_certificate_sign(LQCert *cert, LQPrivKey *pk) {
 	int r;
 	char out[LQ_DIGEST_LEN];

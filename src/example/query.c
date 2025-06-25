@@ -11,7 +11,6 @@
 
 
 int main(int argc, char **argv) {
-	int r;
 	char *p;
 	char path[PATH_MAX];
 	LQStore *store;

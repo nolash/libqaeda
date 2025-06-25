@@ -63,6 +63,27 @@ static int msg_to_sign(LQMsg *msg, char *out, const char *extra, size_t extra_le
 	return lq_digest(data, l, out);
 }	
 
+/**
+ * \todo DRY with lq_msg_sign_extra
+ */
+int lq_msg_mat(LQMsg *msg, const char *salt, const char *extra, size_t extra_len, char *out) {
+	int r;
+
+	if (extra == NULL) {
+		extra_len = 0;
+	}
+	if (msg->pubkey == NULL) {
+		debug_logerr(LLOG_ERROR, ERR_NOKEY, "public key");
+		return ERR_NOKEY;	
+	}
+	r = msg_to_sign(msg, out, extra, extra_len);
+	if (r) {
+		debug_logerr(LLOG_DEBUG, r, "prepare message material");
+		return ERR_ENCODING;
+	}
+	return ERR_OK;
+}
+
 LQSig* lq_msg_sign_extra(LQMsg *msg, LQPrivKey *pk, const char *salt, const char *extra, size_t extra_len) {
 	int r;
 	char digest[LQ_DIGEST_LEN];

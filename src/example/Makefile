@@ -11,3 +11,4 @@ LDFLAGS := $(LIBS)
 all:
 	$(CC) $(CFLAGS) query.c -o query_bin $(COMMONOBJS) $(LDFLAGS) -lgcrypt
 	$(CC) $(CFLAGS) verify.c -o verify_bin $(COMMONOBJS) $(LDFLAGS) -lgcrypt
+	$(CC) $(CFLAGS) fingerprint.c -o fingerprint_bin $(COMMONOBJS) $(LDFLAGS) -lgcrypt

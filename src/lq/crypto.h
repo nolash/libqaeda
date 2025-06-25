@@ -4,7 +4,6 @@
 #include <stddef.h>
 
 #include "base.h"
-#include "store.h"
 
 #ifndef LQ_DIGEST_LEN
 /**
@@ -217,7 +216,7 @@ size_t lq_publickey_bytes(LQPubKey *pubk, char **out);
  * \brief Get the public key fingerprint bytes.
  *
  * \param[in] Public key object
- * \param[out] Pointer to start of data to write to. Buffer must have a capacity of at least LQ_PUBKEY_LEN bytes.
+ * \param[out] Pointer to assign to. The pointer value will be valid until the public key object is freed.
  * \return Length of fingerprint data. If 0, no fingerprint could be found.
  */
 size_t lq_publickey_fingerprint(LQPubKey *pubk, char **out);
@@ -322,16 +321,6 @@ void lq_privatekey_free(LQPrivKey *pk);
  * \param[in] Private key to free.
  */
 void lq_signature_free(LQSig *sig);
-
-/**
- * \brief Retrieve the store object used for the crypto component.
- *
- * Cannot be called before lq_crypto_init()
- *
- * \returns The LQStore object.
- * \see lq_crypto_init
- */
-LQStore* lq_crypto_store();
 
 /**
  * \brief Calculate digest over arbitrary data using the default algorithm.

@@ -380,6 +380,41 @@ START_TEST(check_cert_verify_deserialize_literal_with_publickeys) {
 
 }
 END_TEST
+
+
+START_TEST(check_cert_msg_material_request) {
+	int r;
+	LQCert *cert;
+	LQMsg *req;
+	LQPrivKey *pk;
+	LQPubKey *pubk;
+	LQSig *sig;
+	char out[LQ_DIGEST_LEN];
+
+	pk = lq_privatekey_new(passphrase, sizeof(passphrase));
+	ck_assert_ptr_nonnull(pk);
+	r = lq_privatekey_unlock(pk, passphrase, sizeof(passphrase));
+	ck_assert_int_eq(r, 0);
+
+	cert = lq_certificate_new(NULL);
+	ck_assert_ptr_nonnull(cert);
+
+	req = lq_msg_new("foo", 4);
+	ck_assert_ptr_nonnull(req);
+
+	r = lq_certificate_request(cert, req, NULL);
+	ck_assert_int_eq(r, 0);
+
+	pubk = lq_publickey_from_privatekey(pk);
+	ck_assert_ptr_nonnull(pubk);
+
+	r = lq_certificate_mat(cert, pubk, out);
+	ck_assert_int_eq(r, 0);
+
+	sig = lq_privatekey_sign(pk, out, LQ_DIGEST_LEN, NULL);
+	ck_assert_ptr_nonnull(sig);
+}
+END_TEST
 //
 //START_TEST(check_cert_attach) {
 //	int r;
@@ -422,6 +457,7 @@ Suite * common_suite(void) {
 	tcase_add_test(tc, check_cert_symmetric_ser_rsp_bothsig);
 	tcase_add_test(tc, check_cert_verify_deserialize_literal);
 	tcase_add_test(tc, check_cert_verify_deserialize_literal_with_publickeys);
+	tcase_add_test(tc, check_cert_msg_material_request);
 //	tcase_add_test(tc, check_cert_attach);
 	suite_add_tcase(s, tc);
 
