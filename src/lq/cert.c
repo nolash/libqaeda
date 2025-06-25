@@ -58,6 +58,7 @@ int lq_certificate_request(LQCert *cert, LQMsg *req, LQPrivKey *pk) {
 int lq_certificate_respond(LQCert *cert, LQMsg *res, LQPrivKey *pk) {
 	int r;
 
+	r = ERR_OK;
 	if (cert->request_sig == NULL) {
 		return ERR_SEQ;
 	}
