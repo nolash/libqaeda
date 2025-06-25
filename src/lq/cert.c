@@ -229,6 +229,10 @@ int lq_certificate_verify(LQCert *cert, LQPubKey **request_pubkey, LQPubKey **re
 		return debug_logerr(LLOG_DEBUG, r, "cert verify request");
 	}
 
+	if (request_pubkey != NULL) {
+		*request_pubkey = cert->request_sig->pubkey;
+	}
+
 	if (cert->response_sig == NULL) {
 		debug(LLOG_DEBUG, "cert", "skip empty response signature");
 		return ERR_OK;
@@ -245,10 +249,6 @@ int lq_certificate_verify(LQCert *cert, LQPubKey **request_pubkey, LQPubKey **re
 	r = lq_msg_verify_extra(cert_valid.response, cert_valid.response_sig, NULL, out, LQ_DIGEST_LEN);
 	if (r != ERR_OK) {
 		return debug_logerr(LLOG_DEBUG, r, "cert verify response");
-	}
-
-	if (request_pubkey != NULL) {
-		*request_pubkey = cert->request_sig->pubkey;
 	}
 
 	if (response_pubkey != NULL) {

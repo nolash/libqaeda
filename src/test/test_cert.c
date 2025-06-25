@@ -387,13 +387,24 @@ START_TEST(check_cert_msg_material) {
 	LQCert *cert;
 	LQMsg *req;
 	LQMsg *res;
-	LQPrivKey *pk;
-	LQPubKey *pubk;
+	LQPrivKey *pk_alice;
+	LQPrivKey *pk_bob;
+	LQPubKey *pubk_alice;
+	LQPubKey *pubk_bob;
+	LQPubKey *pubk_req;
+	LQPubKey *pubk_res;
 	char out[LQ_DIGEST_LEN];
+	char *pubk_left_b;
+	char *pubk_right_b;
 
-	pk = lq_privatekey_new(passphrase, sizeof(passphrase));
-	ck_assert_ptr_nonnull(pk);
-	r = lq_privatekey_unlock(pk, passphrase, sizeof(passphrase));
+	pk_alice = lq_privatekey_new(passphrase, sizeof(passphrase));
+	ck_assert_ptr_nonnull(pk_alice);
+	r = lq_privatekey_unlock(pk_alice, passphrase, sizeof(passphrase));
+	ck_assert_int_eq(r, 0);
+
+	pk_bob = lq_privatekey_new(passphrase, sizeof(passphrase));
+	ck_assert_ptr_nonnull(pk_bob);
+	r = lq_privatekey_unlock(pk_bob, passphrase, sizeof(passphrase));
 	ck_assert_int_eq(r, 0);
 
 	cert = lq_certificate_new(NULL);
@@ -406,34 +417,59 @@ START_TEST(check_cert_msg_material) {
 	ck_assert_int_eq(r, 0);
 	ck_assert_ptr_null(cert->request_sig);
 
-	pubk = lq_publickey_from_privatekey(pk);
-	ck_assert_ptr_nonnull(pubk);
+	pubk_alice = lq_publickey_from_privatekey(pk_alice);
+	ck_assert_ptr_nonnull(pubk_alice);
 
-	r = lq_certificate_mat(cert, pubk, out);
+	r = lq_certificate_mat(cert, pubk_alice, out);
 	ck_assert_int_eq(r, 0);
 
-	cert->request_sig = lq_privatekey_sign(pk, out, LQ_DIGEST_LEN, NULL);
+	cert->request_sig = lq_privatekey_sign(pk_alice, out, LQ_DIGEST_LEN, NULL);
 	ck_assert_ptr_nonnull(cert->request_sig);
 
-	r = lq_certificate_verify(cert, NULL, NULL);
+	r = lq_certificate_verify(cert, &pubk_req, NULL);
 	ck_assert_int_eq(r, 0);
+
+	r = lq_publickey_bytes(pubk_alice, &pubk_left_b);
+	ck_assert_int_eq(r, LQ_PUBKEY_LEN);
+	r = lq_publickey_bytes(pubk_req, &pubk_right_b);
+	ck_assert_int_eq(r, LQ_PUBKEY_LEN);
+	ck_assert_mem_eq(pubk_left_b, pubk_right_b, LQ_PUBKEY_LEN); 
 
 	res = lq_msg_new("barbaz", 7);
 	ck_assert_ptr_nonnull(res);
+
+	pubk_bob = lq_publickey_from_privatekey(pk_bob);
+	ck_assert_ptr_nonnull(pubk_bob);
 
 	r = lq_certificate_respond(cert, res, NULL);
 	ck_assert_int_eq(r, 0);
 	ck_assert_ptr_null(cert->response_sig);
 
 	lq_zero(out, LQ_DIGEST_LEN);
-	r = lq_certificate_mat(cert, pubk, out);
+	r = lq_certificate_mat(cert, pubk_bob, out);
 	ck_assert_int_eq(r, 0);
 
-	cert->response_sig = lq_privatekey_sign(pk, out, LQ_DIGEST_LEN, NULL);
+	cert->response_sig = lq_privatekey_sign(pk_bob, out, LQ_DIGEST_LEN, NULL);
 	ck_assert_ptr_nonnull(cert->response_sig);
 
-	r = lq_certificate_verify(cert, NULL, NULL);
+	r = lq_certificate_verify(cert, &pubk_req, &pubk_res);
 	ck_assert_int_eq(r, 0);
+
+	r = lq_publickey_bytes(pubk_alice, &pubk_left_b);
+	ck_assert_int_eq(r, LQ_PUBKEY_LEN);
+	r = lq_publickey_bytes(pubk_req, &pubk_right_b);
+	ck_assert_int_eq(r, LQ_PUBKEY_LEN);
+	ck_assert_mem_eq(pubk_left_b, pubk_right_b, LQ_PUBKEY_LEN); 
+
+	r = lq_publickey_bytes(pubk_bob, &pubk_left_b);
+	ck_assert_int_eq(r, LQ_PUBKEY_LEN);
+	r = lq_publickey_bytes(pubk_res, &pubk_right_b);
+	ck_assert_int_eq(r, LQ_PUBKEY_LEN);
+	ck_assert_mem_eq(pubk_left_b, pubk_right_b, LQ_PUBKEY_LEN); 
+
+	lq_certificate_free(cert);
+	lq_privatekey_free(pk_bob);
+	lq_privatekey_free(pk_alice);
 }
 END_TEST
 //

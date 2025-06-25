@@ -962,6 +962,7 @@ LQSig* lq_privatekey_sign(LQPrivKey *pk, const char *data, size_t data_len, cons
 	}
 
 	sig = lq_alloc(sizeof(LQSig));
+	lq_zero(sig, sizeof(LQSig));
 	sig->pubkey = lq_publickey_from_privatekey(pk);
 	if (sig->pubkey == NULL) {
 		lq_signature_free(sig);
