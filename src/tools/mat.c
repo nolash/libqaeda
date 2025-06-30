@@ -22,8 +22,8 @@ int main(int argc, char **argv) {
 	size_t c;
 	size_t mx;
 	char in[4096];
-	char pubk_b[LQ_PUBKEY_LEN + 1];
-	char sig_b[LQ_SIGN_LEN + 1];
+	char pubk_b[LQ_PUBKEY_LEN];
+	char sig_b[LQ_SIGN_LEN];
 	char out[4096];
 	char sum[LQ_DIGEST_LEN * 2 + 1];
 	char *p;
@@ -54,13 +54,13 @@ int main(int argc, char **argv) {
 	lq_certificate_set_domain(cert, "foobarbaz");
 
 	msg = lq_msg_new("inkypinky", 10);
-	r = lq_certificate_request(cert, msg, NULL);
-	if (r) {
+	msg->pubkey = lq_publickey_new(pubk_b);
+	if (msg->pubkey == NULL) {
 		return 1;
 	}
 
-	msg->pubkey = lq_publickey_new(pubk_b);
-	if (msg->pubkey == NULL) {
+	r = lq_certificate_request(cert, msg, NULL);
+	if (r) {
 		return 1;
 	}
 
@@ -74,6 +74,14 @@ int main(int argc, char **argv) {
 		if (r) {
 			return r;
 		}
+
+		c = 4096;
+		r = lq_certificate_serialize(cert, NULL, in, &c);
+		if (r) {
+			return r;
+		}
+		b2h((unsigned char*)in, c, (unsigned char*)out);
+		printf(out);
 	} else {
 		p = lq_certificate_mat(cert, msg->pubkey, out);
 		b2h((unsigned char*)p, LQ_DIGEST_LEN, (unsigned char*)sum);
