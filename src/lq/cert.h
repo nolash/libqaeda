@@ -170,6 +170,17 @@ int lq_certificate_respond(LQCert *cert, LQMsg *rsp, LQPrivKey *pk);
 
 
 /**
+ * Set parent hash explicitly on certificate.
+ *
+ * Fails if certicicate already holds a parent certificate object (was created with a non-null parent cert value).
+ *
+ * \param[in] Certificate to manipulate.
+ * \param[in] Digest data. Must be LQ_DIGEST_LEN long.
+ * \return ERR_DUP if parent object exists, or ERR_OK on success.
+ */
+int lq_certificate_set_parent_digest(LQCert *cert, const char *b);
+
+/**
  * \brief Free an instantiated certificate.
  *
  * \param[in] Certificate to free.

@@ -41,6 +41,14 @@ LQCert* lq_certificate_new(LQCert *parent) {
 	return cert;
 }
 
+int lq_certificate_set_parent_digest(LQCert *cert, const char *b) {
+	if (cert->parent != NULL) {
+		return ERR_DUP;
+	}
+	lq_cpy(cert->parent_hash, b, LQ_DIGEST_LEN);
+	return ERR_OK;
+}
+
 int lq_certificate_request(LQCert *cert, LQMsg *req, LQPrivKey *pk) {
 	int r;
 

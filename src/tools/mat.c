@@ -9,9 +9,6 @@
 #include <lq/msg.h>
 #include <lq/cert.h>
 
-// 40f7c950cf393e61a3e7ceeef2e2d25f7b5adc1f93ff059d350a3b0f873fa26ca1
-// 49ba0f2518f543d871a3525c0b0ae5411b20d949667da5e34a5f0ae8d5fbacccf61dd75db0b8c2524bb598a1a3c0d93f1baccf21937edbc7f44751dd0b80860c
-
 /**
  *
  * \todo stat file and alloc buffers large enough for the work.
