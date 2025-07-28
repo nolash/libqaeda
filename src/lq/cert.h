@@ -12,6 +12,13 @@
 #define LQ_CERT_DOMAIN_LEN 8
 #endif
 
+enum lq_certificate_state_e {
+	CERT_NONE = 0,
+	CERT_REQUEST = 1,
+	CERT_RESPONSE = 2,
+	CERT_CHAIN = 4,
+};
+
 /**
  * \struct LQCert
  *
@@ -179,6 +186,19 @@ int lq_certificate_respond(LQCert *cert, LQMsg *rsp, LQPrivKey *pk);
  * \return ERR_DUP if parent object exists, or ERR_OK on success.
  */
 int lq_certificate_set_parent_digest(LQCert *cert, const char *b);
+
+
+/**
+ * Create a digest of the certificate, to use as the parent hash.
+ *
+ * Fails if certicicate does not have a response signature.
+ *
+ * \param[in] Certificate to manipulate.
+ * \param[in] Store implementations to use for storing serialized certificate and message data. If NULL, content will not be looked up from resolver.
+ * \param[out] Digest output.
+ * \return ERR_NONSENSE if response missing, ERR_FAIL if serialize fails, ERR_DIGEST if digest fails, or ERR_OK on success.
+ */
+int lq_certificate_digest(LQCert *cert, LQResolve *resolve, char *out);
 
 /**
  * \brief Free an instantiated certificate.

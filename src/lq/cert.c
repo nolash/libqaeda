@@ -80,6 +80,44 @@ int lq_certificate_respond(LQCert *cert, LQMsg *res, LQPrivKey *pk) {
 	return r;
 }
 
+static int certificate_state(LQCert *cert) {
+	int r;
+
+	r = 0;
+	if (lq_cmp(cert->parent_hash, zeros, LQ_DIGEST_LEN)) {
+		r = CERT_CHAIN;
+	}
+
+	if (cert->response_sig != NULL) {
+		return r | CERT_RESPONSE;
+	}
+	if (cert->request_sig != NULL) {
+		return r | CERT_REQUEST;
+	}
+	return r | CERT_NONE;
+}
+
+int lq_certificate_digest(LQCert *cert, LQResolve *resolve, char *out)  {
+	int r;
+	char buf[LQ_BLOCKSIZE];
+	size_t c;
+
+	if (!certificate_state(cert) & CERT_RESPONSE) {
+		return ERR_NONSENSE;
+	}
+
+	c = LQ_BLOCKSIZE;
+	r = lq_certificate_serialize(cert, resolve, buf, &c);
+	if (r) {
+		return ERR_FAIL;
+	}
+	r = lq_digest(buf, c, out);
+	if (r) {
+		return ERR_FAIL;
+	}
+	return ERR_OK;
+}
+
 void lq_certificate_set_domain(LQCert *cert, const char *domain) {
 	lq_cpy(cert->domain, domain, LQ_CERT_DOMAIN_LEN);
 }
