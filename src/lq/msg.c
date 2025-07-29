@@ -174,7 +174,7 @@ int lq_msg_serialize(LQMsg *msg, LQResolve *resolve, char *out, size_t *out_len)
 //		return ERR_READ;
 //	}
 	if (asn == NULL) {
-		return ERR_READ;
+		return ERR_WRITE;
 	}
 
 	lq_cpy(v, "FALSE", 5);
@@ -183,12 +183,13 @@ int lq_msg_serialize(LQMsg *msg, LQResolve *resolve, char *out, size_t *out_len)
 		lq_cpy(v, "TRUE", 5);
 		v[4] = 0;
 	}
-	r = lq_asn_write(asn, "literal", v, strlen(v) + 1);
 	//r = asn1_write_value(item, "Msg.literal", v, strlen(v) + 1);
 	//if (r != ASN1_SUCCESS) {
+	//	return asn_except(&item, ERR_WRITE);
+	//}
+	r = lq_asn_write(asn, "literal", v, strlen(v) + 1);
 	if (r != ERR_OK) {
 		return r;
-	//	return asn_except(&item, ERR_WRITE);
 	}
 
 	*out_len = 1;
@@ -322,6 +323,9 @@ int lq_msg_deserialize(LQMsg **msg, LQResolve *resolve, const char *in, size_t i
 	lq_zero(&item, sizeof(item));
 
 	asn = lq_asn_parse("Msg", in, in_len);
+	if (asn != NULL) {
+		return ERR_READ;
+	}
 //	r = asn1_create_element(asn, "Qaeda.Msg", &item);
 //	if (r != ASN1_SUCCESS) {
 //		return ERR_READ;
@@ -338,7 +342,7 @@ int lq_msg_deserialize(LQMsg **msg, LQResolve *resolve, const char *in, size_t i
 //		debug_logerr(LLOG_WARNING, ERR_READ, (char*)asn1_strerror(r));
 //		return asn_except(&item, ERR_READ);
 //	}
-	r = lq_asn_read(asn, "literal", tmp, (int*)&c);
+	r = lq_asn_read(asn, "literal", tmp, &c);
 	if (r != ERR_OK) {
 		return r;
 	}
