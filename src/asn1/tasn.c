@@ -2,10 +2,12 @@
 #include <llog.h>
 
 #include <lq/asn.h>
+#include <lq/mem.h>
 #include <lq/err.h>
 #include "debug.h"
 
-const asn1_static_node defs_asn1_tab[];
+#include "tasn.h"
+
 asn1_node asn;
 
 // TODO: DRY
@@ -19,7 +21,7 @@ static int asn_except(asn1_node *node, int err) {
 
 	return err;
 }
-int lq_asn_init() {
+int lq_asn_init() {
 	return asn1_array2tree(defs_asn1_tab, &asn, NULL);
 }
 
@@ -48,12 +50,13 @@ LQASN* lq_asn_parse(const char *element, const char *data, size_t data_len) {
 	int r;
 	LQASN *item;
 	asn1_node o;
+	char err[1024];
 
 	item = lq_asn_new(element);
 	item->mode = LQASN_MODE_READ;
 	o = (asn1_node)item->impl;
 
-	r = asn1_der_decoding(&o, in, in_len, err);
+	r = asn1_der_decoding(&o, data, data_len, err);
 	if (r != ASN1_SUCCESS) {
 		//return asn_except(&item, ERR_ENCODING);
 		return NULL;
@@ -77,18 +80,18 @@ int lq_asn_out(LQASN *item, char *out, size_t *out_len) {
 	return ERR_OK;
 }
 
-int lq_asn_write(LQASN *item, const char *property, const *data, size_t data_len) {
+int lq_asn_write(LQASN *item, const char *property, const char *data, size_t data_len) {
 	int r;
 	int c;
 	asn1_node o;
 	char s[32];
-	char p;
+	char *p;
 
 	p = (char*)s;
 	r = lq_len(item->element);
 	lq_cpy(p, item->element, r);
 	p += r;
-	s[r] = ".";
+	s[r] = '.';
 	p++;
 	r = lq_len(property);
 	lq_cpy(p, property, r);
@@ -103,7 +106,7 @@ int lq_asn_write(LQASN *item, const char *property, const *data, size_t data_len
 	return ERR_OK;
 }
 
-int lq_asn_read(LQASN *item, const char *property, const *data, size_t *data_len) {
+int lq_asn_read(LQASN *item, const char *property, char *data, size_t *data_len) {
 	int r;
 	asn1_node o;
 
@@ -117,6 +120,7 @@ int lq_asn_read(LQASN *item, const char *property, const *data, size_t *data_len
 }
 
 void lq_asn_free(LQASN *item) {
+	int r;
 	asn1_node o;
 
 	o = (asn1_node)item->impl;
@@ -124,5 +128,5 @@ void lq_asn_free(LQASN *item) {
 	if (r != ASN1_SUCCESS) {
 		debug(LLOG_WARNING, item->element, "delete item");
 	}
-	free(item);
+	lq_free(item);
 }
