@@ -1,6 +1,5 @@
 #include <stddef.h>
 
-#include <libtasn1.h>
 #include <llog.h>
 
 #include "lq/cert.h"

@@ -25,3 +25,7 @@ void* lq_set(void *dst, const char b, size_t len) {
 void* lq_zero(void *dst, size_t len) {
 	return lq_set(dst, 0, len);
 }
+
+size_t lq_len(const char *s) {
+	return strlen(s);
+}
