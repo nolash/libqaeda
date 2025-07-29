@@ -131,6 +131,8 @@ int lq_msg_mat(LQMsg *msg, const char *salt, const char *extra, size_t extra_len
 /**
  * \brief Free an instantiated message.
  *
+ * Also frees the associates public key
+ *
  * \param[in] Message to free.
  */
 void lq_msg_free(LQMsg *msg);

@@ -9,6 +9,7 @@
 #include "lq/config.h"
 #include "lq/base.h"
 #include "lq/io.h"
+#include "lq/err.h"
 
 const char *data = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
 const char *data_two = "Que trata de la condición y ejercicio del famoso hidalgo D. Quijote de la Mancha En un lugar de la Mancha, de cuyo nombre no quiero acordarme, no ha mucho tiempo que vivía un hidalgo de los de lanza en astillero, adarga antigua, rocín flaco y galgo corredor.";
@@ -474,6 +475,51 @@ START_TEST(check_cert_msg_material) {
 	lq_privatekey_free(pk_alice);
 }
 END_TEST
+
+
+START_TEST(check_cert_digest) {
+	int r;
+	char *p;
+	LQCert *cert;
+	LQMsg *req;
+	LQMsg *res;
+	LQPrivKey *pk_alice;
+	LQPrivKey *pk_bob;
+	LQPubKey *pubk_alice;
+	LQPubKey *pubk_bob;
+	char digest[LQ_DIGEST_LEN];
+
+	pk_alice = lq_privatekey_new(passphrase, sizeof(passphrase));
+	ck_assert_ptr_nonnull(pk_alice);
+	r = lq_privatekey_unlock(pk_alice, passphrase, sizeof(passphrase));
+	ck_assert_int_eq(r, 0);
+
+	pk_bob = lq_privatekey_new(passphrase, sizeof(passphrase));
+	ck_assert_ptr_nonnull(pk_bob);
+	r = lq_privatekey_unlock(pk_bob, passphrase, sizeof(passphrase));
+	ck_assert_int_eq(r, 0);
+
+	cert = lq_certificate_new(NULL);
+	ck_assert_ptr_nonnull(cert);
+
+	req = lq_msg_new("foo", 4);
+	ck_assert_ptr_nonnull(req);
+	r = lq_certificate_request(cert, req, pk_alice);
+	ck_assert_int_eq(r, ERR_OK);
+	ck_assert_ptr_nonnull(cert->request_sig);
+
+	r = lq_certificate_digest(cert, NULL, digest);
+	ck_assert_int_eq(r, ERR_NONSENSE);
+
+	res = lq_msg_new("barbaz", 7);
+	ck_assert_ptr_nonnull(res);
+	r = lq_certificate_respond(cert, res, pk_bob);
+	ck_assert_int_eq(r, ERR_OK);
+	ck_assert_ptr_nonnull(cert->response_sig);
+
+	r = lq_certificate_digest(cert, NULL, digest);
+	ck_assert_int_eq(r, ERR_OK);
+}
 //
 //START_TEST(check_cert_attach) {
 //	int r;
@@ -517,6 +563,7 @@ Suite * common_suite(void) {
 	tcase_add_test(tc, check_cert_verify_deserialize_literal);
 	tcase_add_test(tc, check_cert_verify_deserialize_literal_with_publickeys);
 	tcase_add_test(tc, check_cert_msg_material);
+	tcase_add_test(tc, check_cert_digest);
 //	tcase_add_test(tc, check_cert_attach);
 	suite_add_tcase(s, tc);
 

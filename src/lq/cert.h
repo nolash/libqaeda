@@ -203,6 +203,8 @@ int lq_certificate_digest(LQCert *cert, LQResolve *resolve, char *out);
 /**
  * \brief Free an instantiated certificate.
  *
+ * Also frees any messages and signatures assigned in the certificate.
+ *
  * \param[in] Certificate to free.
  */
 void lq_certificate_free(LQCert *cert);

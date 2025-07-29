@@ -102,7 +102,7 @@ int lq_certificate_digest(LQCert *cert, LQResolve *resolve, char *out)  {
 	char buf[LQ_BLOCKSIZE];
 	size_t c;
 
-	if (!certificate_state(cert) & CERT_RESPONSE) {
+	if (!(certificate_state(cert) & CERT_RESPONSE)) {
 		return ERR_NONSENSE;
 	}
 
