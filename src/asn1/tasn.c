@@ -5,8 +5,23 @@
 #include <lq/err.h>
 #include "debug.h"
 
-extern asn1_node asn;
+const asn1_static_node defs_asn1_tab[];
+asn1_node asn;
 
+// TODO: DRY
+static int asn_except(asn1_node *node, int err) {
+	int r;
+
+	r = asn1_delete_structure(node);
+	if (r != ASN1_SUCCESS) {
+		debug_logerr(LLOG_ERROR, ERR_FAIL, "free asn");
+	}
+
+	return err;
+}
+int lq_asn_init() {
+	return asn1_array2tree(defs_asn1_tab, &asn, NULL);
+}
 
 LQASN* lq_asn_new(const char *element) {
 	int r;
