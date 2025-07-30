@@ -1,15 +1,15 @@
 #include <stddef.h>
+#include <stdio.h>
 
-#include <libtasn1.h>
+#include <endian.h>
 #include <llog.h>
 #include <lq/envelope.h>
 #include <lq/cert.h>
 #include <lq/mem.h>
 #include <lq/err.h>
+#include <lq/asn.h>
 #include <debug.h>
 
-
-extern asn1_node asn;
 
 static struct lq_attach *lq_attach_new() {
 	struct lq_attach *o;
@@ -81,17 +81,17 @@ int lq_envelope_attach(LQEnvelope *env, const char *data, size_t data_len) {
 	return ERR_OK;
 }
 
-// TODO: DRY
-static int asn_except(asn1_node *node, int err) {
-	int r;
-
-	r = asn1_delete_structure(node);
-	if (r != ASN1_SUCCESS) {
-		debug_logerr(LLOG_ERROR, ERR_FAIL, (char*)asn1_strerror(err));
-	}
-
-	return err;
-}
+//// TODO: DRY
+//static int asn_except(asn1_node *node, int err) {
+//	int r;
+//
+//	r = asn1_delete_structure(node);
+//	if (r != ASN1_SUCCESS) {
+//		debug_logerr(LLOG_ERROR, ERR_FAIL, (char*)asn1_strerror(err));
+//	}
+//
+//	return err;
+//}
 
 int lq_envelope_serialize(LQEnvelope *env, LQResolve *resolve, char *out, size_t *out_len) {
 	size_t c;
@@ -100,41 +100,63 @@ int lq_envelope_serialize(LQEnvelope *env, LQResolve *resolve, char *out, size_t
 	int hint;
 	char err[LQ_ERRSIZE];
 	char buf[LQ_BLOCKSIZE];
-	asn1_node item;
+	//asn1_node item;
+	LQASN *asn;
 
 	mx = *out_len;
 	*out_len = 0;
-	lq_zero(&item, sizeof(item));
+//	lq_zero(&item, sizeof(item));
 
-	r = asn1_create_element(asn, "Qaeda", &item);
-	if (r != ASN1_SUCCESS) {
-		return ERR_READ;
+//	r = asn1_create_element(asn, "Qaeda", &item);
+//	if (r != ASN1_SUCCESS) {
+//		return ERR_READ;
+//	}
+	asn = lq_asn_new("Envelope");
+	if (asn == NULL) {
+		return ERR_WRITE;
 	}
+
 
 	hint = env->hint;
 	r = to_endian(TO_ENDIAN_BIG, sizeof(int), &hint);
 	if (r) {
-		return asn_except(&item, ERR_BYTEORDER);
+		//return asn_except(&item, ERR_BYTEORDER);
+		lq_asn_free(asn);
+		return ERR_BYTEORDER;
 	}
 	c = sizeof(int);
-	r = asn1_write_value(item, "Envelope.hint", &hint, c);
-	if (r != ASN1_SUCCESS) {
-		return asn_except(&item, ERR_WRITE);
+//	r = asn1_write_value(item, "Envelope.hint", &hint, c);
+//	if (r != ASN1_SUCCESS) {
+//		return asn_except(&item, ERR_WRITE);
+//	}
+	r = lq_asn_write(asn, "hint", (char*)&hint, c);
+	if (r != ERR_OK) {
+		return r;
 	}
 
 	c = mx - sizeof(int);
 	r = lq_certificate_serialize(env->cert, resolve, buf, &c);
 	if (r != ERR_OK) {
-		return asn_except(&item, r);
+		//return asn_except(&item, r);
+		lq_asn_free(asn);
+		return r;
 	}
 	*out_len += c;
 	if (*out_len > mx) {
-		return asn_except(&item, ERR_OVERFLOW);
+		//return asn_except(&item, ERR_OVERFLOW);
+		lq_asn_free(asn);
+		return ERR_OVERFLOW;
 	}
-	r = asn1_write_value(item, "Envelope.cert", buf, c);
-	if (r != ASN1_SUCCESS) {
-		return asn_except(&item, ERR_WRITE);
+//	r = asn1_write_value(item, "Envelope.cert", buf, c);
+//	if (r != ASN1_SUCCESS) {
+//		return asn_except(&item, ERR_WRITE);
+//	}
+	r = lq_asn_write(asn, "cert", buf, c);
+	if (r != ERR_OK) {
+		lq_asn_free(asn);
+		return r;
 	}
+
 
 	while(1) {
 		c = LQ_BLOCKSIZE;
@@ -142,32 +164,50 @@ int lq_envelope_serialize(LQEnvelope *env, LQResolve *resolve, char *out, size_t
 		if (r) {
 			break;
 		}
-		r = asn1_write_value(item, "Envelope.attach", "NEW", 1);
-		if (r != ASN1_SUCCESS) {
-			return asn_except(&item, ERR_WRITE);
+//		r = asn1_write_value(item, "Envelope.attach", "NEW", 1);
+//		if (r != ASN1_SUCCESS) {
+//			return asn_except(&item, ERR_WRITE);
+//		}
+//		r = asn1_write_value(item, "Envelope.attach.?LAST", buf, c);
+//		if (r != ASN1_SUCCESS) {
+//			return asn_except(&item, ERR_WRITE);
+//		}
+
+		r = lq_asn_write(asn, "attach", "NEW", 1);
+		if (r != ERR_OK) {
+			lq_asn_free(asn);
+			return ERR_WRITE;
 		}
-		r = asn1_write_value(item, "Envelope.attach.?LAST", buf, c);
-		if (r != ASN1_SUCCESS) {
-			return asn_except(&item, ERR_WRITE);
+		r = lq_asn_write(asn, "attach.?LAST", buf, c);
+		if (r != ERR_OK) {
+			lq_asn_free(asn);
+			return ERR_WRITE;
 		}
 	}	
 
 	*out_len = mx;
-	r = asn1_der_coding(item, "Envelope", out, (int*)out_len, err);
-	if (r != ASN1_SUCCESS) {
-		return asn_except(&item, ERR_ENCODING);
+//	r = asn1_der_coding(item, "Envelope", out, (int*)out_len, err);
+//	if (r != ASN1_SUCCESS) {
+//		return asn_except(&item, ERR_ENCODING);
+//	}
+	r = lq_asn_out(asn, out, out_len);
+	if (r != ERR_OK) {
+		lq_asn_free(asn);
+		return r;
 	}
 
-	r = asn1_delete_structure(&item);
-	if (r != ASN1_SUCCESS) {
-		return ERR_FAIL;
-	}
+//	r = asn1_delete_structure(&item);
+//	if (r != ASN1_SUCCESS) {
+//		return ERR_FAIL;
+//	}
+
+	lq_asn_free(asn);
 
 	return ERR_OK;
 }
 
 int lq_envelope_deserialize(LQEnvelope **env, LQResolve *resolve, const char *in, size_t in_len) {
-	int c;
+	size_t c;
 	int r;
 	int i;
 	char err[LQ_ERRSIZE];
@@ -176,37 +216,55 @@ int lq_envelope_deserialize(LQEnvelope **env, LQResolve *resolve, const char *in
 	int hint;
 	char *p;
 	LQCert *cert;
-	asn1_node item;
+	LQASN *asn;
 
-	r = asn1_create_element(asn, "Qaeda.Envelope", &item);
-	if (r != ASN1_SUCCESS) {
+//	r = asn1_create_element(asn, "Qaeda.Envelope", &item);
+//	if (r != ASN1_SUCCESS) {
+//		return ERR_READ;
+//	}
+//
+//	r = asn1_der_decoding(&item, in, in_len, err);
+//	if (r != ASN1_SUCCESS) {
+//		return asn_except(&item, ERR_ENCODING);
+//	}
+
+	asn = lq_asn_parse("Envelope", in, in_len);
+	if (asn == NULL) {
 		return ERR_READ;
-	}
-
-	r = asn1_der_decoding(&item, in, in_len, err);
-	if (r != ASN1_SUCCESS) {
-		return asn_except(&item, ERR_ENCODING);
 	}
 
 	hint = 0;
 	c = sizeof(int);
-	r = asn1_read_value(item, "hint", &hint, &c);
-	if (r != ASN1_SUCCESS) {
-		return asn_except(&item, ERR_READ);
+//	r = asn1_read_value(item, "hint", &hint, &c);
+//	if (r != ASN1_SUCCESS) {
+//		return asn_except(&item, ERR_READ);
+//	}
+	r = lq_asn_read(asn, "hint", (char*)&hint, &c);
+	if (r != ERR_OK) {
+		lq_asn_free(asn);
+		return r;
 	}
+
 	hint <<= ((sizeof(int) - c) * 8);
 	if (is_le()) {
 		flip_endian(sizeof(int), (char*)(&hint));
 	}
 
 	c = LQ_BLOCKSIZE;
-	r = asn1_read_value(item, "cert", tmp, &c);
-	if (r != ASN1_SUCCESS) {
-		return asn_except(&item, ERR_READ);
+//	r = asn1_read_value(item, "cert", tmp, &c);
+//	if (r != ASN1_SUCCESS) {
+//		return asn_except(&item, ERR_READ);
+//	}
+	r = lq_asn_read(asn, "cert", tmp, &c);
+	if (r != ERR_OK) {
+		lq_asn_free(asn);
+		return r;
 	}
 	r = lq_certificate_deserialize(&cert, resolve, tmp, c);
 	if (r != ERR_OK) {
-		return asn_except(&item, r);
+		//return asn_except(&item, r);
+		lq_asn_free(asn);
+		return r;
 	}
 
 	*env = lq_envelope_new(cert, hint);
@@ -215,21 +273,28 @@ int lq_envelope_deserialize(LQEnvelope **env, LQResolve *resolve, const char *in
 	while(++i) {
 		c = LQ_BLOCKSIZE;
 		sprintf(node_seq_name, "attach.?%i", i);
-		r = asn1_read_value(item, node_seq_name, tmp, &c);
-		if (r != ASN1_SUCCESS) {
+//		r = asn1_read_value(item, node_seq_name, tmp, &c);
+//		if (r != ASN1_SUCCESS) {
+//			break;
+//		}
+		r = lq_asn_read(asn, node_seq_name, tmp, &c);
+		if (r != ERR_OK) {
 			break;
 		}
 		r = lq_envelope_attach(*env, tmp, c);
 		if (r != ERR_OK) {
 			lq_envelope_free(*env);
+			lq_asn_free(asn);
 			return ERR_FAIL;
 		}
 	}
 
-	r = asn1_delete_structure(&item);
-	if (r != ASN1_SUCCESS) {
-		return ERR_FAIL;
-	}
+//	r = asn1_delete_structure(&item);
+//	if (r != ASN1_SUCCESS) {
+//		return ERR_FAIL;
+//	}
+
+	lq_asn_free(asn);
 
 	return ERR_OK;
 }
