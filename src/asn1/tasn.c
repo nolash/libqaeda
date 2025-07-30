@@ -90,7 +90,6 @@ LQASN* lq_asn_parse(const char *element, const char *data, size_t data_len) {
 
 	r = asn1_der_decoding(&o, data, data_len, err);
 	if (r != ASN1_SUCCESS) {
-		//return asn_except(&item, ERR_ENCODING);
 		return NULL;
 	}
 	return item;
@@ -105,7 +104,6 @@ int lq_asn_out(LQASN *item, char *out, size_t *out_len) {
 	r = asn1_der_coding(o, item->element, out, (int*)out_len, err);
 	if (r != ASN1_SUCCESS) {
 		debug_logerr(LLOG_WARNING, ERR_ENCODING, (char*)asn1_strerror(r));
-		//return asn_except(&item, ERR_ENCODING);
 		return ERR_ENCODING;
 	}
 
@@ -136,7 +134,6 @@ int lq_asn_read(LQASN *item, const char *property, char *data, size_t *data_len)
 	r = asn1_read_value(o, property, data, (int*)data_len);
 	if (r != ASN1_SUCCESS) {
 		return ERR_ELEMENT_READ;
-		//return asn_except(&item, ERR_READ);
 	}
 	return ERR_OK;
 }
