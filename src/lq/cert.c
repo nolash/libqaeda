@@ -517,7 +517,7 @@ int lq_certificate_deserialize(LQCert **cert, LQResolve *resolve, char *in, size
 //		return asn_except(&item, ERR_ENCODING);
 //	}
 	asn = lq_asn_parse("Cert", in, in_len);
-	if (asn != NULL) {
+	if (asn == NULL) {
 		return ERR_READ;
 	}
 

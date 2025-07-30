@@ -45,8 +45,8 @@ START_TEST(check_msg_symmetric) {
 	lq_msg_free(msg);
 
 	r = lq_msg_deserialize(&msg, &resolve, buf, c);
-	ck_assert_ptr_nonnull(msg);
 	ck_assert_int_eq(r, 0);
+	ck_assert_ptr_nonnull(msg);
 	lq_msg_free(msg);
 	resolve.store->free(resolve.store);
 	resolve_dummy.store->free(resolve_dummy.store);
@@ -83,9 +83,9 @@ START_TEST(check_msg_symmetric_literal) {
 	lq_msg_free(msg);
 
 	r = lq_msg_deserialize(&msg, &resolve, buf, c);
+	ck_assert_int_eq(r, 0);
 	ck_assert_ptr_nonnull(msg);
 	ck_assert_mem_eq(msg->data, data, strlen(data) + 1);
-	ck_assert_int_eq(r, 0);
 	lq_msg_free(msg);
 }
 END_TEST

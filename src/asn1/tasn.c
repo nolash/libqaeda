@@ -21,6 +21,24 @@ static int asn_except(asn1_node *node, int err) {
 
 	return err;
 }
+
+static char* asn_join_element(const char *domain, const char *element, char *s) {
+	int r;
+	char *p;
+
+	p = s;
+	r = lq_len(domain);
+	lq_cpy(p, domain, r);
+	p += r;
+	s[r] = '.';
+	p++;
+	r = lq_len(element);
+	lq_cpy(p, element, r);
+	p += r;
+	*p = 0x0;
+	return s;
+}
+
 int lq_asn_init() {
 	return asn1_array2tree(defs_asn1_tab, &asn, NULL);
 }
@@ -51,8 +69,22 @@ LQASN* lq_asn_parse(const char *element, const char *data, size_t data_len) {
 	LQASN *item;
 	asn1_node o;
 	char err[1024];
+	char s[32];
+	char *p;
 
-	item = lq_asn_new(element);
+	p = asn_join_element("Qaeda", element, (char*)s);
+	r = asn1_create_element(asn, p, &o);
+	if (r != ASN1_SUCCESS) {
+		return NULL;
+	}
+	item = lq_alloc(sizeof(LQASN));
+	if (item == NULL) {
+		return NULL;
+	}
+	lq_zero(item, sizeof(LQASN));
+
+	lq_cpy(item->element, element, lq_len(element));
+	item->impl = (void*)o;
 	item->mode = LQASN_MODE_READ;
 	o = (asn1_node)item->impl;
 
@@ -87,17 +119,7 @@ int lq_asn_write(LQASN *item, const char *property, const char *data, size_t dat
 	char s[32];
 	char *p;
 
-	p = (char*)s;
-	r = lq_len(item->element);
-	lq_cpy(p, item->element, r);
-	p += r;
-	s[r] = '.';
-	p++;
-	r = lq_len(property);
-	lq_cpy(p, property, r);
-	p++;
-	*p = 0x0;
-
+	p = asn_join_element(item->element, property, (char*)s);
 	o = (asn1_node)item->impl;
 	r = asn1_write_value(o, p, data, (int)data_len);
 	if (r != ASN1_SUCCESS) {

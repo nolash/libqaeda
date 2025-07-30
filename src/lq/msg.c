@@ -331,7 +331,7 @@ int lq_msg_deserialize(LQMsg **msg, LQResolve *resolve, const char *in, size_t i
 //	lq_zero(&item, sizeof(item));
 
 	asn = lq_asn_parse("Msg", in, in_len);
-	if (asn != NULL) {
+	if (asn == NULL) {
 		return ERR_READ;
 	}
 //	r = asn1_create_element(asn, "Qaeda.Msg", &item);
