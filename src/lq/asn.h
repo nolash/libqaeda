@@ -19,5 +19,6 @@ int lq_asn_write(LQASN *asn, const char *property, const char *data, size_t data
 int lq_asn_out(LQASN *asn, char *out, size_t *out_len);
 int lq_asn_read(LQASN *asn, const char *property, char *data, size_t *data_len);
 void lq_asn_free(LQASN*);
+void lq_asn_finish();
 
 #endif // LIBQAEDA_ASN_H_

@@ -1,5 +1,6 @@
 #include <libtasn1.h>
 #include <llog.h>
+#include <stdlib.h>
 
 #include <lq/asn.h>
 #include <lq/mem.h>
@@ -148,4 +149,7 @@ void lq_asn_free(LQASN *item) {
 		debug(LLOG_WARNING, item->element, "delete item");
 	}
 	lq_free(item);
+}
+
+void lq_asn_finish() {
 }

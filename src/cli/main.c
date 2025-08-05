@@ -99,21 +99,23 @@ int main(int argc, char **argv) {
 		return 1;
 	}
 
-	pk_alice = lq_privatekey_load(passphrase_alice, strlen(passphrase_alice), NULL);
+	pk_alice = lq_privatekey_new(passphrase_alice, strlen(passphrase_alice));
 	if (pk_alice == NULL) {
 		lq_ui_free();
 		return 1;
 	}
+	lq_privatekey_unlock(pk_alice, passphrase_alice, strlen(passphrase_alice));
 	pubk_alice = lq_publickey_from_privatekey(pk_alice);
 	if (pubk_alice == NULL) {
 		lq_ui_free();
 		return 1;
 	}
-	pk_bob = lq_privatekey_load(passphrase_bob, strlen(passphrase_bob), NULL);
+	pk_bob = lq_privatekey_new(passphrase_bob, strlen(passphrase_bob));
 	if (pk_bob == NULL) {
 		lq_ui_free();
 		return 1;
 	}
+	lq_privatekey_unlock(pk_bob, passphrase_bob, strlen(passphrase_bob));
 	pubk_bob = lq_publickey_from_privatekey(pk_bob);
 	if (pubk_bob == NULL) {
 		lq_ui_free();
@@ -125,6 +127,7 @@ int main(int argc, char **argv) {
 		lq_ui_free();
 		return 1;
 	}
+	lq_msg_literal(req);
 
 	cert = lq_certificate_new(NULL);
 	r = lq_certificate_request(cert, req, pk_alice);
@@ -148,42 +151,43 @@ int main(int argc, char **argv) {
 		return 1;
 	}
 
-	r = lq_certificate_verify(cert);
+	r = lq_certificate_verify(cert, NULL, NULL);
 	if (r != ERR_OK) {
 		lq_certificate_free(cert);
 		lq_ui_free();
 		return 1;
 	}
 
-	env = lq_envelope_new(cert, 42);
-	out_len = LQ_BLOCKSIZE;
-	r = lq_envelope_serialize(env, NULL, out, &out_len);
-	if (r != ERR_OK) {
-		lq_envelope_free(env);
-		lq_ui_free();
-		return 1;
-	}
-	lq_envelope_free(env);
-
-	f = lq_open("./out.dat", O_WRONLY | O_CREAT, S_IRWXU);
-	if (f < 0) {
-		lq_ui_free();
-		return errno;
-	}
-
-	r = lq_write(f, out, out_len);
-	if (r != out_len) {
-		lq_close(f);
-		lq_ui_free();
-		return 1;
-	}
-	lq_close(f);
-
-	r = lq_envelope_deserialize(&env, NULL, out, out_len);
-	if (r != ERR_OK) {
-		lq_ui_free();
-		return 1;
-	}
-	lq_envelope_free(env);
+//	env = lq_envelope_new(cert, 42);
+//	out_len = LQ_BLOCKSIZE;
+//	r = lq_envelope_serialize(env, NULL, out, &out_len);
+//	if (r != ERR_OK) {
+//		lq_envelope_free(env);
+//		lq_ui_free();
+//		return 1;
+//	}
+//	lq_envelope_free(env);
+//
+//	f = lq_open("./out.dat", O_WRONLY | O_CREAT, S_IRWXU);
+//	if (f < 0) {
+//		lq_ui_free();
+//		return errno;
+//	}
+//
+//	r = lq_write(f, out, out_len);
+//	if (r != out_len) {
+//		lq_close(f);
+//		lq_ui_free();
+//		return 1;
+//	}
+//	lq_close(f);
+//
+//	r = lq_envelope_deserialize(&env, NULL, out, out_len);
+//	if (r != ERR_OK) {
+//		lq_ui_free();
+//		return 1;
+//	}
+//	lq_envelope_free(env);
+	lq_certificate_free(cert);
 	lq_ui_free();
 }

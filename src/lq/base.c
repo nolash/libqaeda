@@ -3,10 +3,9 @@
 #include "err.h"
 #include "config.h"
 #include "debug.h"
+#include "asn.h"
 
 char zeros[65];
-
-int lq_asn_init();
 
 int lq_init() {
 	int r;
@@ -28,4 +27,5 @@ void lq_finish() {
 //	}
 //
 	lq_config_free();
+	lq_asn_finish();
 }
