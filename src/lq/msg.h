@@ -13,6 +13,8 @@ enum lq_msgstate_e {
 	LQ_MSG_LITERAL = 4,
 };
 
+const static int LQ_TIMESTAMP_LEN = 8;
+
 /**
  * \struct LQMsg
  *
