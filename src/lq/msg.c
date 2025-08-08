@@ -19,6 +19,23 @@ static LQPubKey nokey = {
 	.impl = zeros,
 };
 
+static int timestamp_bytes(LQMsg *msg, char *timedata) {
+	int r;
+
+	lq_cpy(timedata, &msg->time.tv_sec, LQ_TIMESTAMP_LEN);
+	lq_cpy(((char*)timedata)+4, &msg->time.tv_nsec, 4);
+	r = to_endian(TO_ENDIAN_BIG, 4, timedata);
+	if (r) {
+		return ERR_BYTEORDER;
+		//return asn_except(&item, ERR_BYTEORDER);
+	}
+	r = to_endian(TO_ENDIAN_BIG, 4, ((char*)timedata)+4);
+	if (r) {
+		return ERR_BYTEORDER;
+	}
+	return ERR_OK;
+}
+
 LQMsg* lq_msg_new(const char *msg_data, size_t msg_len) {
 	LQMsg *msg;
 
@@ -47,15 +64,25 @@ LQSig* lq_msg_sign(LQMsg *msg, LQPrivKey *pk, const char *salt) {
 }
 
 static int msg_to_sign(LQMsg *msg, char *out, const char *extra, size_t extra_len) {
+	int r;
 	int l;
-	char data[LQ_BLOCKSIZE];
+	char data[LQ_BLOCKSIZE + LQ_TIMESTAMP_LEN];
+	char *p;
 
+	p = (char*)data;
 	l = msg->len;
 	if (extra_len > 0) {
 		l += extra_len;
-		lq_cpy(data, extra, extra_len);
+		lq_cpy(p, extra, extra_len);
 	}
-	lq_cpy(data + extra_len, msg->data, msg->len);
+	p += extra_len;
+	lq_cpy(p, msg->data, msg->len);
+
+	p += msg->len;
+	r = timestamp_bytes(msg, p);
+	if (r) {
+		return r;
+	}
 
 	return lq_digest(data, l, out);
 }	
@@ -221,20 +248,12 @@ int lq_msg_serialize(LQMsg *msg, LQResolve *resolve, char *out, size_t *out_len)
 		return r;
 	}
 
-	lq_cpy(timedata, &msg->time.tv_sec, 4);
-	lq_cpy(((char*)timedata)+4, &msg->time.tv_nsec, 4);
-	r = to_endian(TO_ENDIAN_BIG, 4, timedata);
-	if (r) {
-		lq_asn_free(asn);
-		return ERR_BYTEORDER;
-	}
-	r = to_endian(TO_ENDIAN_BIG, 4, ((char*)timedata)+4);
-	if (r) {
-		lq_asn_free(asn);
-		return ERR_BYTEORDER;
+	r = timestamp_bytes(msg, timedata);
+	if (r != ERR_OK) {
+		return asn_except(&item, r);
 	}
 
-	c = sizeof(int);
+	c = sizeof(LQ_TIMESTAMP_LEN);
 	*out_len += c;
 	if (*out_len > mx) {
 		lq_asn_free(asn);
