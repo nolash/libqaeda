@@ -9,6 +9,6 @@ LDFLAGS += -L../aux/lib -L.. $(LIBS)
 
 all:
 	#gcc $(CFLAGS) main.c -o a.out $(OBJFILES) $(LDFLAGS)
-	gcc $(CFLAGS) main.c -o a.out  $(LDFLAGS)
+	gcc $(CFLAGS) main.c -o a.out  ../asn1/defs_asn1_tab.o $(LDFLAGS)
 
 .PHONY: clean asn1 aux

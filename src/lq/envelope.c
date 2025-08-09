@@ -97,7 +97,6 @@ int lq_envelope_serialize(LQEnvelope *env, LQResolve *resolve, char *out, size_t
 		return ERR_WRITE;
 	}
 
-
 	hint = env->hint;
 	r = to_endian(TO_ENDIAN_BIG, sizeof(int), &hint);
 	if (r) {

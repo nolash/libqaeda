@@ -158,8 +158,14 @@ int main(int argc, char **argv) {
 		return 1;
 	}
 
+	out_len = LQ_BLOCKSIZE;
+	r = lq_certificate_serialize(cert, NULL, out, &out_len);
+	if (r != ERR_OK) {
+		lq_certificate_free(cert);
+		lq_ui_free();
+		return 1;
+	}
 //	env = lq_envelope_new(cert, 42);
-//	out_len = LQ_BLOCKSIZE;
 //	r = lq_envelope_serialize(env, NULL, out, &out_len);
 //	if (r != ERR_OK) {
 //		lq_envelope_free(env);

@@ -2,13 +2,14 @@
 #include <llog.h>
 #include <stdlib.h>
 
+//#include "tasn.h"
 #include <lq/asn.h>
 #include <lq/mem.h>
 #include <lq/err.h>
 #include "debug.h"
 
-#include "tasn.h"
 
+extern const asn1_static_node defs_asn1_tab[];
 asn1_node asn;
 
 // TODO: DRY
@@ -23,7 +24,7 @@ static int asn_except(asn1_node *node, int err) {
 	return err;
 }
 
-static char* asn_join_element(const char *domain, const char *element, char *s) {
+static char* join_element(const char *domain, const char *element, char *s) {
 	int r;
 	char *p;
 
@@ -41,7 +42,13 @@ static char* asn_join_element(const char *domain, const char *element, char *s) 
 }
 
 int lq_asn_init() {
-	return asn1_array2tree(defs_asn1_tab, &asn, NULL);
+	int r;
+
+	r = asn1_array2tree(defs_asn1_tab, &asn, NULL);
+	if (r != ASN1_SUCCESS) {
+		return ERR_FAIL;
+	}
+	return ERR_OK;
 }
 
 LQASN* lq_asn_new(const char *element) {
@@ -49,6 +56,7 @@ LQASN* lq_asn_new(const char *element) {
 	LQASN *item;
 	asn1_node o;
 
+	lq_zero(&o, sizeof(o));
 	r = asn1_create_element(asn, "Qaeda", &o);
 	if (r != ASN1_SUCCESS) {
 		return NULL;
@@ -73,7 +81,8 @@ LQASN* lq_asn_parse(const char *element, const char *data, size_t data_len) {
 	char s[32];
 	char *p;
 
-	p = asn_join_element("Qaeda", element, (char*)s);
+	lq_zero(&o, sizeof(o));
+	p = join_element("Qaeda", element, (char*)s);
 	r = asn1_create_element(asn, p, &o);
 	if (r != ASN1_SUCCESS) {
 		return NULL;
@@ -118,7 +127,7 @@ int lq_asn_write(LQASN *item, const char *property, const char *data, size_t dat
 	char s[32];
 	char *p;
 
-	p = asn_join_element(item->element, property, (char*)s);
+	p = join_element(item->element, property, (char*)s);
 	o = (asn1_node)item->impl;
 	r = asn1_write_value(o, p, data, (int)data_len);
 	if (r != ASN1_SUCCESS) {

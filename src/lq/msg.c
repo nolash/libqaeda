@@ -250,7 +250,7 @@ int lq_msg_serialize(LQMsg *msg, LQResolve *resolve, char *out, size_t *out_len)
 
 	r = timestamp_bytes(msg, timedata);
 	if (r != ERR_OK) {
-		return asn_except(&item, r);
+		return ERR_BYTEORDER;
 	}
 
 	c = sizeof(LQ_TIMESTAMP_LEN);
