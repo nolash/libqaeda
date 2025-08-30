@@ -35,6 +35,7 @@ struct lq_certificate_t {
 	LQSig *response_sig; ///< Signature over a response message. This field must be NULL unless a response message is set. The signature is calculated over both the response and the signed request.
 	LQCert *parent; ///< Link to previous certificate. Optional. Set to NULL if no link exists.
 	char parent_hash[LQ_DIGEST_LEN];
+	LQResolve *resolve; ///< Optional store implementation to resolve message hashes to content.
 };
 
 /**
@@ -78,6 +79,7 @@ char* lq_certificate_mat(const LQCert *cert, const LQPubKey *pubk, char *out);
  * If the certificate has the response_signature it will be used as the response_signature value. The response_signature may not exist without the request_signature.
  *
  * \param[in] Instantiated certificate to perform signature on.
+ * \param[in] Store implementations to use for resolving content key from deserialized message and certificate data. If NULL, content will not be resolved.
  * \param[in] Private key to use for signature.
  * \return ERR_OK on successful signature, or:
  * 	* ERR_REQUEST if request has already been signed  (and response is not set)
@@ -94,7 +96,6 @@ int lq_certificate_sign(LQCert *cert, LQPrivKey *pk);
  * \brief Serialize certificate data payload for storage and transport.
  *
  * \param[in] Certificate to serialize
- * \param[in] Store implementations to use for storing serialized certificate and message data. If NULL, content will not be stored in resolver.
  * \param[out] Buffer to write data to.
  * \param[out] Value behind pointer must contain the capacity of the output buffer. Will be overwritten with the actual number of bytes written.
  * \return ERR_OK if serialization is successful, or:
@@ -103,7 +104,7 @@ int lq_certificate_sign(LQCert *cert, LQPrivKey *pk);
  * 	* ERR_WRITE if serialization of an element failed.
  * 	* ERR_ENCODING if generating the final serialization string failed.
  */
-int lq_certificate_serialize(LQCert *cert, LQResolve *resolve, char *out, size_t *out_len);
+int lq_certificate_serialize(LQCert *cert, char *out, size_t *out_len);
 
 /**
  * \brief Deserialize certificate data payload from storage or transport.
@@ -134,6 +135,7 @@ int lq_certificate_deserialize(LQCert **cert, LQResolve *resolve, char *in, size
  * The public key pointers in the output parameters are valid until the certificate is freed.
  *
  * \param[in] Certificate to verify
+ * \param[in] Store implementations to use for resolving content key from deserialized message and certificate data. If NULL, content will not be resolved.
  * \param[out] If not NULL, provides location to store pointer to request publickey. If certificate does not contain a valid request, this will be set to NULL.
  * \param[out] If not NULL, provider location to store pointer to response publickey. If certificate does not contain a valid response, this will be set to NULL.
  * \return ERR_OK if verified, ERR_NOOP if no message.
@@ -187,6 +189,13 @@ int lq_certificate_respond(LQCert *cert, LQMsg *rsp, LQPrivKey *pk);
  */
 int lq_certificate_set_parent_digest(LQCert *cert, const char *b);
 
+/**
+ * Set the content resolver to use for serializations.
+ *
+ * \param[in] Certificate to manipulate.
+ * \param[in] Store implementations to use for storing serialized certificate and message data. If NULL, content will not be looked up from resolver.
+ */
+void lq_certificate_set_resolver(LQCert *cert, LQResolve *resolve);
 
 /**
  * Create a digest of the certificate, to use as the parent hash.
@@ -198,7 +207,7 @@ int lq_certificate_set_parent_digest(LQCert *cert, const char *b);
  * \param[out] Digest output.
  * \return ERR_NONSENSE if response missing, ERR_FAIL if serialize fails, ERR_DIGEST if digest fails, or ERR_OK on success.
  */
-int lq_certificate_digest(LQCert *cert, LQResolve *resolve, char *out);
+int lq_certificate_digest(LQCert *cert, char *out);
 
 /**
  * \brief Free an instantiated certificate.
