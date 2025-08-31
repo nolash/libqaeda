@@ -94,7 +94,7 @@ static int certificate_state(LQCert *cert) {
 	return r | CERT_NONE;
 }
 
-int lq_certificate_digest(LQCert *cert, LQResolve *resolve, char *out)  {
+int lq_certificate_digest(LQCert *cert, char *out)  {
 	int r;
 	char buf[LQ_BLOCKSIZE];
 	size_t c;
@@ -104,7 +104,7 @@ int lq_certificate_digest(LQCert *cert, LQResolve *resolve, char *out)  {
 	}
 
 	c = LQ_BLOCKSIZE;
-	r = lq_certificate_serialize(cert, resolve, buf, &c);
+	r = lq_certificate_serialize(cert, buf, &c);
 	if (r) {
 		return ERR_FAIL;
 	}
@@ -119,12 +119,13 @@ void lq_certificate_set_domain(LQCert *cert, const char *domain) {
 	lq_cpy(cert->domain, domain, LQ_CERT_DOMAIN_LEN);
 }
 
+
 // generates a prefix to include with the message for the signature
 // domain (required)
 // parent (optional)
 // request signature (optional)
 // response signature (optional)
-static int state_digest(LQCert *cert, char *out, int final) {
+static int state_digest(const LQCert *cert, char *out, int final) {
 	int r;
 	int c;
 	char data[LQ_BLOCKSIZE];
@@ -138,7 +139,11 @@ static int state_digest(LQCert *cert, char *out, int final) {
 	p += c;
 
 	if (cert->parent != NULL && !final) {
-		r = state_digest(cert->parent, cert->parent_hash, 1);
+		if (cert->parent->resolve == NULL) {
+			cert->parent->resolve = cert->resolve;
+		}
+		//r = state_digest(cert->parent, cert->parent_hash, 1);
+		r = lq_certificate_digest(cert->parent, cert->parent_hash);
 		if (r != ERR_OK) {
 			return r;
 		}
@@ -210,6 +215,8 @@ char* lq_certificate_mat(const LQCert *cert, const LQPubKey *pubk, char *out) {
 	if (cert->request->pubkey == NULL) {
 		cert->request->pubkey = pubk;
 	}
+
+	// TODO: salt?
 	r = lq_msg_mat(cert->request, NULL, state, LQ_DIGEST_LEN, out);
 	if (r) {
 		return NULL;
@@ -308,7 +315,7 @@ int lq_certificate_verify(LQCert *cert, LQPubKey **request_pubkey, LQPubKey **re
 	return ERR_OK;
 }
 
-int lq_certificate_serialize(LQCert *cert, LQResolve *resolve, char *out, size_t *out_len) {
+int lq_certificate_serialize(LQCert *cert, char *out, size_t *out_len) {
 	size_t c;
 	int r;
 	size_t mx;
@@ -344,7 +351,7 @@ int lq_certificate_serialize(LQCert *cert, LQResolve *resolve, char *out, size_t
 		msg = &nomsg;
 	}
 	c = mx - LQ_CERT_DOMAIN_LEN; 
-	r = lq_msg_serialize(msg, resolve, buf, &c);
+	r = lq_msg_serialize(msg, cert->resolve, buf, &c);
 	if (r != ERR_OK) {
 		lq_asn_free(asn);
 		return r;
@@ -381,7 +388,7 @@ int lq_certificate_serialize(LQCert *cert, LQResolve *resolve, char *out, size_t
 		msg = &nomsg;
 	}
 	c = mx - LQ_CERT_DOMAIN_LEN; 
-	r = lq_msg_serialize(msg, resolve, buf, &c);
+	r = lq_msg_serialize(msg, cert->resolve, buf, &c);
 	if (r != ERR_OK) {
 		lq_asn_free(asn);
 		return r;
@@ -469,13 +476,14 @@ int lq_certificate_deserialize(LQCert **cert, LQResolve *resolve, char *in, size
 	*cert = lq_certificate_new(NULL);
 	p = *cert;
 	lq_certificate_set_domain(p, tmp);
+	lq_certificate_set_resolver(p, resolve);
 
 	c = LQ_BLOCKSIZE;
 	r = lq_asn_read(asn, "request", tmp, &c);
 	if (r != ERR_OK) {
 		return r;
 	}
-	r = lq_msg_deserialize(&p->request, resolve, tmp, c);
+	r = lq_msg_deserialize(&p->request, p->resolve, tmp, c);
 	if (r != ERR_OK) {
 		lq_asn_free(asn);
 		return r;
@@ -500,7 +508,7 @@ int lq_certificate_deserialize(LQCert **cert, LQResolve *resolve, char *in, size
 		return r;
 	}
 
-	r = lq_msg_deserialize(&p->response, resolve, tmp, c);
+	r = lq_msg_deserialize(&p->response, p->resolve, tmp, c);
 	if (r != ERR_OK) {
 		lq_signature_free(p->request_sig);
 		lq_msg_free(p->request);
@@ -544,6 +552,10 @@ int lq_certificate_deserialize(LQCert **cert, LQResolve *resolve, char *in, size
 	lq_asn_free(asn);
 
 	return ERR_OK;
+}
+
+void lq_certificate_set_resolver(LQCert *cert, LQResolve *resolve) {
+	cert->resolve = resolve;
 }
 
 void lq_certificate_free(LQCert *cert) {

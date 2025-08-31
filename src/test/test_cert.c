@@ -107,7 +107,7 @@ START_TEST(check_cert_symmetric_ser_nomsg) {
 	cert = lq_certificate_new(NULL);
 	ck_assert_ptr_nonnull(cert);
 	c = LQ_BLOCKSIZE;
-	r = lq_certificate_serialize(cert, NULL, buf, &c);
+	r = lq_certificate_serialize(cert, buf, &c);
 	ck_assert_int_eq(r, 0);
 	lq_certificate_free(cert);
 
@@ -134,7 +134,7 @@ START_TEST(check_cert_symmetric_ser_req_nosig) {
 
 	r = lq_certificate_request(cert, req, NULL);
 	c = LQ_BLOCKSIZE;
-	r = lq_certificate_serialize(cert, NULL, buf, &c);
+	r = lq_certificate_serialize(cert, buf, &c);
 	ck_assert_int_eq(r, 0);
 	lq_certificate_free(cert);
 
@@ -169,7 +169,7 @@ START_TEST(check_cert_symmetric_ser_req_sig) {
 	ck_assert_int_eq(r, 0);
 
 	c = LQ_BLOCKSIZE;
-	r = lq_certificate_serialize(cert, NULL, buf, &c);
+	r = lq_certificate_serialize(cert, buf, &c);
 	ck_assert_int_eq(r, 0);
 	lq_certificate_free(cert);
 
@@ -203,7 +203,7 @@ START_TEST(check_cert_symmetric_ser_rsp_onesig) {
 	ck_assert_int_eq(r, 0);
 
 	c = LQ_BLOCKSIZE;
-	r = lq_certificate_serialize(cert, NULL, buf, &c);
+	r = lq_certificate_serialize(cert, buf, &c);
 	ck_assert_int_eq(r, 0);
 	lq_certificate_free(cert);
 
@@ -250,7 +250,7 @@ START_TEST(check_cert_symmetric_ser_rsp_bothsig) {
 	ck_assert_int_eq(r, 0);
 
 	c = LQ_BLOCKSIZE; 
-	r = lq_certificate_serialize(cert, NULL, buf, &c);
+	r = lq_certificate_serialize(cert, buf, &c);
 	ck_assert_int_eq(r, 0);
 	lq_certificate_free(cert);
 
@@ -294,7 +294,7 @@ START_TEST(check_cert_verify_deserialize_literal) {
 	ck_assert_int_eq(r, 0);
 
 	c = LQ_BLOCKSIZE; 
-	r = lq_certificate_serialize(cert, NULL, buf, &c);
+	r = lq_certificate_serialize(cert, buf, &c);
 	ck_assert_int_eq(r, 0);
 	lq_certificate_free(cert);
 
@@ -346,7 +346,7 @@ START_TEST(check_cert_verify_deserialize_literal_with_publickeys) {
 	ck_assert_int_eq(r, 0);
 
 	c = LQ_BLOCKSIZE; 
-	r = lq_certificate_serialize(cert, NULL, buf, &c);
+	r = lq_certificate_serialize(cert, buf, &c);
 	ck_assert_int_eq(r, 0);
 	lq_certificate_free(cert);
 
@@ -508,7 +508,7 @@ START_TEST(check_cert_digest) {
 	ck_assert_int_eq(r, ERR_OK);
 	ck_assert_ptr_nonnull(cert->request_sig);
 
-	r = lq_certificate_digest(cert, NULL, digest);
+	r = lq_certificate_digest(cert, digest);
 	ck_assert_int_eq(r, ERR_NONSENSE);
 
 	res = lq_msg_new("barbaz", 7);
@@ -517,7 +517,7 @@ START_TEST(check_cert_digest) {
 	ck_assert_int_eq(r, ERR_OK);
 	ck_assert_ptr_nonnull(cert->response_sig);
 
-	r = lq_certificate_digest(cert, NULL, digest);
+	r = lq_certificate_digest(cert, digest);
 	ck_assert_int_eq(r, ERR_OK);
 }
 //

@@ -30,7 +30,7 @@ START_TEST(check_envelope) {
 
 	r = lq_certificate_request(cert, req, NULL);
 	c = LQ_BLOCKSIZE;
-	r = lq_certificate_serialize(cert, NULL, buf, &c);
+	r = lq_certificate_serialize(cert, buf, &c);
 	ck_assert_int_eq(r, 0);
 
 	env = lq_envelope_new(cert, 500);
