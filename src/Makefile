@@ -2,8 +2,7 @@ INCLUDES := -I. -I./aux/include
 CFLAGS +=  $(INCLUDES) -Wall -DRERR
 #LIBOBJFILES = ./asn1/*.o ./*.o ./lq/*.o ./store/file.o ./mem/std.o ./io/std.o ./crypto/gcrypt.o
 LIBOBJFILES = ./asn1/*.o ./*.o ./lq/*.o ./store/file.o ./mem/std.o ./io/std.o ./crypto/gcrypt.o ./aux/hashmap.c/hashmap.o ./aux/liblash/src/rerr/*.o ./aux/liblash/src/llog/*.o ./aux/liblash/src/endian/*.o ./aux/liblash/src/hex/*.o  ./aux/liblash/src/case/*.o ./aux/cwalk/build/CMakeFiles/cwalk.dir/src/cwalk.c.o
-
-#LIBOBJEMBED = ./aux/lib/liblash.a #./aux/lib/libcwalk.a
+LIBOBJEMBED = ./asn1/*.o ./*.o ./lq/*.o ./store/file.o ./mem/std.o ./io/std.o ./crypto/gcrypt.o ./aux/hashmap.o ./aux/rerr.o ./aux/llog.o ./aux/endian.o ./aux/hex.o  ./aux/case.o ./aux/cwalk.o
 LIBS := `pkg-config --libs libtasn1 libgcrypt` -L./aux/lib -llash -lcwalk
 
 all: all-gpg
@@ -27,8 +26,13 @@ aux:
 asn1:
 	make -C asn1 all
 
-gpg:
+gpg: std
 	make -C crypto gpg
+
+gpg-shared: 
+	make -C crypto gpg-shared
+
+std:
 	make -C mem std
 	make -C io std
 	make -C store dummy
@@ -53,9 +57,14 @@ clean:
 tools:
 	make -C tools
 
-#shared-gpg: core aux asn1 gpg
-	#make -C aux/liblash/src lib
-	#$(CC) $(CFLAGS) -shared -o libqaeda.so $(LIBOBJFILES) $(LIBOBJEMBED)
+#shared-gpg: core aux asn1 gpg-shared
+#	#make -C aux/liblash/src lib
+#	$(CC) $(CFLAGS) -shared -o libqaeda.so $(LIBOBJEMBED)
+shared:
+	#make -C aux shared
+	$(CC) $(CFLAGS) -shared -o libqaeda.so $(LIBOBJEMBED)
+#	$(CC) $(CFLAGS) -shared -o libqaeda.so libqaeda.a
+
 			
 
 .PHONY: clean asn1 aux

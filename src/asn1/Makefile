@@ -7,7 +7,7 @@ all: compile dynamic
 
 src:
 	$(CC) $(CFLAGS) generate.c -o generate_asn1 $(LDFLAGS)
-	$(CC) $(CFLAGS) -c tasn.c -o tasn.o $(LDFLAGS)
+	$(CC) $(CFLAGS) -fPIC -c tasn.c -o tasn.o $(LDFLAGS)
 
 %.o: %_asn1_tab.c
 	$(CC) $< -o $* $(LDFLAGS)

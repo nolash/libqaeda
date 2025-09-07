@@ -104,6 +104,7 @@ int lq_file_content_put(enum payload_e typ, LQStore *store, const char *key, siz
 	sprintf(p, "%d%s", (char)typ, (unsigned char*)buf);
 	f = lq_open(path, O_CREAT | O_TRUNC | O_WRONLY, S_IRUSR | S_IWUSR);
 	if (f < 0) {
+		printf(">>>>>>>> nonet %s\n", path);
 		return ERR_NOENT;
 	}
 	l = value_len;

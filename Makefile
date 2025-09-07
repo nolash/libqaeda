@@ -10,7 +10,8 @@ test: all
 clean:
 	make -C src clean
 
-#shared: lib
-#	make -C src shared-gpg
+shared: lib
+	#make -C src shared-gpg
+	make -C src shared
 
 .PHONY: clean

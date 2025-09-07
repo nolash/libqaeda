@@ -1,5 +1,5 @@
 INCLUDES := -I.. -I../aux/include
-CFLAGS +=  $(INCLUDES) -Wall
+CFLAGS +=  $(INCLUDES) -Wall -fPIC
 LDFLAGS += -L../aux/lib -lhashmap
 
 all:

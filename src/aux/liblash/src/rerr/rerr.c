@@ -4,7 +4,7 @@
 static char** rerr[RERR_N_PFX + 1];
 static const char* rerr_pfx[RERR_N_PFX + 1];
 #ifdef RERR_EXT
-char *rerr_base[14] = {
+char *rerr_base[15] = {
 #else
 char *rerr_base[3] = {
 #endif

@@ -533,7 +533,6 @@ static int key_create_store(struct gpg_store *gpg, const char *passphrase, size_
 	r = create_mac(mac, passphrase_hash + CHACHA20_KEY_LENGTH_BYTES, v, m+sizeof(int));
 	if (r) {
 		return debug_logerr(LLOG_ERROR, ERR_CIPHER, "mac generation fail");
-		return r;
 	}
 	lq_cpy(ciphertext + c, mac, POLY1305_MAC_LEN);
 
@@ -656,6 +655,35 @@ static int check_ciphertext(const char *buf, size_t buf_len) {
 	return buf_len % (LQ_CRYPTO_BLOCKSIZE + CHACHA20_NONCE_LENGTH_BYTES + POLY1305_MAC_LEN);
 }
 
+// TODO: DRY with key_from_store
+static int key_have(const char *fingerprint) {
+	int r;
+	char inkey[LQ_FP_LEN];
+	size_t inkey_len;
+	char in[LQ_CRYPTO_BUFLEN];
+	size_t in_len;
+	LQStore *store;
+
+	store = key_store_get();
+	inkey_len = LQ_FP_LEN;
+	in_len = LQ_CRYPTO_BUFLEN;
+
+	if (fingerprint == NULL) {
+		*inkey = gpg_default_store_key;
+		inkey_len = 1;
+	} else {
+		lq_cpy(inkey, fingerprint, LQ_FP_LEN);
+	}
+	return ERR_OK;
+
+	r = store->get(LQ_CONTENT_KEY, store, inkey, inkey_len, in, &in_len);
+	if (r) {
+		return ERR_NOKEY;
+	}
+
+	return ERR_OK;
+}
+
 /// Load a private key from the store's crypto partition.
 static int key_from_store(struct gpg_store *gpg, const char *passphrase, size_t passphrase_len) {
 	char *nonce;
@@ -774,6 +802,9 @@ static int gpg_key_load(struct gpg_store *gpg, const char *passphrase, size_t pa
 	return ERR_OK;
 }
 
+int lq_privatekey_exist(const char *fingerprint) {
+	return key_have(fingerprint);
+}
 
 /// Implements the interface to load a private key from storage.
 LQPrivKey* lq_privatekey_load(const char *passphrase, size_t passphrase_len, const char *fingerprint) {

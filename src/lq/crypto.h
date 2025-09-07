@@ -173,6 +173,14 @@ LQPrivKey* lq_privatekey_new(const char *passphrase, size_t passphrase_len);
 LQPrivKey* lq_privatekey_load(const char *passphrase, size_t passphrase_len, const char *fingerprint);
 
 /**
+ * \brief Check if private key exists in store.
+ *
+ * \param[in] If not NULL, the private key matching the fingerprint will be loaded. If not, a "default" key will be checked.
+ * \return ERR_OK if exists, ERR_NOKEY if not.
+ */
+int lq_privatekey_exist(const char *fingerprint);
+
+/**
  * \brief Get the raw private key bytes.
  * 
  * \param[in] Private key object.

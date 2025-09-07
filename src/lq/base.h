@@ -8,6 +8,13 @@
 #define LQ_BLOCKSIZE 4096
 #endif
 
+typedef struct _lq_version {
+	short major;
+	short minor;
+	short patch;
+} LQVersion;
+
+
 /***
  * \brief Initialize libqaeda internals.
  *
@@ -19,5 +26,13 @@ int lq_init();
  * \brief Release resources used by libqaeda internals.
  */
 void lq_finish();
+
+
+/***
+ * \brief Return library version
+ *
+ * \return 
+ */
+LQVersion* lq_version();
 
 #endif // LQ_BASE_H_

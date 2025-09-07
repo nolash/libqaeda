@@ -1,6 +1,6 @@
 OBJS := $(patsubst %.c,%.o,$(filter-out main.c,$(wildcard *.c)))
 INCLUDES := -I.. -I../aux/include
-CFLAGS +=  $(INCLUDES) -Wall
+CFLAGS +=  $(INCLUDES) -Wall -fPIC
 LIBS := ../asn1/defs_asn1_tab.o -L../aux/lib -llash
 
 LDFLAGS += $(LIBS)
